@@ -3,12 +3,21 @@
     x:Class="MedRemind.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:MedRemind"
+    xmlns:pages="clr-namespace:MedRemind.Pages"
     Title="MedRemind">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <ShellContent
+            Title="Medications"
+            Icon="dotnet_bot.png"
+            ContentTemplate="{DataTemplate pages:MedicationsPage}"
+            Route="medications" />
+
+        <ShellContent
+            Title="Scan Rx"
+            Icon="dotnet_bot.png"
+            ContentTemplate="{DataTemplate pages:PrescriptionReaderPage}"
+            Route="prescriptionreader" />
+    </TabBar>
 
 </Shell>

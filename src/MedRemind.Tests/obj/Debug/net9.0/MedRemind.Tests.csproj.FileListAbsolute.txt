@@ -1,0 +1,8 @@
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\bin\Debug\net9.0\.msCoverageSourceRootsMapping_MedRemind.Tests
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\bin\Debug\net9.0\CoverletSourceRootsMapping_MedRemind.Tests
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\obj\Debug\net9.0\MedRemind.Tests.csproj.AssemblyReference.cache
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\obj\Debug\net9.0\MedRemind.Tests.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\obj\Debug\net9.0\MedRemind.Tests.AssemblyInfoInputs.cache
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\obj\Debug\net9.0\MedRemind.Tests.AssemblyInfo.cs
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\obj\Debug\net9.0\MedRemind.Tests.csproj.CoreCompileInputs.cache
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Tests\obj\Debug\net9.0\MedRemind.Tests.sourcelink.json

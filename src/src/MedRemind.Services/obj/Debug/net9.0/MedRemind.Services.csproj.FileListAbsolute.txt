@@ -1,0 +1,16 @@
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.csproj.AssemblyReference.cache
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.AssemblyInfoInputs.cache
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.AssemblyInfo.cs
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.csproj.CoreCompileInputs.cache
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.sourcelink.json
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\bin\Debug\net9.0\MedRemind.Services.deps.json
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\bin\Debug\net9.0\MedRemind.Services.dll
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\bin\Debug\net9.0\MedRemind.Services.pdb
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\bin\Debug\net9.0\MedRemind.Core.dll
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\bin\Debug\net9.0\MedRemind.Core.pdb
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemin.0719148A.Up2Date
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.dll
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\refint\MedRemind.Services.dll
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\MedRemind.Services.pdb
+C:\Users\rajib\source\repos\MedRemind\src\src\MedRemind.Services\obj\Debug\net9.0\ref\MedRemind.Services.dll

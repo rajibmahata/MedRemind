@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MedRemind</name>
+    </assembly>
+    <members>
+        <member name="T:MedRemind.ViewModels.AddMedicationViewModel">
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.Name">
+            <inheritdoc cref="F:MedRemind.ViewModels.AddMedicationViewModel.name"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.Dosage">
+            <inheritdoc cref="F:MedRemind.ViewModels.AddMedicationViewModel.dosage"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.Frequency">
+            <inheritdoc cref="F:MedRemind.ViewModels.AddMedicationViewModel.frequency"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.Instructions">
+            <inheritdoc cref="F:MedRemind.ViewModels.AddMedicationViewModel.instructions"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.StartDate">
+            <inheritdoc cref="F:MedRemind.ViewModels.AddMedicationViewModel.startDate"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.Notes">
+            <inheritdoc cref="F:MedRemind.ViewModels.AddMedicationViewModel.notes"/>
+        </member>
+        <member name="F:MedRemind.ViewModels.AddMedicationViewModel.saveMedicationCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.AddMedicationViewModel.SaveMedicationCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.SaveMedicationCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.AddMedicationViewModel.SaveMedicationAsync"/>.</summary>
+        </member>
+        <member name="F:MedRemind.ViewModels.AddMedicationViewModel.cancelCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.AddMedicationViewModel.CancelCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.AddMedicationViewModel.CancelCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.AddMedicationViewModel.CancelAsync"/>.</summary>
+        </member>
+        <member name="T:MedRemind.ViewModels.MedicationsViewModel">
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+        </member>
+        <member name="P:MedRemind.ViewModels.MedicationsViewModel.Medications">
+            <inheritdoc cref="F:MedRemind.ViewModels.MedicationsViewModel.medications"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.MedicationsViewModel.IsRefreshing">
+            <inheritdoc cref="F:MedRemind.ViewModels.MedicationsViewModel.isRefreshing"/>
+        </member>
+        <member name="F:MedRemind.ViewModels.MedicationsViewModel.loadMedicationsCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.MedicationsViewModel.LoadMedicationsCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.MedicationsViewModel.LoadMedicationsCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.MedicationsViewModel.LoadMedicationsAsync"/>.</summary>
+        </member>
+        <member name="F:MedRemind.ViewModels.MedicationsViewModel.addMedicationCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.MedicationsViewModel.AddMedicationCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.MedicationsViewModel.AddMedicationCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.MedicationsViewModel.AddMedicationAsync"/>.</summary>
+        </member>
+        <member name="F:MedRemind.ViewModels.MedicationsViewModel.viewMedicationCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.MedicationsViewModel.ViewMedicationCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.MedicationsViewModel.ViewMedicationCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand`1"/> instance wrapping <see cref="M:MedRemind.ViewModels.MedicationsViewModel.ViewMedicationAsync(MedRemind.Models.Medication)"/>.</summary>
+        </member>
+        <member name="F:MedRemind.ViewModels.MedicationsViewModel.deleteMedicationCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.MedicationsViewModel.DeleteMedicationCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.MedicationsViewModel.DeleteMedicationCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand`1"/> instance wrapping <see cref="M:MedRemind.ViewModels.MedicationsViewModel.DeleteMedicationAsync(MedRemind.Models.Medication)"/>.</summary>
+        </member>
+        <member name="T:MedRemind.ViewModels.PrescriptionReaderViewModel">
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.ImagePath">
+            <inheritdoc cref="F:MedRemind.ViewModels.PrescriptionReaderViewModel.imagePath"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.ExtractedText">
+            <inheritdoc cref="F:MedRemind.ViewModels.PrescriptionReaderViewModel.extractedText"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.IsProcessing">
+            <inheritdoc cref="F:MedRemind.ViewModels.PrescriptionReaderViewModel.isProcessing"/>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.HasImage">
+            <inheritdoc cref="F:MedRemind.ViewModels.PrescriptionReaderViewModel.hasImage"/>
+        </member>
+        <member name="F:MedRemind.ViewModels.PrescriptionReaderViewModel.takePhotoCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.PrescriptionReaderViewModel.TakePhotoCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.TakePhotoCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.PrescriptionReaderViewModel.TakePhotoAsync"/>.</summary>
+        </member>
+        <member name="F:MedRemind.ViewModels.PrescriptionReaderViewModel.pickPhotoCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.PrescriptionReaderViewModel.PickPhotoCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.PickPhotoCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.PrescriptionReaderViewModel.PickPhotoAsync"/>.</summary>
+        </member>
+        <member name="F:MedRemind.ViewModels.PrescriptionReaderViewModel.clearImageCommand">
+            <summary>The backing field for <see cref="P:MedRemind.ViewModels.PrescriptionReaderViewModel.ClearImageCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.ViewModels.PrescriptionReaderViewModel.ClearImageCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IRelayCommand"/> instance wrapping <see cref="M:MedRemind.ViewModels.PrescriptionReaderViewModel.ClearImage"/>.</summary>
+        </member>
+        <member name="T:MedRemind.Resource">
+            <summary>
+            Android Resource Designer class.
+            Exposes the Android Resource designer assembly into the project Namespace.
+            </summary>
+        </member>
+        <member name="T:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs">
+            <summary>
+            A helper type providing cached, reusable <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instances
+            for all properties generated with <see cref="T:CommunityToolkit.Mvvm.ComponentModel.ObservablePropertyAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Name">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Name" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Dosage">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Dosage" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Frequency">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Frequency" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Instructions">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Instructions" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.StartDate">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "StartDate" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Notes">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Notes" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Medications">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Medications" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.IsRefreshing">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "IsRefreshing" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ImagePath">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ImagePath" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ExtractedText">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ExtractedText" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.IsProcessing">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "IsProcessing" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.HasImage">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "HasImage" generated properties.</summary>
+        </member>
+        <member name="T:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs">
+            <summary>
+            A helper type providing cached, reusable <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instances
+            for all properties generated with <see cref="T:CommunityToolkit.Mvvm.ComponentModel.ObservablePropertyAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Name">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Name" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Dosage">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Dosage" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Frequency">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Frequency" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Instructions">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Instructions" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.StartDate">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "StartDate" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Notes">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Notes" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Medications">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Medications" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.IsRefreshing">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "IsRefreshing" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ImagePath">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ImagePath" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ExtractedText">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ExtractedText" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.IsProcessing">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "IsProcessing" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.HasImage">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "HasImage" generated properties.</summary>
+        </member>
+    </members>
+</doc>

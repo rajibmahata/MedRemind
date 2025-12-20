@@ -1,0 +1,13 @@
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\bin\Release\net9.0\MedRemind.Core.deps.json
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\bin\Release\net9.0\MedRemind.Core.dll
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\bin\Release\net9.0\MedRemind.Core.pdb
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.csproj.AssemblyReference.cache
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.AssemblyInfoInputs.cache
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.AssemblyInfo.cs
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.csproj.CoreCompileInputs.cache
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.sourcelink.json
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.dll
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\refint\MedRemind.Core.dll
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\MedRemind.Core.pdb
+C:\Users\rajib\source\repos\MedRemind\src\MedRemind.Core\obj\Release\net9.0\ref\MedRemind.Core.dll

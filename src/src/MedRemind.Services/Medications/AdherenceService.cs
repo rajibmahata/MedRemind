@@ -13,6 +13,46 @@ public class AdherenceService
         _unitOfWork = unitOfWork;
     }
 
+    // Alias for test compatibility
+    public async Task<AdherenceData> CalculateAdherenceAsync(
+        int userId,
+        DateTime startDate,
+        DateTime endDate)
+    {
+        return await GetAdherenceDataAsync(userId, startDate, endDate);
+    }
+
+    public async Task<int> CalculateLongestStreakAsync(int userId)
+    {
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var doseLogRepo = _unitOfWork.Repository<DoseLog>();
+
+        var medications = await medicationRepo.FindAsync(m => m.UserId == userId);
+        var medicationIds = medications.Select(m => m.Id).ToList();
+
+        if (!medicationIds.Any())
+            return 0;
+
+        var doseLogs = await doseLogRepo.FindAsync(dl => medicationIds.Contains(dl.MedicationId));
+        var doseLogsList = doseLogs.OrderBy(dl => dl.ScheduledTime).ToList();
+
+        return CalculateLongestStreak(doseLogsList);
+    }
+
+    public async Task<AdherenceData> GetWeeklyAdherenceAsync(int userId)
+    {
+        var endDate = DateTime.UtcNow.Date.AddDays(1);
+        var startDate = endDate.AddDays(-7);
+        return await GetAdherenceDataAsync(userId, startDate, endDate);
+    }
+
+    public async Task<AdherenceData> GetMonthlyAdherenceAsync(int userId)
+    {
+        var endDate = DateTime.UtcNow.Date.AddDays(1);
+        var startDate = endDate.AddDays(-30);
+        return await GetAdherenceDataAsync(userId, startDate, endDate);
+    }
+
     public async Task<AdherenceData> GetAdherenceDataAsync(
         int userId,
         DateTime startDate,
@@ -24,10 +64,23 @@ public class AdherenceService
         var medications = await medicationRepo.FindAsync(m => m.UserId == userId);
         var medicationIds = medications.Select(m => m.Id).ToList();
 
+        if (!medicationIds.Any())
+        {
+            return new AdherenceData
+            {
+                OverallPercentage = 0,
+                TotalDoses = 0,
+                TakenDoses = 0,
+                MissedDoses = 0,
+                LongestStreak = 0,
+                DailyData = new List<DailyAdherence>()
+            };
+        }
+
         var doseLogs = await doseLogRepo.FindAsync(dl =>
             medicationIds.Contains(dl.MedicationId) &&
             dl.ScheduledTime >= startDate &&
-            dl.ScheduledTime <= endDate);
+            dl.ScheduledTime < endDate);
 
         var doseLogsList = doseLogs.ToList();
 
@@ -45,7 +98,7 @@ public class AdherenceService
 
         return new AdherenceData
         {
-            OverallPercentage = Math.Round(adherencePercentage, 2),
+            OverallPercentage = Math.Round(adherencePercentage, 1),
             TotalDoses = totalDoses,
             TakenDoses = takenDoses,
             MissedDoses = missedDoses,

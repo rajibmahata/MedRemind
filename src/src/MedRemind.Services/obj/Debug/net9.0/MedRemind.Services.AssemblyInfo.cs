@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MedRemind.Services")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb6a90438f8056b1b84f93cfbebceda7a3a05142")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+29fba26597f3e546ad89c382adf8809a4b1a1e1d")]
 [assembly: System.Reflection.AssemblyProductAttribute("MedRemind.Services")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MedRemind.Services")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

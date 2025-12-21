@@ -1,0 +1,230 @@
+﻿@MedRemind.API_HostAddress = https://localhost:7001
+@token = 
+
+### Health Check
+GET {{MedRemind.API_HostAddress}}/
+
+###
+
+### === AUTHENTICATION ===
+
+### Send OTP
+POST {{MedRemind.API_HostAddress}}/api/auth/send-otp
+Content-Type: application/json
+
+{
+  "phoneNumber": "+919876543210"
+}
+
+###
+
+### Verify OTP
+POST {{MedRemind.API_HostAddress}}/api/auth/verify-otp
+Content-Type: application/json
+
+{
+  "phoneNumber": "+919876543210",
+  "otp": "123456"
+}
+
+###
+
+### Validate Token
+POST {{MedRemind.API_HostAddress}}/api/auth/validate-token
+Content-Type: application/json
+
+{
+  "token": "{{token}}"
+}
+
+###
+
+### === PRESCRIPTIONS ===
+
+### Upload Prescription (Base64 image)
+POST {{MedRemind.API_HostAddress}}/api/prescriptions/upload
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "imageBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+}
+
+###
+
+### Get User Prescriptions
+GET {{MedRemind.API_HostAddress}}/api/prescriptions/user/1
+
+###
+
+### Get Prescription by ID
+GET {{MedRemind.API_HostAddress}}/api/prescriptions/1
+
+###
+
+### === MEDICATIONS ===
+
+### Create Medication
+POST {{MedRemind.API_HostAddress}}/api/medications
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "name": "Paracetamol",
+  "genericName": "Acetaminophen",
+  "dosage": "500",
+  "unit": "mg",
+  "frequency": "twice daily",
+  "timesPerDay": 2,
+  "timing": "after meals",
+  "duration": "7 days",
+  "durationDays": 7,
+  "instructions": "Take with water",
+  "prescriptionId": null,
+  "createReminders": true
+}
+
+###
+
+### Get Medication by ID
+GET {{MedRemind.API_HostAddress}}/api/medications/1
+
+###
+
+### Get Active Medications for User
+GET {{MedRemind.API_HostAddress}}/api/medications/user/1/active
+
+###
+
+### Update Medication
+PUT {{MedRemind.API_HostAddress}}/api/medications/1
+Content-Type: application/json
+
+{
+  "name": "Paracetamol",
+  "genericName": "Acetaminophen",
+  "dosage": "650",
+  "unit": "mg",
+  "frequency": "three times daily",
+  "timesPerDay": 3,
+  "timing": "after meals",
+  "duration": "5 days",
+  "durationDays": 5,
+  "instructions": "Take with food",
+  "updateReminders": true
+}
+
+###
+
+### Pause Medication
+POST {{MedRemind.API_HostAddress}}/api/medications/1/pause
+
+###
+
+### Resume Medication
+POST {{MedRemind.API_HostAddress}}/api/medications/1/resume
+
+###
+
+### Delete Medication
+DELETE {{MedRemind.API_HostAddress}}/api/medications/1
+
+###
+
+### Log Dose
+POST {{MedRemind.API_HostAddress}}/api/medications/1/doses
+Content-Type: application/json
+
+{
+  "scheduledTime": "2024-12-21T09:00:00",
+  "actualTime": "2024-12-21T09:05:00",
+  "status": "Taken",
+  "notes": "Taken on time"
+}
+
+###
+
+### Get Dose Logs
+GET {{MedRemind.API_HostAddress}}/api/medications/1/doses
+
+###
+
+### Get Dose Logs for Date Range
+GET {{MedRemind.API_HostAddress}}/api/medications/1/doses?startDate=2024-12-01&endDate=2024-12-31
+
+###
+
+### === ADHERENCE ===
+
+### Get Adherence Percentage
+GET {{MedRemind.API_HostAddress}}/api/adherence/user/1/percentage?startDate=2024-12-01&endDate=2024-12-21
+
+###
+
+### Get Longest Streak
+GET {{MedRemind.API_HostAddress}}/api/adherence/user/1/streak
+
+###
+
+### Get Weekly Adherence
+GET {{MedRemind.API_HostAddress}}/api/adherence/user/1/weekly
+
+###
+
+### Get Monthly Adherence
+GET {{MedRemind.API_HostAddress}}/api/adherence/user/1/monthly
+
+###
+
+### === REMINDERS ===
+
+### Get Medication Reminders
+GET {{MedRemind.API_HostAddress}}/api/reminders/medication/1
+
+###
+
+### Get User Reminders
+GET {{MedRemind.API_HostAddress}}/api/reminders/user/1
+
+###
+
+### Update Reminder Time
+PUT {{MedRemind.API_HostAddress}}/api/reminders/1/time
+Content-Type: application/json
+
+{
+  "newTime": "10:00:00"
+}
+
+###
+
+### Toggle Reminder (Enable/Disable)
+PUT {{MedRemind.API_HostAddress}}/api/reminders/1/toggle
+Content-Type: application/json
+
+{
+  "isEnabled": true
+}
+
+###
+
+### Calculate Reminder Times (Standard)
+POST {{MedRemind.API_HostAddress}}/api/reminders/calculate
+Content-Type: application/json
+
+{
+  "timesPerDay": 3
+}
+
+###
+
+### Calculate Custom Reminder Times
+POST {{MedRemind.API_HostAddress}}/api/reminders/calculate-custom
+Content-Type: application/json
+
+{
+  "frequency": "every 8 hours",
+  "timesPerDay": 3
+}
+
+###

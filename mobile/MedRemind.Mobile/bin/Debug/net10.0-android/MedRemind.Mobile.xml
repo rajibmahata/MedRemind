@@ -95,6 +95,16 @@
         <member name="P:MedRemind.Mobile.ViewModels.HomeViewModel.GreetingMessage">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.HomeViewModel._greetingMessage"/>
         </member>
+        <member name="M:MedRemind.Mobile.ViewModels.HomeViewModel.OnTodaysTotalDosesChanged(System.Int32)">
+            <summary>Executes the logic for when <see cref="P:MedRemind.Mobile.ViewModels.HomeViewModel.TodaysTotalDoses"/> just changed.</summary>
+            <param name="value">The new property value that was set.</param>
+            <remarks>This method is invoked right after the value of <see cref="P:MedRemind.Mobile.ViewModels.HomeViewModel.TodaysTotalDoses"/> is changed.</remarks>
+        </member>
+        <member name="M:MedRemind.Mobile.ViewModels.HomeViewModel.OnTodaysTakenDosesChanged(System.Int32)">
+            <summary>Executes the logic for when <see cref="P:MedRemind.Mobile.ViewModels.HomeViewModel.TodaysTakenDoses"/> just changed.</summary>
+            <param name="value">The new property value that was set.</param>
+            <remarks>This method is invoked right after the value of <see cref="P:MedRemind.Mobile.ViewModels.HomeViewModel.TodaysTakenDoses"/> is changed.</remarks>
+        </member>
         <member name="F:MedRemind.Mobile.ViewModels.HomeViewModel.loadDataCommand">
             <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.HomeViewModel.LoadDataCommand"/>.</summary>
         </member>

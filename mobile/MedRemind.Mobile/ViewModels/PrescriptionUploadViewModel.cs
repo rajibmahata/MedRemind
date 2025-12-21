@@ -67,10 +67,14 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
             }
             else
             {
-                await Application.Current!.MainPage!.DisplayAlert(
-                    "Not Supported",
-                    "Camera is not available on this device",
-                    "OK");
+                var page = GetCurrentPage();
+                if (page != null)
+                {
+                    await page.DisplayAlertAsync(
+                        "Not Supported",
+                        "Camera is not available on this device",
+                        "OK");
+                }
             }
         }
         catch (Exception ex)
@@ -84,7 +88,8 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
     {
         try
         {
-            var photo = await MediaPicker.Default.PickPhotoAsync();
+            var results = await MediaPicker.Default.PickPhotosAsync();
+            var photo = results?.FirstOrDefault();
             await ProcessPhotoAsync(photo);
         }
         catch (Exception ex)
@@ -107,10 +112,14 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
             SelectedImage = ImageSource.FromStream(() => new MemoryStream(bytes));
             
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Photo Selected",
-                "Ready to process. Tap 'Process Prescription' to extract medications.",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Photo Selected",
+                    "Ready to process. Tap 'Process Prescription' to extract medications.",
+                    "OK");
+            }
         }
         catch (Exception ex)
         {
@@ -213,10 +222,14 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 savedCount++;
             }
 
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Success",
-                $"Saved {savedCount} medication(s) with reminders!",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Success",
+                    $"Saved {savedCount} medication(s) with reminders!",
+                    "OK");
+            }
 
             // Clear and navigate to medications
             ClearData();
@@ -229,7 +242,10 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
     {
         if (medication == null) return;
 
-        var result = await Application.Current!.MainPage!.DisplayPromptAsync(
+        var page = GetCurrentPage();
+        if (page == null) return;
+
+        var result = await page.DisplayPromptAsync(
             "Edit Dosage",
             $"Edit dosage for {medication.Name}:",
             initialValue: medication.Dosage);

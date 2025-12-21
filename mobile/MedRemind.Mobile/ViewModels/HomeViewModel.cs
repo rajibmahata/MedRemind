@@ -29,6 +29,8 @@ public partial class HomeViewModel : BaseViewModel
     [ObservableProperty]
     private string _greetingMessage = string.Empty;
 
+    public int TodaysMissedDoses => Math.Max(0, TodaysTotalDoses - TodaysTakenDoses);
+
     public HomeViewModel(
         MedicationService medicationService,
         AdherenceService adherenceService)
@@ -94,10 +96,14 @@ public partial class HomeViewModel : BaseViewModel
 
             await LoadDataAsync();
 
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Success",
-                "Dose logged successfully!",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Success",
+                    "Dose logged successfully!",
+                    "OK");
+            }
         });
     }
 
@@ -115,5 +121,15 @@ public partial class HomeViewModel : BaseViewModel
     public void OnAppearing()
     {
         LoadDataCommand.Execute(null);
+    }
+
+    partial void OnTodaysTotalDosesChanged(int value)
+    {
+        OnPropertyChanged(nameof(TodaysMissedDoses));
+    }
+
+    partial void OnTodaysTakenDosesChanged(int value)
+    {
+        OnPropertyChanged(nameof(TodaysMissedDoses));
     }
 }

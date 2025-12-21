@@ -1,0 +1,223 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\medremind.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\medremind.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rajib\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-33c5c088-8882-422f-94e5-b441c7e7326f.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\readme.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\readme.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\controllers\\medicationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\controllers\\medicationscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\controllers\\reminderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\controllers\\reminderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\medremind.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\medremind.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|c:\\users\\rajib\\source\\repos\\medremind\\backend\\medremind.api\\controllers\\prescriptionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CC9F9D02-CB40-487C-8B26-2169E0522565}|MedRemind.API\\MedRemind.API.csproj|solutionrelative:medremind.api\\controllers\\prescriptionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\backend\\MedRemind.API\\API-SETUP-COMPLETE.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\MedRemind.API\\API-SETUP-COMPLETE.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\backend\\MedRemind.API\\BUILD-VERIFICATION.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\MedRemind.API\\BUILD-VERIFICATION.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "plan-33c5c088-8882-422f-94e5-b441c7e7326f.md",
+              "DocumentMoniker": "C:\\Users\\rajib\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-33c5c088-8882-422f-94e5-b441c7e7326f.md",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-33c5c088-8882-422f-94e5-b441c7e7326f.md",
+              "ToolTip": "C:\\Users\\rajib\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-33c5c088-8882-422f-94e5-b441c7e7326f.md",
+              "RelativeToolTip": "..\\..\\..\\..\\AppData\\Local\\Temp\\VisualStudio\\copilot-vs\\plan-33c5c088-8882-422f-94e5-b441c7e7326f.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-12-21T04:37:11.501Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "PrescriptionsController.cs",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\PrescriptionsController.cs",
+              "RelativeDocumentMoniker": "MedRemind.API\\Controllers\\PrescriptionsController.cs",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\PrescriptionsController.cs",
+              "RelativeToolTip": "MedRemind.API\\Controllers\\PrescriptionsController.cs",
+              "ViewState": "AgIAAHYAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-21T04:38:26.112Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Program.cs",
+              "RelativeDocumentMoniker": "MedRemind.API\\Program.cs",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Program.cs",
+              "RelativeToolTip": "MedRemind.API\\Program.cs",
+              "ViewState": "AgIAAEoAAAAAAAAAAAAkwGIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-21T04:38:53.362Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\appsettings.json",
+              "RelativeDocumentMoniker": "MedRemind.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\appsettings.json",
+              "RelativeToolTip": "MedRemind.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-21T04:43:47.407Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MedRemind.API.csproj",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\MedRemind.API.csproj",
+              "RelativeDocumentMoniker": "MedRemind.API\\MedRemind.API.csproj",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\MedRemind.API.csproj",
+              "RelativeToolTip": "MedRemind.API\\MedRemind.API.csproj",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAAAA8AAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-12-21T04:31:44.335Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "MedRemind.API\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "MedRemind.API\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAGMAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-21T04:37:59.399Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "BUILD-VERIFICATION.md",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\backend\\MedRemind.API\\BUILD-VERIFICATION.md",
+              "RelativeDocumentMoniker": "backend\\MedRemind.API\\BUILD-VERIFICATION.md",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\backend\\MedRemind.API\\BUILD-VERIFICATION.md",
+              "RelativeToolTip": "backend\\MedRemind.API\\BUILD-VERIFICATION.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGYBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-12-21T05:16:22.245Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "API-SETUP-COMPLETE.md",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\backend\\MedRemind.API\\API-SETUP-COMPLETE.md",
+              "RelativeDocumentMoniker": "backend\\MedRemind.API\\API-SETUP-COMPLETE.md",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\backend\\MedRemind.API\\API-SETUP-COMPLETE.md",
+              "RelativeToolTip": "backend\\MedRemind.API\\API-SETUP-COMPLETE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAANkBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-12-21T04:42:24.915Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "README.md",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\README.md",
+              "RelativeDocumentMoniker": "MedRemind.API\\README.md",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\README.md",
+              "RelativeToolTip": "MedRemind.API\\README.md",
+              "ViewState": "AgIAAMwBAAAAAAAAAAAewN4BAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-12-21T04:31:04.814Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "RemindersController.cs",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\RemindersController.cs",
+              "RelativeDocumentMoniker": "MedRemind.API\\Controllers\\RemindersController.cs",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\RemindersController.cs",
+              "RelativeToolTip": "MedRemind.API\\Controllers\\RemindersController.cs",
+              "ViewState": "AgIAANIAAAAAAAAAAAA1wNQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-21T04:29:44.494Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "MedicationsController.cs",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\MedicationsController.cs",
+              "RelativeDocumentMoniker": "MedRemind.API\\Controllers\\MedicationsController.cs",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\Controllers\\MedicationsController.cs",
+              "RelativeToolTip": "MedRemind.API\\Controllers\\MedicationsController.cs",
+              "ViewState": "AgIAABUBAAAAAAAAAAAMwCUBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-21T04:28:53.115Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "MedRemind.API.http",
+              "DocumentMoniker": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\MedRemind.API.http",
+              "RelativeDocumentMoniker": "MedRemind.API\\MedRemind.API.http",
+              "ToolTip": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.API\\MedRemind.API.http",
+              "RelativeToolTip": "MedRemind.API\\MedRemind.API.http",
+              "ViewState": "AgIAAN8AAAAAAAAAAABhwOYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2025-12-21T04:30:14.756Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

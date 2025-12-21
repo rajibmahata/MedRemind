@@ -12259,7 +12259,7 @@
   },
   "projectFileDependencyGroups": {
     "net10.0-android36.0": [
-      "CommunityToolkit.Maui >= 9.1.2",
+      "CommunityToolkit.Maui >= 10.0.0",
       "CommunityToolkit.Mvvm >= 8.4.0",
       "MedRemind.Core >= 1.0.0",
       "MedRemind.Services >= 1.0.0",
@@ -12331,7 +12331,7 @@
         "dependencies": {
           "CommunityToolkit.Maui": {
             "target": "Package",
-            "version": "[9.1.2, )"
+            "version": "[10.0.0, )"
           },
           "CommunityToolkit.Mvvm": {
             "target": "Package",
@@ -12669,18 +12669,6 @@
     }
   },
   "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "MedRemind.Mobile depends on CommunityToolkit.Maui (>= 9.1.2) but CommunityToolkit.Maui 9.1.2 was not found. CommunityToolkit.Maui 10.0.0 was resolved instead.",
-      "libraryId": "CommunityToolkit.Maui",
-      "targetGraphs": [
-        "net10.0-android36.0",
-        "net10.0-android36.0/android-arm64",
-        "net10.0-android36.0/android-x64"
-      ]
-    },
     {
       "code": "NU1608",
       "level": "Warning",

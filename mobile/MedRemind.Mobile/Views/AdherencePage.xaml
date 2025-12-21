@@ -9,14 +9,14 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16">
             
-            <Label Text="?? Medication Adherence"
+            <Label Text="Medication Adherence"
                    Style="{StaticResource HeaderLabel}"/>
 
             <!-- Streak Display -->
             <Frame Style="{StaticResource CardFrame}"
                    BackgroundColor="{StaticResource PrimaryLight}">
                 <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                    <Label Text="??"
+                    <Label Text="🔥"
                            FontSize="48"
                            HorizontalOptions="Center"/>
                     

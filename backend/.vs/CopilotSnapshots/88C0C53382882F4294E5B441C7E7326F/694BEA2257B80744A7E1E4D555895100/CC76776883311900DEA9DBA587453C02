@@ -1,0 +1,191 @@
+﻿using MedRemind.Core.Interfaces;
+using MedRemind.Core.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MedRemind.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class RemindersController : ControllerBase
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly INotificationService _notificationService;
+    private readonly IReminderSchedulingService _schedulingService;
+    private readonly ILogger<RemindersController> _logger;
+
+    public RemindersController(
+        IUnitOfWork unitOfWork,
+        INotificationService notificationService,
+        IReminderSchedulingService schedulingService,
+        ILogger<RemindersController> logger)
+    {
+        _unitOfWork = unitOfWork;
+        _notificationService = notificationService;
+        _schedulingService = schedulingService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Get reminders for a medication
+    /// </summary>
+    [HttpGet("medication/{medicationId}")]
+    public async Task<IActionResult> GetMedicationReminders(int medicationId)
+    {
+        try
+        {
+            var reminders = await _unitOfWork.Repository<Reminder>().FindAsync(r => r.MedicationId == medicationId);
+            return Ok(reminders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting reminders for medication {MedicationId}", medicationId);
+            return StatusCode(500, new { message = "An error occurred while retrieving reminders" });
+        }
+    }
+
+    /// <summary>
+    /// Get all reminders for a user
+    /// </summary>
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetUserReminders(int userId)
+    {
+        try
+        {
+            var medications = await _unitOfWork.Repository<Medication>().FindAsync(m => m.UserId == userId && m.IsActive);
+            var medicationIds = medications.Select(m => m.Id).ToList();
+
+            var reminders = await _unitOfWork.Repository<Reminder>().FindAsync(r => medicationIds.Contains(r.MedicationId));
+            return Ok(reminders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting reminders for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving reminders" });
+        }
+    }
+
+    /// <summary>
+    /// Update reminder time
+    /// </summary>
+    [HttpPut("{id}/time")]
+    public async Task<IActionResult> UpdateReminderTime(int id, [FromBody] UpdateReminderTimeRequest request)
+    {
+            try
+        {
+            var reminder = await _unitOfWork.Repository<Reminder>().GetByIdAsync(id);
+            
+            if (reminder == null)
+            {
+                return NotFound(new { message = "Reminder not found" });
+            }
+
+            reminder.ReminderTime = request.NewTime;
+            await _unitOfWork.Repository<Reminder>().UpdateAsync(reminder);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Reschedule notification
+            if (reminder.IsEnabled)
+            {
+                await _notificationService.RescheduleNotificationAsync(
+                    reminder.Id,
+                    $"Time to take {reminder.Medication?.Name}",
+                    $"{reminder.Medication?.Dosage} {reminder.Medication?.Unit}",
+                    request.NewTime,
+                    reminder.VoiceRecordingId
+                );
+            }
+
+            return Ok(new { message = "Reminder time updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating reminder {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while updating reminder" });
+        }
+    }
+
+    /// <summary>
+    /// Enable/Disable reminder
+    /// </summary>
+    [HttpPut("{id}/toggle")]
+    public async Task<IActionResult> ToggleReminder(int id, [FromBody] ToggleReminderRequest request)
+    {
+        try
+        {
+            var reminder = await _unitOfWork.Repository<Reminder>().GetByIdAsync(id);
+            
+            if (reminder == null)
+            {
+                return NotFound(new { message = "Reminder not found" });
+            }
+
+            reminder.IsEnabled = request.IsEnabled;
+            await _unitOfWork.Repository<Reminder>().UpdateAsync(reminder);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Schedule or cancel notification
+            if (request.IsEnabled)
+            {
+                await _notificationService.ScheduleNotificationAsync(
+                    reminder.Id,
+                    $"Time to take {reminder.Medication?.Name}",
+                    $"{reminder.Medication?.Dosage} {reminder.Medication?.Unit}",
+                    reminder.ReminderTime,
+                    reminder.VoiceRecordingId
+                );
+            }
+            else
+            {
+                await _notificationService.CancelNotificationAsync(reminder.Id);
+            }
+
+            return Ok(new { message = $"Reminder {(request.IsEnabled ? "enabled" : "disabled")} successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling reminder {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while toggling reminder" });
+        }
+    }
+
+    /// <summary>
+    /// Calculate reminder times for a frequency
+    /// </summary>
+    [HttpPost("calculate")]
+    public IActionResult CalculateReminderTimes([FromBody] CalculateRemindersRequest request)
+    {
+        try
+        {
+            var times = _schedulingService.CalculateReminderTimes(request.TimesPerDay);
+            return Ok(new { timesPerDay = request.TimesPerDay, reminderTimes = times });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating reminder times");
+            return StatusCode(500, new { message = "An error occurred while calculating reminder times" });
+        }
+    }
+
+    /// <summary>
+    /// Calculate custom reminder times from natural language
+    /// </summary>
+    [HttpPost("calculate-custom")]
+    public IActionResult CalculateCustomReminderTimes([FromBody] CalculateCustomRemindersRequest request)
+    {
+        try
+        {
+            var times = _schedulingService.CalculateCustomReminderTimes(request.Frequency);
+            return Ok(new { frequency = request.Frequency, reminderTimes = times });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating custom reminder times");
+            return StatusCode(500, new { message = "An error occurred while calculating reminder times" });
+        }
+    }
+}
+
+public record UpdateReminderTimeRequest(TimeSpan NewTime);
+public record ToggleReminderRequest(bool IsEnabled);
+public record CalculateRemindersRequest(int TimesPerDay);
+public record CalculateCustomRemindersRequest(string Frequency);

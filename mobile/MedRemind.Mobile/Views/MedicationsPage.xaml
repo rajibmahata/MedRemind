@@ -156,7 +156,7 @@
 
         <!-- Add Button (FAB) -->
         <Button Grid.Row="2"
-                Text="? Add Medication"
+                Text="Add Medication"
                 Command="{Binding AddMedicationCommand}"
                 Style="{StaticResource PrimaryButton}"
                 Margin="16"

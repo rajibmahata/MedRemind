@@ -183,10 +183,10 @@
                     <Label TextColor="{StaticResource PrimaryDark}"
                            FontSize="12">
                         <Label.Text>
-• Ensure good lighting
-• Keep prescription flat
-• Capture all medication details
-• Avoid shadows and glare
+ï¿½ Ensure good lighting
+ï¿½ Keep prescription flat
+ï¿½ Capture all medication details
+ï¿½ Avoid shadows and glare
                         </Label.Text>
                     </Label>
                 </VerticalStackLayout>

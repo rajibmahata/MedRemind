@@ -51,7 +51,7 @@ public partial class MedicationsViewModel : BaseViewModel
     private async Task AddMedicationAsync()
     {
         // Navigate to add medication page
-        await Shell.Current.DisplayAlert(
+        await Shell.Current.DisplayAlertAsync(
             "Add Medication",
             "This will open a form to add a new medication manually",
             "OK");
@@ -62,7 +62,10 @@ public partial class MedicationsViewModel : BaseViewModel
     {
         if (medication == null) return;
 
-        var result = await Application.Current!.MainPage!.DisplayPromptAsync(
+        var page = GetCurrentPage();
+        if (page == null) return;
+
+        var result = await page.DisplayPromptAsync(
             "Edit Medication",
             "Enter new dosage:",
             initialValue: medication.Dosage,
@@ -87,7 +90,7 @@ public partial class MedicationsViewModel : BaseViewModel
                 await _medicationService.UpdateMedicationAsync(medication.Id, medicationData, false);
                 await LoadMedicationsAsync();
                 
-                await Application.Current!.MainPage!.DisplayAlert(
+                await page.DisplayAlertAsync(
                     "Success",
                     "Medication updated successfully",
                     "OK");
@@ -100,7 +103,10 @@ public partial class MedicationsViewModel : BaseViewModel
     {
         if (medication == null) return;
 
-        var confirm = await Application.Current!.MainPage!.DisplayAlert(
+        var page = GetCurrentPage();
+        if (page == null) return;
+
+        var confirm = await page.DisplayAlertAsync(
             "Delete Medication",
             $"Are you sure you want to delete {medication.Name}?",
             "Yes",
@@ -113,7 +119,7 @@ public partial class MedicationsViewModel : BaseViewModel
                 await _medicationService.DeleteMedicationAsync(medication.Id);
                 await LoadMedicationsAsync();
                 
-                await Application.Current!.MainPage!.DisplayAlert(
+                await page.DisplayAlertAsync(
                     "Success",
                     "Medication deleted successfully",
                     "OK");
@@ -131,10 +137,14 @@ public partial class MedicationsViewModel : BaseViewModel
             await _medicationService.PauseMedicationAsync(medication.Id);
             await LoadMedicationsAsync();
             
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Success",
-                $"{medication.Name} has been paused",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Success",
+                    $"{medication.Name} has been paused",
+                    "OK");
+            }
         });
     }
 
@@ -148,10 +158,14 @@ public partial class MedicationsViewModel : BaseViewModel
             await _medicationService.ResumeMedicationAsync(medication.Id);
             await LoadMedicationsAsync();
             
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Success",
-                $"{medication.Name} has been resumed",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Success",
+                    $"{medication.Name} has been resumed",
+                    "OK");
+            }
         });
     }
 
@@ -165,10 +179,14 @@ public partial class MedicationsViewModel : BaseViewModel
             var doseLogs = await _medicationService.GetDoseLogsAsync(medication.Id);
             var count = doseLogs.Count();
             
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Dose History",
-                $"{medication.Name} has {count} dose log entries",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Dose History",
+                    $"{medication.Name} has {count} dose log entries",
+                    "OK");
+            }
         });
     }
 

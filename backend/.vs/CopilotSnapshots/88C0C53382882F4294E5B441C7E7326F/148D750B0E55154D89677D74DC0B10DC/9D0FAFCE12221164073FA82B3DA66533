@@ -1,0 +1,110 @@
+﻿using MedRemind.Core.Interfaces;
+using MedRemind.Services.Prescriptions;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MedRemind.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class PrescriptionsController : ControllerBase
+{
+    private readonly IPrescriptionReaderService _prescriptionReader;
+    private readonly PrescriptionService _prescriptionService;
+    private readonly ILogger<PrescriptionsController> _logger;
+
+    public PrescriptionsController(
+        IPrescriptionReaderService prescriptionReader,
+        PrescriptionService prescriptionService,
+        ILogger<PrescriptionsController> logger)
+    {
+        _prescriptionReader = prescriptionReader;
+        _prescriptionService = prescriptionService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Upload and process prescription image
+    /// </summary>
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadPrescription([FromBody] UploadPrescriptionRequest request)
+    {
+        try
+        {
+            // Process with AI
+            var result = await _prescriptionReader.ReadPrescriptionFromBase64Async(request.ImageBase64);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            // Save prescription
+            var prescription = await _prescriptionService.CreatePrescriptionAsync(
+                request.UserId,
+                request.ImageBase64,
+                result.Medications?.Count ?? 0,
+                result.ValidationScore
+            );
+
+            return Ok(new
+            {
+                prescriptionId = prescription.Id,
+                medications = result.Medications,
+                doctor = result.Doctor,
+                patient = result.Patient,
+                validationScore = result.ValidationScore,
+                warnings = result.Warnings,
+                criticalIssues = result.CriticalIssues
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing prescription");
+            return StatusCode(500, new { message = "An error occurred while processing prescription" });
+        }
+    }
+
+    /// <summary>
+    /// Get user's prescriptions
+    /// </summary>
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetUserPrescriptions(int userId)
+    {
+        try
+        {
+            var prescriptions = await _prescriptionService.GetUserPrescriptionsAsync(userId);
+            return Ok(prescriptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting prescriptions for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving prescriptions" });
+        }
+    }
+
+    /// <summary>
+    /// Get prescription by ID
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetPrescription(int id)
+    {
+        try
+        {
+            var prescription = await _prescriptionService.GetPrescriptionByIdAsync(id);
+            
+            if (prescription == null)
+            {
+                return NotFound(new { message = "Prescription not found" });
+            }
+
+            return Ok(prescription);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting prescription {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving prescription" });
+        }
+    }
+}
+
+public record UploadPrescriptionRequest(int UserId, string ImageBase64);

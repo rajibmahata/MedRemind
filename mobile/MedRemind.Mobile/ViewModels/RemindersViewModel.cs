@@ -57,10 +57,14 @@ public partial class RemindersViewModel : BaseViewModel
     {
         if (reminder == null) return;
 
-        await Application.Current!.MainPage!.DisplayAlert(
-            "Edit Reminder",
-            $"Reminder time: {reminder.ReminderTime}",
-            "OK");
+        var page = GetCurrentPage();
+        if (page != null)
+        {
+            await page.DisplayAlertAsync(
+                "Edit Reminder",
+                $"Reminder time: {reminder.ReminderTime}",
+                "OK");
+        }
     }
 
     [RelayCommand]
@@ -85,10 +89,14 @@ public partial class RemindersViewModel : BaseViewModel
 
         if (result.Success)
         {
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Success",
-                "Voice reminder recorded!",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Success",
+                    "Voice reminder recorded!",
+                    "OK");
+            }
         }
     }
 

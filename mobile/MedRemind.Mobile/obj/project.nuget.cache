@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "rCFxR5wrq4s=",
+  "dgSpecHash": "n25sHT6AkEw=",
   "success": true,
   "projectFilePath": "C:\\Users\\rajib\\source\\repos\\MedRemind\\mobile\\MedRemind.Mobile\\MedRemind.Mobile.csproj",
   "expectedPackageFiles": [
@@ -137,20 +137,6 @@
     "C:\\Users\\rajib\\.nuget\\packages\\xamarin.kotlinx.serialization.core.jvm\\1.9.0.1\\xamarin.kotlinx.serialization.core.jvm.1.9.0.1.nupkg.sha512"
   ],
   "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "message": "MedRemind.Mobile depends on CommunityToolkit.Maui (>= 9.1.2) but CommunityToolkit.Maui 9.1.2 was not found. CommunityToolkit.Maui 10.0.0 was resolved instead.",
-      "projectPath": "C:\\Users\\rajib\\source\\repos\\MedRemind\\mobile\\MedRemind.Mobile\\MedRemind.Mobile.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\rajib\\source\\repos\\MedRemind\\mobile\\MedRemind.Mobile\\MedRemind.Mobile.csproj",
-      "libraryId": "CommunityToolkit.Maui",
-      "targetGraphs": [
-        "net10.0-android36.0",
-        "net10.0-android36.0/android-arm64",
-        "net10.0-android36.0/android-x64"
-      ]
-    },
     {
       "code": "NU1608",
       "level": "Warning",

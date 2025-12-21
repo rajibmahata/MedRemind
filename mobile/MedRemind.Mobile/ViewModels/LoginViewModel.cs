@@ -47,10 +47,15 @@ public partial class LoginViewModel : BaseViewModel
                 IsOtpSent = true;
                 IsOtpVisible = true;
                 ButtonText = "Verify OTP";
-                await Application.Current!.MainPage!.DisplayAlert(
-                    "Success", 
-                    "OTP sent successfully to your phone", 
-                    "OK");
+                
+                var page = GetCurrentPage();
+                if (page != null)
+                {
+                    await page.DisplayAlertAsync(
+                        "Success", 
+                        "OTP sent successfully to your phone", 
+                        "OK");
+                }
             }
             else
             {

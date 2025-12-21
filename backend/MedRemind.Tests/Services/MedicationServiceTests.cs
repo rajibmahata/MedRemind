@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using MedRemind.Core.Data;
+using MedRemind.Core.DTOs;
+using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Core.Repositories;
 using MedRemind.Services.Medications;
+using Moq;
 using Xunit;
 
 namespace MedRemind.Tests.Services;
@@ -12,6 +15,8 @@ public class MedicationServiceTests : IDisposable
     private readonly MedRemindDbContext _context;
     private readonly UnitOfWork _unitOfWork;
     private readonly MedicationService _medicationService;
+    private readonly Mock<IReminderSchedulingService> _mockReminderScheduling;
+    private readonly Mock<INotificationService> _mockNotificationService;
 
     public MedicationServiceTests()
     {
@@ -21,29 +26,52 @@ public class MedicationServiceTests : IDisposable
 
         _context = new MedRemindDbContext(options);
         _unitOfWork = new UnitOfWork(_context);
-        _medicationService = new MedicationService(_unitOfWork);
+        
+        // Setup mock services
+        _mockReminderScheduling = new Mock<IReminderSchedulingService>();
+        _mockNotificationService = new Mock<INotificationService>();
+        
+        // Setup default behavior for reminder scheduling
+        _mockReminderScheduling
+            .Setup(x => x.CalculateReminderTimes(It.IsAny<int>()))
+            .Returns((int count) => Enumerable.Range(0, count)
+                .Select(i => new ReminderSchedule { Time = TimeSpan.FromHours(8 + i * 4) })
+                .ToList());
+        
+        _mockNotificationService
+            .Setup(x => x.ScheduleNotificationAsync(
+                It.IsAny<int>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync((int id, DateTime time, string title, string body, string? audio) => 
+                $"notification_{id}_{Guid.NewGuid()}");
+        
+        _medicationService = new MedicationService(
+            _unitOfWork, 
+            _mockReminderScheduling.Object,
+            _mockNotificationService.Object);
     }
 
     [Fact]
-    public async Task AddMedicationAsync_ShouldAddMedication()
+    public async Task CreateMedicationAsync_ShouldAddMedication()
     {
         // Arrange
         var user = await CreateTestUser();
-        var medication = new Medication
+        var medicationData = new MedicationData
         {
-            UserId = user.Id,
             Name = "Paracetamol",
             Dosage = "500",
             Unit = "mg",
             Frequency = "Twice daily",
             FrequencyCount = 2,
             DurationDays = 7,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7)
+            Instructions = "Take with food"
         };
 
         // Act
-        var result = await _medicationService.AddMedicationAsync(medication);
+        var result = await _medicationService.CreateMedicationAsync(user.Id, medicationData);
 
         // Assert
         Assert.NotNull(result);
@@ -76,7 +104,8 @@ public class MedicationServiceTests : IDisposable
         var medication = await CreateTestMedication(user.Id, "Test Med");
 
         // Act
-        var result = await _medicationService.GetMedicationByIdAsync(medication.Id);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var result = await medicationRepo.GetByIdAsync(medication.Id);
 
         // Assert
         Assert.NotNull(result);
@@ -88,7 +117,8 @@ public class MedicationServiceTests : IDisposable
     public async Task GetMedicationByIdAsync_WithInvalidId_ShouldReturnNull()
     {
         // Act
-        var result = await _medicationService.GetMedicationByIdAsync(999);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var result = await medicationRepo.GetByIdAsync(999);
 
         // Assert
         Assert.Null(result);
@@ -100,14 +130,24 @@ public class MedicationServiceTests : IDisposable
         // Arrange
         var user = await CreateTestUser();
         var medication = await CreateTestMedication(user.Id, "Original Name");
+        
+        var updatedData = new MedicationData
+        {
+            Name = "Updated Name",
+            Dosage = "1000",
+            Unit = "mg",
+            Frequency = "Twice daily",
+            FrequencyCount = 2,
+            DurationDays = 7,
+            Instructions = "Updated instructions"
+        };
 
         // Act
-        medication.Name = "Updated Name";
-        medication.Dosage = "1000";
-        await _medicationService.UpdateMedicationAsync(medication);
+        await _medicationService.UpdateMedicationAsync(medication.Id, updatedData, false);
 
         // Assert
-        var updated = await _medicationService.GetMedicationByIdAsync(medication.Id);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var updated = await medicationRepo.GetByIdAsync(medication.Id);
         Assert.NotNull(updated);
         Assert.Equal("Updated Name", updated.Name);
         Assert.Equal("1000", updated.Dosage);
@@ -125,7 +165,8 @@ public class MedicationServiceTests : IDisposable
         await _medicationService.PauseMedicationAsync(medication.Id);
 
         // Assert
-        var paused = await _medicationService.GetMedicationByIdAsync(medication.Id);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var paused = await medicationRepo.GetByIdAsync(medication.Id);
         Assert.NotNull(paused);
         Assert.False(paused.IsActive);
     }
@@ -141,7 +182,8 @@ public class MedicationServiceTests : IDisposable
         await _medicationService.ResumeMedicationAsync(medication.Id);
 
         // Assert
-        var resumed = await _medicationService.GetMedicationByIdAsync(medication.Id);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var resumed = await medicationRepo.GetByIdAsync(medication.Id);
         Assert.NotNull(resumed);
         Assert.True(resumed.IsActive);
     }
@@ -157,7 +199,8 @@ public class MedicationServiceTests : IDisposable
         await _medicationService.DeleteMedicationAsync(medication.Id);
 
         // Assert
-        var deleted = await _medicationService.GetMedicationByIdAsync(medication.Id);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var deleted = await medicationRepo.GetByIdAsync(medication.Id);
         Assert.Null(deleted);
     }
 
@@ -218,7 +261,7 @@ public class MedicationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetDoseLogsForDateRangeAsync_ShouldReturnLogsInRange()
+    public async Task GetDoseLogsForDateRange_ShouldReturnLogsInRange()
     {
         // Arrange
         var user = await CreateTestUser();
@@ -233,17 +276,18 @@ public class MedicationServiceTests : IDisposable
         await _medicationService.LogDoseAsync(medication.Id, today.AddHours(9), "Taken");
 
         // Act
-        var logs = await _medicationService.GetDoseLogsForDateRangeAsync(
-            medication.Id, 
-            yesterday, 
-            today.AddDays(1));
+        var doseLogRepo = _unitOfWork.Repository<DoseLog>();
+        var logs = await doseLogRepo.FindAsync(d => 
+            d.MedicationId == medication.Id && 
+            d.ScheduledTime >= yesterday && 
+            d.ScheduledTime < today.AddDays(1));
 
         // Assert
         Assert.Equal(2, logs.Count()); // Should only return yesterday and today
     }
 
     [Fact]
-    public async Task GetMedicationsByPrescriptionAsync_ShouldReturnRelatedMedications()
+    public async Task GetMedicationsByPrescription_ShouldReturnRelatedMedications()
     {
         // Arrange
         var user = await CreateTestUser();
@@ -254,7 +298,8 @@ public class MedicationServiceTests : IDisposable
         var med3 = await CreateTestMedication(user.Id, "Med 3"); // Different prescription
 
         // Act
-        var result = await _medicationService.GetMedicationsByPrescriptionAsync(prescription.Id);
+        var medicationRepo = _unitOfWork.Repository<Medication>();
+        var result = await medicationRepo.FindAsync(m => m.PrescriptionId == prescription.Id);
 
         // Assert
         Assert.Equal(2, result.Count());
@@ -264,26 +309,15 @@ public class MedicationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetUpcomingMedicationsAsync_ShouldReturnMedicationsNotEnded()
+    public async Task GetUpcomingMedications_ShouldReturnMedicationsNotEnded()
     {
         // Arrange
         var user = await CreateTestUser();
         
-        var futureMed = new Medication
-        {
-            UserId = user.Id,
-            Name = "Future Med",
-            Dosage = "500",
-            Unit = "mg",
-            Frequency = "Once daily",
-            FrequencyCount = 1,
-            DurationDays = 7,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            IsActive = true
-        };
-        await _medicationService.AddMedicationAsync(futureMed);
-
+        var futureMed = await CreateTestMedication(user.Id, "Future Med", durationDays: 7);
+        
+        // Create past medication
+        var medicationRepo = _unitOfWork.Repository<Medication>();
         var pastMed = new Medication
         {
             UserId = user.Id,
@@ -297,10 +331,11 @@ public class MedicationServiceTests : IDisposable
             EndDate = DateTime.UtcNow.AddDays(-7),
             IsActive = true
         };
-        await _medicationService.AddMedicationAsync(pastMed);
+        await medicationRepo.AddAsync(pastMed);
+        await _unitOfWork.SaveChangesAsync();
 
         // Act
-        var result = await _medicationService.GetUpcomingMedicationsAsync(user.Id);
+        var result = await _medicationService.GetActiveMedicationsAsync(user.Id);
 
         // Assert
         Assert.Single(result);
@@ -327,24 +362,30 @@ public class MedicationServiceTests : IDisposable
         int userId, 
         string name, 
         bool isActive = true,
-        int? prescriptionId = null)
+        int? prescriptionId = null,
+        int durationDays = 7)
     {
-        var medication = new Medication
+        var medicationData = new MedicationData
         {
-            UserId = userId,
-            PrescriptionId = prescriptionId,
             Name = name,
             Dosage = "500",
             Unit = "mg",
             Frequency = "Twice daily",
             FrequencyCount = 2,
-            DurationDays = 7,
-            StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(7),
-            IsActive = isActive
+            DurationDays = durationDays,
+            Instructions = "Take with food"
         };
 
-        return await _medicationService.AddMedicationAsync(medication);
+        var medication = await _medicationService.CreateMedicationAsync(userId, medicationData, prescriptionId);
+        
+        if (!isActive)
+        {
+            await _medicationService.PauseMedicationAsync(medication.Id);
+            var medicationRepo = _unitOfWork.Repository<Medication>();
+            medication = await medicationRepo.GetByIdAsync(medication.Id) ?? medication;
+        }
+        
+        return medication;
     }
 
     private async Task<Prescription> CreateTestPrescription(int userId)

@@ -1,0 +1,93 @@
+﻿using MedRemind.Core.Data;
+using MedRemind.Core.Interfaces;
+using MedRemind.Core.Repositories;
+using MedRemind.Services.AI;
+using MedRemind.Services.Authentication;
+using MedRemind.Services.Medications;
+using MedRemind.Services.Media;
+using MedRemind.Services.Notifications;
+using MedRemind.Services.Prescriptions;
+using MedRemind.Services.Reminders;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "MedRemind API",
+        Version = "v1",
+        Description = "REST API for MedRemind - Medication Reminder & Prescription Management System"
+    });
+});
+
+// Database
+var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "medremind_api.db");
+builder.Services.AddDbContext<MedRemindDbContext>(options =>
+    options.UseSqlite($"Data Source={dbPath}"));
+
+// Repository & Unit of Work
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Core Services
+builder.Services.AddSingleton<ISecureStorageService, SecureStorageService>();
+builder.Services.AddSingleton<IAudioService, AudioService>();
+builder.Services.AddSingleton<INotificationService, LocalNotificationService>();
+builder.Services.AddSingleton<IReminderSchedulingService, ReminderSchedulingService>();
+builder.Services.AddSingleton<IValidationAgentService, MedicineValidationAgent>();
+
+// Business Services
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IPrescriptionReaderService, OpenAIPrescriptionReaderService>();
+builder.Services.AddScoped<MedicationService>();
+builder.Services.AddScoped<AdherenceService>();
+builder.Services.AddScoped<PrescriptionService>();
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Add HttpClient for OpenAI service
+builder.Services.AddHttpClient<IPrescriptionReaderService, OpenAIPrescriptionReaderService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
+});
+
+var app = builder.Build();
+
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<MedRemindDbContext>();
+    context.Database.EnsureCreated();
+}
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MedRemind API v1");
+        c.RoutePrefix = string.Empty; // Swagger at root
+    });
+}
+
+app.UseHttpsRedirection();
+app.UseCors("AllowAll");
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();

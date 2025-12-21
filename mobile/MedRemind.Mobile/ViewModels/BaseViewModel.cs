@@ -29,6 +29,11 @@ public partial class BaseViewModel : ObservableObject
         HasError = false;
     }
 
+    protected Page? GetCurrentPage()
+    {
+        return Application.Current?.Windows?.FirstOrDefault()?.Page;
+    }
+
     protected async Task ExecuteAsync(Func<Task> operation, string? loadingMessage = null)
     {
         IsBusy = true;

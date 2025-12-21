@@ -48,7 +48,10 @@ public partial class SettingsViewModel : BaseViewModel
     [RelayCommand]
     private async Task UpdateProfileAsync()
     {
-        var name = await Application.Current!.MainPage!.DisplayPromptAsync(
+        var page = GetCurrentPage();
+        if (page == null) return;
+
+        var name = await page.DisplayPromptAsync(
             "Update Profile",
             "Enter your name:",
             initialValue: UserName);
@@ -58,7 +61,7 @@ public partial class SettingsViewModel : BaseViewModel
             UserName = name;
             await _secureStorage.SetAsync("user_name", name);
             
-            await Application.Current!.MainPage!.DisplayAlert(
+            await page.DisplayAlertAsync(
                 "Success",
                 "Profile updated successfully",
                 "OK");
@@ -72,10 +75,14 @@ public partial class SettingsViewModel : BaseViewModel
         {
             await _secureStorage.SetAsync("notifications_enabled", NotificationsEnabled.ToString());
             
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Notifications",
-                NotificationsEnabled ? "Notifications enabled" : "Notifications disabled",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Notifications",
+                    NotificationsEnabled ? "Notifications enabled" : "Notifications disabled",
+                    "OK");
+            }
         });
     }
 
@@ -86,10 +93,14 @@ public partial class SettingsViewModel : BaseViewModel
         {
             await _secureStorage.SetAsync("biometric_enabled", BiometricEnabled.ToString());
             
-            await Application.Current!.MainPage!.DisplayAlert(
-                "Biometric Authentication",
-                BiometricEnabled ? "Biometric enabled" : "Biometric disabled",
-                "OK");
+            var page = GetCurrentPage();
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Biometric Authentication",
+                    BiometricEnabled ? "Biometric enabled" : "Biometric disabled",
+                    "OK");
+            }
         });
     }
 
@@ -99,34 +110,49 @@ public partial class SettingsViewModel : BaseViewModel
         Theme = theme;
         await _secureStorage.SetAsync("theme", theme);
         
-        await Application.Current!.MainPage!.DisplayAlert(
-            "Theme",
-            $"Theme changed to {theme}",
-            "OK");
+        var page = GetCurrentPage();
+        if (page != null)
+        {
+            await page.DisplayAlertAsync(
+                "Theme",
+                $"Theme changed to {theme}",
+                "OK");
+        }
     }
 
     [RelayCommand]
     private async Task ViewPrivacyPolicyAsync()
     {
-        await Application.Current!.MainPage!.DisplayAlert(
-            "Privacy Policy",
-            "Your data is stored locally on your device and never shared with third parties.",
-            "OK");
+        var page = GetCurrentPage();
+        if (page != null)
+        {
+            await page.DisplayAlertAsync(
+                "Privacy Policy",
+                "Your data is stored locally on your device and never shared with third parties.",
+                "OK");
+        }
     }
 
     [RelayCommand]
     private async Task ViewTermsAsync()
     {
-        await Application.Current!.MainPage!.DisplayAlert(
-            "Terms of Service",
-            "By using MedRemind, you agree to take your medications as prescribed by your doctor.",
-            "OK");
+        var page = GetCurrentPage();
+        if (page != null)
+        {
+            await page.DisplayAlertAsync(
+                "Terms of Service",
+                "By using MedRemind, you agree to take your medications as prescribed by your doctor.",
+                "OK");
+        }
     }
 
     [RelayCommand]
     private async Task LogoutAsync()
     {
-        var confirm = await Application.Current!.MainPage!.DisplayAlert(
+        var page = GetCurrentPage();
+        if (page == null) return;
+
+        var confirm = await page.DisplayAlertAsync(
             "Logout",
             "Are you sure you want to logout?",
             "Yes",

@@ -9,7 +9,7 @@
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="16">
             
-            <Label Text="?? Settings"
+            <Label Text="Settings"
                    Style="{StaticResource HeaderLabel}"/>
 
             <!-- Profile Section -->
@@ -155,7 +155,7 @@
             </Frame>
 
             <!-- Logout Button -->
-            <Button Text="?? Logout"
+            <Button Text="Logout"
                    Command="{Binding LogoutCommand}"
                    BackgroundColor="{StaticResource Error}"
                    TextColor="White"

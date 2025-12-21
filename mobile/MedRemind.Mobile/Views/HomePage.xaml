@@ -25,7 +25,7 @@
                                FontSize="36"
                                FontAttributes="Bold"
                                TextColor="{StaticResource Primary}"/>
-                        <Label Text="Day Streak ??"
+                        <Label Text="Day Streak 🔥"
                                Style="{StaticResource BodyLabel}"/>
                     </VerticalStackLayout>
 
@@ -74,15 +74,10 @@
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="2" Spacing="4">
-                            <Label FontSize="24"
+                            <Label Text="{Binding TodaysMissedDoses}"
+                                   FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="{StaticResource Error}">
-                                <Label.Text>
-                                    <Binding Path="TodaysTotalDoses"/>
-                                    <Binding Path="TodaysTakenDoses"/>
-                                    <!-- Will subtract in converter -->
-                                </Label.Text>
-                            </Label>
+                                   TextColor="{StaticResource Error}"/>
                             <Label Text="Missed"
                                    Style="{StaticResource CaptionLabel}"/>
                         </VerticalStackLayout>
@@ -97,13 +92,13 @@
                            Style="{StaticResource SubHeaderLabel}"/>
                     
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <Button Text="?? Upload Prescription"
+                        <Button Text="📤 Upload Prescription"
                                 Command="{Binding NavigateToUploadCommand}"
                                 Style="{StaticResource PrimaryButton}"
                                 HeightRequest="60"/>
 
                         <Button Grid.Column="1"
-                                Text="?? View Medications"
+                                Text="💊 View Medications"
                                 Command="{Binding NavigateToMedicationsCommand}"
                                 Style="{StaticResource SecondaryButton}"
                                 HeightRequest="60"/>
@@ -118,7 +113,7 @@
                            Style="{StaticResource SubHeaderLabel}"/>
 
                     <CollectionView ItemsSource="{Binding TodaysMedications}"
-                                   EmptyView="No medications for today ??">
+                                   EmptyView="No medications for today ✅">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Frame BackgroundColor="{StaticResource Gray100}"
@@ -145,7 +140,7 @@
                                         </VerticalStackLayout>
 
                                         <Button Grid.Column="1"
-                                                Text="? Take"
+                                                Text="✓ Take"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HomeViewModel}}, Path=TakeDoseCommand}"
                                                 CommandParameter="{Binding .}"
                                                 BackgroundColor="{StaticResource Success}"

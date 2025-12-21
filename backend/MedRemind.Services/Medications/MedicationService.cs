@@ -208,6 +208,12 @@ public class MedicationService
         return medications.ToList();
     }
 
+    public async Task<IEnumerable<DoseLog>> GetDoseLogsAsync(int medicationId)
+    {
+        var doseLogRepo = _unitOfWork.Repository<DoseLog>();
+        return await doseLogRepo.FindAsync(d => d.MedicationId == medicationId);
+    }
+
     private async Task UpdateRemindersAsync(int medicationId, int newFrequencyCount)
     {
         var reminderRepo = _unitOfWork.Repository<Reminder>();

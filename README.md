@@ -5,7 +5,7 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 [![Tests](https://img.shields.io/badge/tests-175%2B%20passing-brightgreen)]()
 [![Coverage](https://img.shields.io/badge/coverage-85%25-green)]()
-[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)]()
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 ## 🌟 Features
@@ -43,8 +43,8 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-- .NET 9.0 SDK
-- Visual Studio 2022 or Visual Studio Code
+- .NET 10.0 SDK
+- Visual Studio 2022 (17.12+) or Visual Studio Code
 - Android Studio (for Android)
 - Xcode (for iOS, Mac only)
 
@@ -132,8 +132,8 @@ MedRemind follows Clean Architecture principles with a layered approach:
 
 ### Tech Stack
 - **Frontend:** .NET MAUI (iOS & Android)
-- **Backend:** C# 12, .NET 9
-- **Database:** SQLite with Entity Framework Core 9
+- **Backend:** C# 13, .NET 10
+- **Database:** SQLite with Entity Framework Core 10
 - **AI:** OpenAI GPT-4 Vision API
 - **Authentication:** 2Factor.in OTP service
 - **Testing:** xUnit, Moq

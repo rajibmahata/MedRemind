@@ -72,8 +72,19 @@ public partial class MedicationsViewModel : BaseViewModel
         {
             await ExecuteAsync(async () =>
             {
-                medication.Dosage = result;
-                await _medicationService.UpdateMedicationAsync(medication);
+                // Create MedicationData from the medication
+                var medicationData = new Core.DTOs.MedicationData
+                {
+                    Name = medication.Name,
+                    Dosage = result,
+                    Unit = medication.Unit,
+                    Frequency = medication.Frequency,
+                    FrequencyCount = medication.FrequencyCount,
+                    DurationDays = medication.DurationDays,
+                    Instructions = medication.Instructions
+                };
+                
+                await _medicationService.UpdateMedicationAsync(medication.Id, medicationData, false);
                 await LoadMedicationsAsync();
                 
                 await Application.Current!.MainPage!.DisplayAlert(

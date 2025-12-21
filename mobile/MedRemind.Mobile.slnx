@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/mobile/">
+    <Project Path="MedRemind.Mobile\MedRemind.Mobile.csproj" Type="C#" />
+  </Folder>
+  <Folder Name="/backend/">
+    <Project Path="..\backend\MedRemind.Core\MedRemind.Core.csproj" Type="C#" />
+    <Project Path="..\backend\MedRemind.Services\MedRemind.Services.csproj" Type="C#" />
+    <Project Path="..\backend\MedRemind.API\MedRemind.API.csproj" Type="C#" />
+    <Project Path="..\backend\MedRemind.Tests\MedRemind.Tests.csproj" Type="C#" />
+  </Folder>
+  <Properties Name="Visual Studio">
+    <Property Name="OpenWith" Value="Visual Studio Version 17" />
+  </Properties>
+</Solution>

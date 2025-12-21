@@ -154,30 +154,24 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 ExtractedMedications = new ObservableCollection<MedicationData>(result.Medications);
                 
                 // Validate medications
-                var warnings = new List<string>();
-                foreach (var med in result.Medications)
-                {
-                    var validation = await _validationAgent.ValidateMedicineAsync(
-                        med.Name,
-                        med.Dosage,
-                        med.Unit);
-
-                    if (!validation.IsValid)
-                    {
-                        warnings.Add($"{med.Name}: {validation.Message}");
-                    }
-                }
-
+                var warnings = await _validationAgent.ValidateMedicationsAsync(result.Medications);
+                
                 // Update prescription status
                 await _prescriptionService.UpdatePrescriptionStatusAsync(
                     prescription.Id,
                     "Processed",
-                    result.RawResponse,
+                    null, // No RawResponse property in DTO
                     result.ConfidenceScore);
 
-                ResultMessage = warnings.Any()
-                    ? $"?? Warnings:\n{string.Join("\n", warnings)}"
-                    : "? All medications validated successfully!";
+                if (warnings.Any())
+                {
+                    var warningMessages = warnings.Select(w => $"{w.MedicationName}: {w.Message}").ToList();
+                    ResultMessage = $"? Warnings:\n{string.Join("\n", warningMessages)}";
+                }
+                else
+                {
+                    ResultMessage = "? All medications validated successfully!";
+                }
             }
             else
             {
@@ -185,7 +179,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 await _prescriptionService.UpdatePrescriptionStatusAsync(
                     prescription.Id,
                     "Failed",
-                    result.RawResponse);
+                    null); // No RawResponse property
             }
         });
 
@@ -208,27 +202,13 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
             foreach (var medData in ExtractedMedications)
             {
-                // Create medication
-                var medication = new Medication
-                {
-                    UserId = userId,
-                    Name = medData.Name,
-                    Dosage = medData.Dosage,
-                    Unit = medData.Unit,
-                    Frequency = medData.Frequency,
-                    FrequencyCount = medData.FrequencyCount,
-                    DurationDays = medData.DurationDays,
-                    Instructions = medData.Instructions,
-                    StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.AddDays(medData.DurationDays),
-                    IsActive = true
-                };
-
-                var savedMed = await _medicationService.AddMedicationAsync(medication);
+                // Create medication using MedicationService.CreateMedicationAsync
+                var savedMed = await _medicationService.CreateMedicationAsync(
+                    userId,
+                    medData);
 
                 // Create reminders
-                var reminderSchedules = _reminderScheduling.CalculateReminderTimes(medData.FrequencyCount);
-                // Note: Reminder creation would happen here in full implementation
+                await _medicationService.CreateRemindersAsync(savedMed.Id, medData.FrequencyCount);
 
                 savedCount++;
             }

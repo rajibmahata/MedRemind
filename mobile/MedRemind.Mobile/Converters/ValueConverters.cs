@@ -15,9 +15,9 @@ public class PercentToDecimalConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is double decimal)
+        if (value is double decimalValue)
         {
-            return decimal * 100.0;
+            return decimalValue * 100.0;
         }
         return 0.0;
     }

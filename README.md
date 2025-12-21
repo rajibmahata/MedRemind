@@ -3,7 +3,7 @@
 > Never miss your medication again with AI prescription reading and voice reminders from loved ones
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Tests](https://img.shields.io/badge/tests-100%2B%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-175%2B%20passing-brightgreen)]()
 [![Coverage](https://img.shields.io/badge/coverage-85%25-green)]()
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
@@ -55,19 +55,18 @@
 git clone https://github.com/rajibmahata/MedRemind.git
 cd MedRemind
 
-# Restore packages
-dotnet restore src/MedRemind.sln
-
-# Build the solution
-dotnet build src/MedRemind.sln
+# Build backend
+cd backend
+dotnet restore
+dotnet build MedRemind.Backend.sln
 
 # Run tests
-dotnet test src/MedRemind.Tests/MedRemind.Tests.csproj
+dotnet test
 ```
 
 ### Configuration
 
-1. Create `appsettings.json` in the Mobile project:
+1. Create `appsettings.json` in the Backend project:
 
 ```json
 {
@@ -84,6 +83,32 @@ dotnet test src/MedRemind.Tests/MedRemind.Tests.csproj
 3. Run the app!
 
 For detailed setup instructions, see [Backend Setup Guide](docs/08-backend-setup-guide.md).
+
+## 📁 Project Structure
+
+```
+MedRemind/
+├── backend/                    # Backend APIs (Complete ✅)
+│   ├── MedRemind.Core/        # Models, DTOs, Interfaces
+│   ├── MedRemind.Services/    # Business logic services
+│   ├── MedRemind.Tests/       # 175+ unit tests
+│   └── MedRemind.Backend.sln  # Backend solution
+│
+├── mobile/                     # Mobile app (In Progress 🚧)
+│   └── MedRemind.Mobile/      # .NET MAUI app
+│
+├── docs/                       # Documentation
+│   ├── 00-project-overview.md
+│   ├── 01-executive-summary.md
+│   ├── 02-technical-architecture.md
+│   ├── 06-detailed-timeline.md
+│   ├── 07-backend-implementation-summary.md
+│   ├── 08-backend-setup-guide.md
+│   ├── 09-backend-build-status.md
+│   └── 10-backend-reorganization-summary.md
+│
+└── README.md                   # This file
+```
 
 ## 🏗️ Architecture
 
@@ -125,11 +150,11 @@ MedRemind follows Clean Architecture principles with a layered approach:
 | Reminder Services | ✅ Complete | 100% |
 | Medication CRUD | ✅ Complete | 100% |
 | Adherence Tracking | ✅ Complete | 100% |
-| Unit Tests | ✅ Complete | 100+ tests |
+| Unit Tests | ✅ Complete | 175+ tests |
 | Mobile UI | 🚧 In Progress | 0% |
 | Platform Services | 🚧 Planned | 0% |
 
-**Current Phase:** Backend APIs Complete ✅  
+**Current Phase:** Backend Complete ✅ - UI Development Next  
 **Next Phase:** Mobile App UI Development
 
 See [Detailed Timeline](docs/06-detailed-timeline.md) for full 2-week implementation plan.
@@ -139,23 +164,28 @@ See [Detailed Timeline](docs/06-detailed-timeline.md) for full 2-week implementa
 The project includes comprehensive unit tests with 85%+ code coverage:
 
 ```bash
+# Build backend
+cd backend
+dotnet build
+
 # Run all tests
 dotnet test
 
 # Run specific test suite
-dotnet test --filter "FullyQualifiedName~MedicationServiceTests"
+dotnet test --filter "FullyQualifiedName~RepositoryTests"
 ```
 
 ### Test Coverage
-- ✅ Repository layer: 10 tests
+- ✅ Repository layer: 17 tests
 - ✅ Unit of Work: 7 tests
 - ✅ Authentication: 15 tests
 - ✅ AI Validation: 15 tests
 - ✅ Reminder Scheduling: 20 tests
 - ✅ Medication Service: 20 tests
 - ✅ Adherence Tracking: 18 tests
+- ✅ Additional Services: 63 tests
 
-**Total: 100+ unit tests**
+**Total: 175+ unit tests**
 
 ## 📖 Documentation
 
@@ -164,16 +194,19 @@ dotnet test --filter "FullyQualifiedName~MedicationServiceTests"
 - [Detailed Timeline](docs/06-detailed-timeline.md) - 2-week implementation plan
 - [Backend Implementation Summary](docs/07-backend-implementation-summary.md) - What's been built
 - [Backend Setup Guide](docs/08-backend-setup-guide.md) - Setup instructions
+- [Backend Build Status](docs/09-backend-build-status.md) - Current status
+- [Backend Reorganization](docs/10-backend-reorganization-summary.md) - Structure changes
 
 ## 🎯 Roadmap
 
 ### MVP (January 1, 2025)
-- [x] Backend APIs with AI integration
-- [x] Database and repository layer
-- [x] Authentication and security
-- [x] Reminder scheduling algorithms
-- [ ] Mobile UI (Login, Upload, Reminders)
-- [ ] Platform services (Biometric, Notifications, Audio)
+- [x] Backend APIs with AI integration ✅
+- [x] Database and repository layer ✅
+- [x] Authentication and security ✅
+- [x] Reminder scheduling algorithms ✅
+- [x] 175+ unit tests ✅
+- [ ] Mobile UI (Login, Upload, Reminders) 🚧
+- [ ] Platform services (Biometric, Notifications, Audio) 🚧
 - [ ] App Store submission
 
 ### Phase 2 (Post-Launch)
@@ -217,5 +250,6 @@ Give a ⭐️ if this project helped you!
 
 ---
 
-**Last Updated:** December 20, 2024  
-**Status:** Backend Complete ✅ - UI In Progress 🚧
+**Last Updated**: December 21, 2024  
+**Status**: Backend Complete ✅ - UI Development Next 🚧  
+**Version**: 1.0.0-beta

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MedRemind.Mobile.ViewModels"
+             x:Class="MedRemind.Mobile.Views.PrescriptionUploadPage"
+             x:DataType="vm:PrescriptionUploadViewModel"
+             Title="Upload Prescription">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            
+            <!-- Header -->
+            <Label Text="?? AI Prescription Scanner"
+                   Style="{StaticResource HeaderLabel}"/>
+            
+            <Label Text="Take a photo or select from gallery to extract medication details automatically"
+                   Style="{StaticResource CaptionLabel}"/>
+
+            <!-- Image Selection -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Step 1: Select Image"
+                           Style="{StaticResource SubHeaderLabel}"/>
+
+                    <!-- Image Preview -->
+                    <Frame IsVisible="{Binding SelectedImage, Converter={StaticResource IsNotNullConverter}}"
+                           BackgroundColor="{StaticResource Gray100}"
+                           CornerRadius="10"
+                           Padding="0"
+                           HeightRequest="200">
+                        <Image Source="{Binding SelectedImage}"
+                              Aspect="AspectFit"/>
+                    </Frame>
+
+                    <!-- Image Selection Buttons -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Button Text="?? Camera"
+                               Command="{Binding TakePhotoCommand}"
+                               Style="{StaticResource PrimaryButton}"/>
+
+                        <Button Grid.Column="1"
+                               Text="??? Gallery"
+                               Command="{Binding PickPhotoCommand}"
+                               Style="{StaticResource SecondaryButton}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Processing Section -->
+            <Frame Style="{StaticResource CardFrame}"
+                   IsVisible="{Binding SelectedImage, Converter={StaticResource IsNotNullConverter}}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Step 2: Process"
+                           Style="{StaticResource SubHeaderLabel}"/>
+
+                    <Button Text="?? Process with AI"
+                           Command="{Binding ProcessPrescriptionCommand}"
+                           Style="{StaticResource PrimaryButton}"
+                           IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+
+                    <ActivityIndicator IsRunning="{Binding IsProcessing}"
+                                     IsVisible="{Binding IsProcessing}"
+                                     Color="{StaticResource Primary}"
+                                     HeightRequest="40"/>
+
+                    <Label Text="Processing... Please wait"
+                           IsVisible="{Binding IsProcessing}"
+                           TextColor="{StaticResource Gray600}"
+                           HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Results Section -->
+            <Frame Style="{StaticResource CardFrame}"
+                   IsVisible="{Binding HasResult}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Step 3: Review Results"
+                           Style="{StaticResource SubHeaderLabel}"/>
+
+                    <!-- Confidence Score -->
+                    <Frame BackgroundColor="{StaticResource PrimaryLight}"
+                           CornerRadius="10"
+                           Padding="12"
+                           HasShadow="False">
+                        <HorizontalStackLayout Spacing="8">
+                            <Label Text="Confidence:"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource PrimaryDark}"/>
+                            <Label TextColor="{StaticResource PrimaryDark}"
+                                   FontAttributes="Bold">
+                                <Label.Text>
+                                    <Binding Path="ConfidenceScore" StringFormat="{}{0:P0}"/>
+                                </Label.Text>
+                            </Label>
+                        </HorizontalStackLayout>
+                    </Frame>
+
+                    <!-- Result Message -->
+                    <Label Text="{Binding ResultMessage}"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray700}"
+                           IsVisible="{Binding ResultMessage, Converter={StaticResource StringToBoolConverter}}"/>
+
+                    <!-- Extracted Medications -->
+                    <Label Text="Extracted Medications:"
+                           FontAttributes="Bold"
+                           FontSize="16"
+                           IsVisible="{Binding ExtractedMedications.Count, Converter={StaticResource IntToBoolConverter}}"/>
+
+                    <CollectionView ItemsSource="{Binding ExtractedMedications}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BackgroundColor="{StaticResource Gray100}"
+                                       CornerRadius="10"
+                                       Padding="12"
+                                       Margin="0,4"
+                                       HasShadow="False">
+                                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                        <Label Grid.Row="0" Grid.Column="0"
+                                              Text="{Binding Name}"
+                                              FontSize="16"
+                                              FontAttributes="Bold"
+                                              TextColor="{StaticResource Gray900}"/>
+
+                                        <Button Grid.Row="0" Grid.Column="1"
+                                               Text="Edit"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PrescriptionUploadViewModel}}, Path=EditMedicationCommand}"
+                                               CommandParameter="{Binding .}"
+                                               BackgroundColor="{StaticResource Secondary}"
+                                               TextColor="White"
+                                               CornerRadius="12"
+                                               Padding="12,4"
+                                               FontSize="12"/>
+
+                                        <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                              FontSize="14"
+                                              TextColor="{StaticResource Gray700}">
+                                            <Label.Text>
+                                                <MultiBinding StringFormat="{}{0} {1} - {2}">
+                                                    <Binding Path="Dosage"/>
+                                                    <Binding Path="Unit"/>
+                                                    <Binding Path="Frequency"/>
+                                                </MultiBinding>
+                                            </Label.Text>
+                                        </Label>
+
+                                        <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                              FontSize="12"
+                                              TextColor="{StaticResource Gray600}">
+                                            <Label.Text>
+                                                <Binding Path="DurationDays" StringFormat="Duration: {0} days"/>
+                                            </Label.Text>
+                                        </Label>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <!-- Save Buttons -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12"
+                          IsVisible="{Binding ExtractedMedications.Count, Converter={StaticResource IntToBoolConverter}}">
+                        <Button Text="?? Save All"
+                               Command="{Binding SaveMedicationsCommand}"
+                               Style="{StaticResource PrimaryButton}"/>
+
+                        <Button Grid.Column="1"
+                               Text="?? Try Again"
+                               Command="{Binding ClearDataCommand}"
+                               Style="{StaticResource SecondaryButton}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Instructions -->
+            <Frame Style="{StaticResource CardFrame}"
+                   BackgroundColor="{StaticResource PrimaryLight}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="?? Tips for Best Results"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource PrimaryDark}"/>
+                    
+                    <Label TextColor="{StaticResource PrimaryDark}"
+                           FontSize="12">
+                        <Label.Text>
+• Ensure good lighting
+• Keep prescription flat
+• Capture all medication details
+• Avoid shadows and glare
+                        </Label.Text>
+                    </Label>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

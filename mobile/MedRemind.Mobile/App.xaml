@@ -1,9 +1,21 @@
 ﻿<?xml version = "1.0" encoding = "UTF-8" ?>
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:MedRemind.Mobile.Converters"
              x:Class="MedRemind.Mobile.App">
     <Application.Resources>
         <ResourceDictionary>
+            
+            <!-- Converters -->
+            <converters:PercentToDecimalConverter x:Key="PercentToDecimalConverter"/>
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+            <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+            <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
+            <converters:IsNotNullConverter x:Key="IsNotNullConverter"/>
+            <converters:IntToBoolConverter x:Key="IntToBoolConverter"/>
+            <converters:StringEqualConverter x:Key="StringEqualConverter"/>
+            <converters:PeriodToColorConverter x:Key="PeriodToColorConverter"/>
             
             <!-- Colors -->
             <Color x:Key="Primary">#4CAF50</Color>

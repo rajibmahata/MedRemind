@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MedRemind.Mobile.ViewModels"
+             x:Class="MedRemind.Mobile.Views.MedicationsPage"
+             x:DataType="vm:MedicationsViewModel"
+             Title="Medications">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        
+        <!-- Search Bar -->
+        <Frame Grid.Row="0" 
+               BackgroundColor="{StaticResource Surface}"
+               CornerRadius="0"
+               Padding="16"
+               HasShadow="False">
+            <SearchBar Text="{Binding SearchText}"
+                      Placeholder="Search medications..."
+                      BackgroundColor="{StaticResource Gray100}"
+                      TextColor="{StaticResource Gray900}"/>
+        </Frame>
+
+        <!-- Medications List -->
+        <RefreshView Grid.Row="1"
+                    IsRefreshing="{Binding IsRefreshing}"
+                    Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Medications}"
+                          EmptyView="No medications found. Add one to get started!"
+                          Margin="16,8">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <!-- Swipe Actions -->
+                            <SwipeView.LeftItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Edit"
+                                             BackgroundColor="{StaticResource Secondary}"
+                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MedicationsViewModel}}, Path=EditMedicationCommand}"
+                                             CommandParameter="{Binding .}"/>
+                                </SwipeItems>
+                            </SwipeView.LeftItems>
+                            
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Delete"
+                                             BackgroundColor="{StaticResource Error}"
+                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MedicationsViewModel}}, Path=DeleteMedicationCommand}"
+                                             CommandParameter="{Binding .}"/>
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+
+                            <!-- Medication Card -->
+                            <Frame Style="{StaticResource CardFrame}">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto" 
+                                      ColumnDefinitions="*,Auto">
+                                    
+                                    <!-- Medication Name -->
+                                    <Label Grid.Row="0" Grid.Column="0"
+                                          Text="{Binding Name}"
+                                          FontSize="18"
+                                          FontAttributes="Bold"
+                                          TextColor="{StaticResource Gray900}"/>
+
+                                    <!-- Status Badge -->
+                                    <Frame Grid.Row="0" Grid.Column="1"
+                                          BackgroundColor="{Binding IsActive, Converter={StaticResource BoolToColorConverter}}"
+                                          CornerRadius="12"
+                                          Padding="12,4"
+                                          HasShadow="False">
+                                        <Label Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}}"
+                                              FontSize="12"
+                                              TextColor="White"
+                                              FontAttributes="Bold"/>
+                                    </Frame>
+
+                                    <!-- Dosage Info -->
+                                    <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                          FontSize="14"
+                                          TextColor="{StaticResource Gray700}"
+                                          Margin="0,4,0,0">
+                                        <Label.Text>
+                                            <MultiBinding StringFormat="{}{0} {1} - {2}">
+                                                <Binding Path="Dosage"/>
+                                                <Binding Path="Unit"/>
+                                                <Binding Path="Frequency"/>
+                                            </MultiBinding>
+                                        </Label.Text>
+                                    </Label>
+
+                                    <!-- Duration -->
+                                    <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                          FontSize="12"
+                                          TextColor="{StaticResource Gray600}"
+                                          Margin="0,4,0,0">
+                                        <Label.Text>
+                                            <MultiBinding StringFormat="{}Duration: {0:d} to {1:d}">
+                                                <Binding Path="StartDate"/>
+                                                <Binding Path="EndDate"/>
+                                            </MultiBinding>
+                                        </Label.Text>
+                                    </Label>
+
+                                    <!-- Instructions -->
+                                    <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                          Text="{Binding Instructions}"
+                                          FontSize="12"
+                                          TextColor="{StaticResource Gray600}"
+                                          LineBreakMode="TailTruncation"
+                                          MaxLines="2"
+                                          Margin="0,4,0,8"
+                                          IsVisible="{Binding Instructions, Converter={StaticResource StringToBoolConverter}}"/>
+
+                                    <!-- Action Buttons -->
+                                    <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                                         Spacing="8"
+                                                         Margin="0,8,0,0">
+                                        
+                                        <Button Text="History"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MedicationsViewModel}}, Path=ViewHistoryCommand}"
+                                               CommandParameter="{Binding .}"
+                                               BackgroundColor="{StaticResource Info}"
+                                               TextColor="White"
+                                               CornerRadius="15"
+                                               Padding="16,8"
+                                               FontSize="12"/>
+
+                                        <Button Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MedicationsViewModel}}, Path=PauseMedicationCommand}"
+                                               CommandParameter="{Binding .}"
+                                               BackgroundColor="{StaticResource Warning}"
+                                               TextColor="White"
+                                               CornerRadius="15"
+                                               Padding="16,8"
+                                               FontSize="12"
+                                               IsVisible="{Binding IsActive}">
+                                            <Button.Text>Pause</Button.Text>
+                                        </Button>
+
+                                        <Button Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MedicationsViewModel}}, Path=ResumeMedicationCommand}"
+                                               CommandParameter="{Binding .}"
+                                               BackgroundColor="{StaticResource Success}"
+                                               TextColor="White"
+                                               CornerRadius="15"
+                                               Padding="16,8"
+                                               FontSize="12"
+                                               IsVisible="{Binding IsActive, Converter={StaticResource InverseBoolConverter}}">
+                                            <Button.Text>Resume</Button.Text>
+                                        </Button>
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Frame>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Add Button (FAB) -->
+        <Button Grid.Row="2"
+                Text="? Add Medication"
+                Command="{Binding AddMedicationCommand}"
+                Style="{StaticResource PrimaryButton}"
+                Margin="16"
+                HeightRequest="60"/>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="1"
+                         IsRunning="{Binding IsBusy}"
+                         IsVisible="{Binding IsBusy}"
+                         Color="{StaticResource Primary}"
+                         HeightRequest="40"
+                         VerticalOptions="Center"/>
+    </Grid>
+</ContentPage>

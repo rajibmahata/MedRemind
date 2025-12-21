@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MedRemind.Mobile.ViewModels"
+             x:Class="MedRemind.Mobile.Views.RemindersPage"
+             x:DataType="vm:RemindersViewModel"
+             Title="Reminders">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            
+            <Label Text="? Medication Reminders"
+                   Style="{StaticResource HeaderLabel}"/>
+
+            <Label Text="Manage when you want to be reminded to take your medications"
+                   Style="{StaticResource CaptionLabel}"/>
+
+            <!-- Group Toggle -->
+            <Frame Style="{StaticResource CardFrame}">
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="Group by Medication"
+                           VerticalOptions="Center"
+                           Style="{StaticResource BodyLabel}"/>
+                    <Switch IsToggled="{Binding GroupByMedication}"
+                           OnColor="{StaticResource Primary}"/>
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- Reminders List -->
+            <CollectionView ItemsSource="{Binding Reminders}"
+                          EmptyView="No reminders set up yet">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Style="{StaticResource CardFrame}">
+                            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                
+                                <Label Grid.Row="0" Grid.Column="0"
+                                      Text="{Binding Medication.Name}"
+                                      FontSize="18"
+                                      FontAttributes="Bold"
+                                      TextColor="{StaticResource Gray900}"/>
+
+                                <Switch Grid.Row="0" Grid.Column="1"
+                                       IsToggled="{Binding IsEnabled}"
+                                       Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RemindersViewModel}}, Path=ToggleReminderCommand}"
+                                       CommandParameter="{Binding .}"
+                                       OnColor="{StaticResource Primary}"/>
+
+                                <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                      FontSize="16"
+                                      TextColor="{StaticResource Gray700}"
+                                      Margin="0,4,0,0">
+                                    <Label.Text>
+                                        <Binding Path="ReminderTime" StringFormat="?? {0:hh\\:mm tt}"/>
+                                    </Label.Text>
+                                </Label>
+
+                                <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                                     Spacing="8"
+                                                     Margin="0,12,0,0">
+                                    
+                                    <Button Text="?? Record Voice"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RemindersViewModel}}, Path=RecordVoiceCommand}"
+                                           CommandParameter="{Binding .}"
+                                           BackgroundColor="{StaticResource Secondary}"
+                                           TextColor="White"
+                                           CornerRadius="15"
+                                           Padding="16,8"
+                                           FontSize="12"/>
+
+                                    <Button Text="?? Edit Time"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RemindersViewModel}}, Path=EditReminderTimeCommand}"
+                                           CommandParameter="{Binding .}"
+                                           BackgroundColor="{StaticResource Info}"
+                                           TextColor="White"
+                                           CornerRadius="15"
+                                           Padding="16,8"
+                                           FontSize="12"/>
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                             IsVisible="{Binding IsBusy}"
+                             Color="{StaticResource Primary}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

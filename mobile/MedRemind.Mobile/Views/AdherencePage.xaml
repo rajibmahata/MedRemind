@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MedRemind.Mobile.ViewModels"
+             x:Class="MedRemind.Mobile.Views.AdherencePage"
+             x:DataType="vm:AdherenceViewModel"
+             Title="Adherence">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            
+            <Label Text="?? Medication Adherence"
+                   Style="{StaticResource HeaderLabel}"/>
+
+            <!-- Streak Display -->
+            <Frame Style="{StaticResource CardFrame}"
+                   BackgroundColor="{StaticResource PrimaryLight}">
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Label Text="??"
+                           FontSize="48"
+                           HorizontalOptions="Center"/>
+                    
+                    <Label Text="{Binding CurrentStreak}"
+                           FontSize="64"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource PrimaryDark}"
+                           HorizontalOptions="Center"/>
+                    
+                    <Label Text="Day Streak"
+                           FontSize="20"
+                           TextColor="{StaticResource PrimaryDark}"
+                           HorizontalOptions="Center"/>
+                    
+                    <Label FontSize="14"
+                           TextColor="{StaticResource PrimaryDark}"
+                           HorizontalOptions="Center">
+                        <Label.Text>
+                            <Binding Path="LongestStreak" StringFormat="Longest: {0} days"/>
+                        </Label.Text>
+                    </Label>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Adherence Percentage -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Overall Adherence"
+                           Style="{StaticResource SubHeaderLabel}"/>
+                    
+                    <ProgressBar Progress="{Binding AdherencePercentage, Converter={StaticResource PercentToDecimalConverter}}"
+                                ProgressColor="{StaticResource Success}"
+                                HeightRequest="20"/>
+                    
+                    <Label HorizontalOptions="Center"
+                           FontSize="32"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Success}">
+                        <Label.Text>
+                            <Binding Path="AdherencePercentage" StringFormat="{}{0:F1}%"/>
+                        </Label.Text>
+                    </Label>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Period Selector -->
+            <Frame Style="{StaticResource CardFrame}">
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Text="Week"
+                           Command="{Binding ChangePeriodCommand}"
+                           CommandParameter="Week"
+                           BackgroundColor="{Binding SelectedPeriod, Converter={StaticResource PeriodToColorConverter}, ConverterParameter=Week}"
+                           TextColor="White"
+                           CornerRadius="20"/>
+                    
+                    <Button Grid.Column="1"
+                           Text="Month"
+                           Command="{Binding ChangePeriodCommand}"
+                           CommandParameter="Month"
+                           BackgroundColor="{Binding SelectedPeriod, Converter={StaticResource PeriodToColorConverter}, ConverterParameter=Month}"
+                           TextColor="White"
+                           CornerRadius="20"/>
+                </Grid>
+            </Frame>
+
+            <!-- Statistics -->
+            <Frame Style="{StaticResource CardFrame}">
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*,*">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding TotalDoses}"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Gray800}"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Total"
+                               Style="{StaticResource CaptionLabel}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="{Binding TakenDoses}"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Success}"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Taken"
+                               Style="{StaticResource CaptionLabel}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="2" Spacing="4">
+                        <Label Text="{Binding MissedDoses}"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Error}"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Missed"
+                               Style="{StaticResource CaptionLabel}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+
+                    <BoxView Grid.Row="1" Grid.ColumnSpan="3"
+                            HeightRequest="2"
+                            Color="{StaticResource Gray300}"
+                            Margin="0,12,0,0"/>
+                </Grid>
+            </Frame>
+
+            <!-- Daily Data -->
+            <Frame Style="{StaticResource CardFrame}"
+                   IsVisible="{Binding SelectedPeriod, Converter={StaticResource StringEqualConverter}, ConverterParameter=Week}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Weekly Breakdown"
+                           Style="{StaticResource SubHeaderLabel}"/>
+                    
+                    <CollectionView ItemsSource="{Binding WeeklyData}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*,Auto" Padding="0,8">
+                                    <Label Text="{Binding Date, StringFormat='{0:ddd}'}"
+                                          FontSize="14"
+                                          TextColor="{StaticResource Gray700}"
+                                          VerticalOptions="Center"/>
+                                    
+                                    <ProgressBar Grid.Column="1"
+                                                Progress="{Binding Percentage, Converter={StaticResource PercentToDecimalConverter}}"
+                                                ProgressColor="{StaticResource Primary}"
+                                                Margin="12,0"
+                                                VerticalOptions="Center"/>
+                                    
+                                    <Label Grid.Column="2"
+                                          FontSize="14"
+                                          FontAttributes="Bold"
+                                          TextColor="{StaticResource Gray800}"
+                                          VerticalOptions="Center">
+                                        <Label.Text>
+                                            <Binding Path="Percentage" StringFormat="{}{0:F0}%"/>
+                                        </Label.Text>
+                                    </Label>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                             IsVisible="{Binding IsBusy}"
+                             Color="{StaticResource Primary}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "XyxRqegTyxU=",
+  "dgSpecHash": "wqsdmHeUADw=",
   "success": true,
   "projectFilePath": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.Tests\\MedRemind.Tests.csproj",
   "expectedPackageFiles": [
@@ -35,12 +35,6 @@
     "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.10\\sqlitepclraw.lib.e_sqlite3.2.1.10.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.10\\sqlitepclraw.provider.e_sqlite3.2.1.10.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\system.diagnostics.eventlog\\6.0.0\\system.diagnostics.eventlog.6.0.0.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.io.pipelines\\10.0.1\\system.io.pipelines.10.0.1.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.net.http.json\\10.0.1\\system.net.http.json.10.0.1.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.reflection.metadata\\1.6.0\\system.reflection.metadata.1.6.0.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.text.encodings.web\\10.0.1\\system.text.encodings.web.10.0.1.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.text.json\\10.0.1\\system.text.json.10.0.1.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\xunit\\2.9.2\\xunit.2.9.2.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\xunit.abstractions\\2.0.3\\xunit.abstractions.2.0.3.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\xunit.analyzers\\1.16.0\\xunit.analyzers.1.16.0.nupkg.sha512",

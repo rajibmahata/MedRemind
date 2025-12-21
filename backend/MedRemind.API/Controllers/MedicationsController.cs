@@ -1,0 +1,293 @@
+using MedRemind.Core.DTOs;
+using MedRemind.Core.Interfaces;
+using MedRemind.Core.Models;
+using MedRemind.Services.Medications;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MedRemind.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class MedicationsController : ControllerBase
+{
+    private readonly MedicationService _medicationService;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<MedicationsController> _logger;
+
+    public MedicationsController(
+        MedicationService medicationService,
+        IUnitOfWork unitOfWork,
+        ILogger<MedicationsController> logger)
+    {
+        _medicationService = medicationService;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Create a new medication
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> CreateMedication([FromBody] CreateMedicationRequest request)
+    {
+        try
+        {
+            var medicationData = new MedicationData
+            {
+                Name = request.Name,
+                Dosage = request.Dosage,
+                Unit = request.Unit,
+                Frequency = request.Frequency,
+                FrequencyCount = request.TimesPerDay,
+                DurationDays = request.DurationDays ?? 7,
+                Instructions = request.Instructions
+            };
+
+            var medication = await _medicationService.CreateMedicationAsync(
+                request.UserId,
+                medicationData,
+                request.PrescriptionId
+            );
+
+            if (request.CreateReminders)
+            {
+                await _medicationService.CreateRemindersAsync(medication.Id, medication.FrequencyCount);
+            }
+
+            return CreatedAtAction(nameof(GetMedication), new { id = medication.Id }, medication);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating medication");
+            return StatusCode(500, new { message = "An error occurred while creating medication" });
+        }
+    }
+
+    /// <summary>
+    /// Get medication by ID
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetMedication(int id)
+    {
+        try
+        {
+            var medication = await _unitOfWork.Repository<Medication>().GetByIdAsync(id);
+            
+            if (medication == null)
+            {
+                return NotFound(new { message = "Medication not found" });
+            }
+
+            return Ok(medication);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting medication {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving medication" });
+        }
+    }
+
+    /// <summary>
+    /// Get all active medications for a user
+    /// </summary>
+    [HttpGet("user/{userId}/active")]
+    public async Task<IActionResult> GetActiveMedications(int userId)
+    {
+        try
+        {
+            var medications = await _medicationService.GetActiveMedicationsAsync(userId);
+            return Ok(medications);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting active medications for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving medications" });
+        }
+    }
+
+    /// <summary>
+    /// Update medication
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateMedication(int id, [FromBody] UpdateMedicationRequest request)
+    {
+        try
+        {
+            var medicationData = new MedicationData
+            {
+                Name = request.Name,
+                Dosage = request.Dosage,
+                Unit = request.Unit,
+                Frequency = request.Frequency,
+                FrequencyCount = request.TimesPerDay,
+                DurationDays = request.DurationDays ?? 7,
+                Instructions = request.Instructions
+            };
+
+            var updated = await _medicationService.UpdateMedicationAsync(id, medicationData, request.UpdateReminders);
+            
+            if (!updated)
+            {
+                return NotFound(new { message = "Medication not found" });
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating medication {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while updating medication" });
+        }
+    }
+
+    /// <summary>
+    /// Pause medication
+    /// </summary>
+    [HttpPost("{id}/pause")]
+    public async Task<IActionResult> PauseMedication(int id)
+    {
+        try
+        {
+            var result = await _medicationService.PauseMedicationAsync(id);
+            
+            if (!result)
+            {
+                return NotFound(new { message = "Medication not found" });
+            }
+
+            return Ok(new { message = "Medication paused successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error pausing medication {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while pausing medication" });
+        }
+    }
+
+    /// <summary>
+    /// Resume medication
+    /// </summary>
+    [HttpPost("{id}/resume")]
+    public async Task<IActionResult> ResumeMedication(int id)
+    {
+        try
+        {
+            var result = await _medicationService.ResumeMedicationAsync(id);
+            
+            if (!result)
+            {
+                return NotFound(new { message = "Medication not found" });
+            }
+
+            return Ok(new { message = "Medication resumed successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resuming medication {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while resuming medication" });
+        }
+    }
+
+    /// <summary>
+    /// Delete medication
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMedication(int id)
+    {
+        try
+        {
+            var result = await _medicationService.DeleteMedicationAsync(id);
+            
+            if (!result)
+            {
+                return NotFound(new { message = "Medication not found" });
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting medication {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while deleting medication" });
+        }
+    }
+
+    /// <summary>
+    /// Log a dose (taken, missed, or snoozed)
+    /// </summary>
+    [HttpPost("{medicationId}/doses")]
+    public async Task<IActionResult> LogDose(int medicationId, [FromBody] LogDoseRequest request)
+    {
+        try
+        {
+            var doseLog = await _medicationService.LogDoseAsync(
+                medicationId,
+                request.ScheduledTime,
+                request.Status,
+                request.Notes
+            );
+
+            return Ok(doseLog);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error logging dose for medication {MedicationId}", medicationId);
+            return StatusCode(500, new { message = "An error occurred while logging dose" });
+        }
+    }
+
+    /// <summary>
+    /// Get dose logs for a medication
+    /// </summary>
+    [HttpGet("{medicationId}/doses")]
+    public async Task<IActionResult> GetDoseLogs(int medicationId)
+    {
+        try
+        {
+            var doseLogRepo = _unitOfWork.Repository<DoseLog>();
+            var logs = await doseLogRepo.FindAsync(d => d.MedicationId == medicationId);
+            return Ok(logs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting dose logs for medication {MedicationId}", medicationId);
+            return StatusCode(500, new { message = "An error occurred while retrieving dose logs" });
+        }
+    }
+}
+
+public record CreateMedicationRequest(
+    int UserId,
+    string Name,
+    string? GenericName,
+    string Dosage,
+    string Unit,
+    string Frequency,
+    int TimesPerDay,
+    string? Timing,
+    string? Duration,
+    int? DurationDays,
+    string? Instructions,
+    int? PrescriptionId,
+    bool CreateReminders = true
+);
+
+public record UpdateMedicationRequest(
+    string Name,
+    string? GenericName,
+    string Dosage,
+    string Unit,
+    string Frequency,
+    int TimesPerDay,
+    string? Timing,
+    string? Duration,
+    int? DurationDays,
+    string? Instructions,
+    bool UpdateReminders = true
+);
+
+public record LogDoseRequest(
+    DateTime ScheduledTime,
+    string Status,
+    string? Notes
+);

@@ -1,0 +1,113 @@
+using MedRemind.Services.Medications;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MedRemind.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AdherenceController : ControllerBase
+{
+    private readonly AdherenceService _adherenceService;
+    private readonly ILogger<AdherenceController> _logger;
+
+    public AdherenceController(AdherenceService adherenceService, ILogger<AdherenceController> logger)
+    {
+        _adherenceService = adherenceService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Calculate adherence percentage for a user
+    /// </summary>
+    [HttpGet("user/{userId}/percentage")]
+    public async Task<IActionResult> GetAdherencePercentage(
+        int userId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate)
+    {
+        try
+        {
+            var start = startDate ?? DateTime.Today.AddDays(-30);
+            var end = endDate ?? DateTime.Today;
+
+            var percentage = await _adherenceService.CalculateAdherenceAsync(userId, start, end);
+            
+            return Ok(new { userId, startDate = start, endDate = end, adherencePercentage = percentage });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating adherence for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while calculating adherence" });
+        }
+    }
+
+    /// <summary>
+    /// Get longest adherence streak for a user
+    /// </summary>
+    [HttpGet("user/{userId}/streak")]
+    public async Task<IActionResult> GetLongestStreak(int userId)
+    {
+        try
+        {
+            var streak = await _adherenceService.CalculateLongestStreakAsync(userId);
+            return Ok(new { userId, longestStreak = streak });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating streak for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while calculating streak" });
+        }
+    }
+
+    /// <summary>
+    /// Get weekly adherence summary
+    /// </summary>
+    [HttpGet("user/{userId}/weekly")]
+    public async Task<IActionResult> GetWeeklyAdherence(int userId)
+    {
+        try
+        {
+            var data = await _adherenceService.GetWeeklyAdherenceAsync(userId);
+            
+            return Ok(new
+            {
+                userId,
+                period = "Last 7 Days",
+                overallPercentage = data.OverallPercentage,
+                longestStreak = data.LongestStreak,
+                dailyData = data.DailyData
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting weekly adherence for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving adherence data" });
+        }
+    }
+
+    /// <summary>
+    /// Get monthly adherence summary
+    /// </summary>
+    [HttpGet("user/{userId}/monthly")]
+    public async Task<IActionResult> GetMonthlyAdherence(int userId)
+    {
+        try
+        {
+            var data = await _adherenceService.GetMonthlyAdherenceAsync(userId);
+            
+            return Ok(new
+            {
+                userId,
+                period = "Last 30 Days",
+                overallPercentage = data.OverallPercentage,
+                longestStreak = data.LongestStreak,
+                dailyData = data.DailyData
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting monthly adherence for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving adherence data" });
+        }
+    }
+}

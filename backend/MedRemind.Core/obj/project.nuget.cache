@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "BhKR9r/CmFo=",
+  "dgSpecHash": "DvyWTEU64M8=",
   "success": true,
   "projectFilePath": "C:\\Users\\rajib\\source\\repos\\MedRemind\\backend\\MedRemind.Core\\MedRemind.Core.csproj",
   "expectedPackageFiles": [
@@ -24,9 +24,7 @@
     "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.10\\sqlitepclraw.bundle_e_sqlite3.2.1.10.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.core\\2.1.10\\sqlitepclraw.core.2.1.10.nupkg.sha512",
     "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.10\\sqlitepclraw.lib.e_sqlite3.2.1.10.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.10\\sqlitepclraw.provider.e_sqlite3.2.1.10.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512",
-    "C:\\Users\\rajib\\.nuget\\packages\\system.text.json\\9.0.0\\system.text.json.9.0.0.nupkg.sha512"
+    "C:\\Users\\rajib\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.10\\sqlitepclraw.provider.e_sqlite3.2.1.10.nupkg.sha512"
   ],
   "logs": []
 }

@@ -1,16 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MedRemind.Core\MedRemind.Core.csproj" />
     <ProjectReference Include="..\MedRemind.Core\MedRemind.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Net.Http.Json" Version="10.0.1" />
-  </ItemGroup>
-
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

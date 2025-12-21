@@ -1,14 +1,41 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    x:Class="MedRemind.Mobile.AppShell"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:MedRemind.Mobile"
-    Title="MedRemind.Mobile">
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:MedRemind.Mobile.Views"
+       x:Class="MedRemind.Mobile.AppShell"
+       FlyoutBehavior="Disabled"
+       Shell.NavBarIsVisible="False">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <Tab Title="Home" 
+             Icon="home.png">
+            <ShellContent Route="HomePage"
+                         ContentTemplate="{DataTemplate views:HomePage}"/>
+        </Tab>
+
+        <Tab Title="Medications" 
+             Icon="pill.png">
+            <ShellContent Route="MedicationsPage"
+                         ContentTemplate="{DataTemplate views:MedicationsPage}"/>
+        </Tab>
+
+        <Tab Title="Upload" 
+             Icon="camera.png">
+            <ShellContent Route="PrescriptionUploadPage"
+                         ContentTemplate="{DataTemplate views:PrescriptionUploadPage}"/>
+        </Tab>
+
+        <Tab Title="Adherence" 
+             Icon="chart.png">
+            <ShellContent Route="AdherencePage"
+                         ContentTemplate="{DataTemplate views:AdherencePage}"/>
+        </Tab>
+
+        <Tab Title="Settings" 
+             Icon="settings.png">
+            <ShellContent Route="SettingsPage"
+                         ContentTemplate="{DataTemplate views:SettingsPage}"/>
+        </Tab>
+    </TabBar>
 
 </Shell>

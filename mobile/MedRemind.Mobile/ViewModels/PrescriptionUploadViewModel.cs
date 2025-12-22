@@ -39,6 +39,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
     private double _confidenceScore;
 
     private string? _imageBase64;
+    private string? _imagePath;
 
     public PrescriptionUploadViewModel(
         IPrescriptionReaderService prescriptionReader,
@@ -77,6 +78,10 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 }
             }
         }
+        catch (PermissionException)
+        {
+            ShowError("Camera permission denied. Please enable camera access in settings.");
+        }
         catch (Exception ex)
         {
             ShowError($"Error taking photo: {ex.Message}");
@@ -88,9 +93,16 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
     {
         try
         {
-            var results = await MediaPicker.Default.PickPhotosAsync();
-            var photo = results?.FirstOrDefault();
-            await ProcessPhotoAsync(photo);
+            var result = await MediaPicker.Default.PickPhotoAsync(new MediaPickerOptions
+            {
+                Title = "Select prescription image"
+            });
+            
+            await ProcessPhotoAsync(result);
+        }
+        catch (PermissionException)
+        {
+            ShowError("Storage permission denied. Please enable storage access in settings.");
         }
         catch (Exception ex)
         {
@@ -104,20 +116,29 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
         try
         {
-            using var stream = await photo.OpenReadAsync();
-            using var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream);
-            var bytes = memoryStream.ToArray();
+            // Save image to local storage
+            var localFilePath = Path.Combine(FileSystem.CacheDirectory, photo.FileName);
+            using (var sourceStream = await photo.OpenReadAsync())
+            using (var fileStream = File.Create(localFilePath))
+            {
+                await sourceStream.CopyToAsync(fileStream);
+            }
+
+            _imagePath = localFilePath;
+
+            // Convert to base64 for AI processing
+            var bytes = await File.ReadAllBytesAsync(localFilePath);
             _imageBase64 = Convert.ToBase64String(bytes);
 
-            SelectedImage = ImageSource.FromStream(() => new MemoryStream(bytes));
+            // Display preview
+            SelectedImage = ImageSource.FromFile(localFilePath);
             
             var page = GetCurrentPage();
             if (page != null)
             {
                 await page.DisplayAlertAsync(
                     "Photo Selected",
-                    "Ready to process. Tap 'Process Prescription' to extract medications.",
+                    "Ready to process. Tap 'Process with AI' to extract medications.",
                     "OK");
             }
         }
@@ -137,58 +158,82 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         }
 
         IsProcessing = true;
+        HasResult = false;
+        ResultMessage = string.Empty;
 
         await ExecuteAsync(async () =>
         {
-            // Save prescription to database
-            var prescription = new Prescription
+            try
             {
-                UserId = 1, // TODO: Get from secure storage
-                ImagePath = "base64_image", // In real app, save to file
-                PrescriptionDate = DateTime.UtcNow,
-                Status = "Processing",
-                CreatedAt = DateTime.UtcNow
-            };
+                // Get user ID from secure storage
+                var userIdString = await SecureStorage.GetAsync("UserId");
+                int userId = int.TryParse(userIdString, out var id) ? id : 1;
 
-            prescription = await _prescriptionService.AddPrescriptionAsync(prescription);
-
-            // Process with AI
-            var result = await _prescriptionReader.ReadPrescriptionAsync(_imageBase64);
-            Result = result;
-            ConfidenceScore = result.ConfidenceScore;
-            HasResult = true;
-
-            if (result.Success && result.Medications.Any())
-            {
-                ExtractedMedications = new ObservableCollection<MedicationData>(result.Medications);
-                
-                // Validate medications
-                var warnings = await _validationAgent.ValidateMedicationsAsync(result.Medications);
-                
-                // Update prescription status
-                await _prescriptionService.UpdatePrescriptionStatusAsync(
-                    prescription.Id,
-                    "Processed",
-                    null, // No RawResponse property in DTO
-                    result.ConfidenceScore);
-
-                if (warnings.Any())
+                // Save prescription to database
+                var prescription = new Prescription
                 {
-                    var warningMessages = warnings.Select(w => $"{w.MedicationName}: {w.Message}").ToList();
-                    ResultMessage = $"? Warnings:\n{string.Join("\n", warningMessages)}";
+                    UserId = userId,
+                    ImagePath = _imagePath ?? "base64_image",
+                    PrescriptionDate = DateTime.UtcNow,
+                    Status = "Processing",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                prescription = await _prescriptionService.AddPrescriptionAsync(prescription);
+
+                // Process with AI
+                var result = await _prescriptionReader.ReadPrescriptionFromBase64Async(_imageBase64);
+                Result = result;
+                ConfidenceScore = result.ConfidenceScore;
+                HasResult = true;
+
+                if (result.Success && result.Medications.Any())
+                {
+                    ExtractedMedications = new ObservableCollection<MedicationData>(result.Medications);
+                    
+                    // Update prescription with doctor and date info
+                    if (!string.IsNullOrEmpty(result.DoctorName))
+                    {
+                        prescription.DoctorName = result.DoctorName;
+                    }
+                    if (result.PrescriptionDate.HasValue)
+                    {
+                        prescription.PrescriptionDate = result.PrescriptionDate.Value;
+                    }
+
+                    // Update prescription status
+                    await _prescriptionService.UpdatePrescriptionStatusAsync(
+                        prescription.Id,
+                        "Processed",
+                        null,
+                        result.ConfidenceScore);
+
+                    // Check for warnings
+                    if (result.Warnings != null && result.Warnings.Any())
+                    {
+                        var warningMessages = result.Warnings
+                            .Select(w => $"• {w.MedicationName}: {w.Message}")
+                            .ToList();
+                        ResultMessage = $"?? Warnings:\n{string.Join("\n", warningMessages)}";
+                    }
+                    else
+                    {
+                        ResultMessage = "? All medications validated successfully!";
+                    }
                 }
                 else
                 {
-                    ResultMessage = "? All medications validated successfully!";
+                    ResultMessage = result.ErrorMessage ?? "Failed to extract medications. Please try again with a clearer image.";
+                    await _prescriptionService.UpdatePrescriptionStatusAsync(
+                        prescription.Id,
+                        "Failed",
+                        null);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                ResultMessage = result.ErrorMessage ?? "Failed to extract medications";
-                await _prescriptionService.UpdatePrescriptionStatusAsync(
-                    prescription.Id,
-                    "Failed",
-                    null); // No RawResponse property
+                ResultMessage = $"? Error: {ex.Message}";
+                HasResult = true;
             }
         });
 
@@ -206,34 +251,56 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
         await ExecuteAsync(async () =>
         {
-            int userId = 1; // TODO: Get from secure storage
+            var userIdString = await SecureStorage.GetAsync("UserId");
+            int userId = int.TryParse(userIdString, out var id) ? id : 1;
             int savedCount = 0;
 
             foreach (var medData in ExtractedMedications)
             {
-                // Create medication using MedicationService.CreateMedicationAsync
-                var savedMed = await _medicationService.CreateMedicationAsync(
-                    userId,
-                    medData);
+                try
+                {
+                    // Validate medication data
+                    if (string.IsNullOrWhiteSpace(medData.Name))
+                    {
+                        continue; // Skip invalid medications
+                    }
 
-                // Create reminders
-                await _medicationService.CreateRemindersAsync(savedMed.Id, medData.FrequencyCount);
+                    // Create medication
+                    var savedMed = await _medicationService.CreateMedicationAsync(userId, medData);
 
-                savedCount++;
+                    // Create reminders based on frequency
+                    await _medicationService.CreateRemindersAsync(savedMed.Id, medData.FrequencyCount);
+
+                    savedCount++;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error saving medication {medData.Name}: {ex.Message}");
+                }
             }
 
             var page = GetCurrentPage();
             if (page != null)
             {
-                await page.DisplayAlertAsync(
-                    "Success",
-                    $"Saved {savedCount} medication(s) with reminders!",
-                    "OK");
-            }
+                if (savedCount > 0)
+                {
+                    await page.DisplayAlertAsync(
+                        "Success",
+                        $"Saved {savedCount} medication(s) with reminders!",
+                        "OK");
 
-            // Clear and navigate to medications
-            ClearData();
-            await Shell.Current.GoToAsync("///MedicationsPage");
+                    // Clear and navigate to medications
+                    ClearData();
+                    await Shell.Current.GoToAsync("///MedicationsPage");
+                }
+                else
+                {
+                    await page.DisplayAlertAsync(
+                        "Error",
+                        "Failed to save medications. Please verify the extracted data and try again.",
+                        "OK");
+                }
+            }
         });
     }
 
@@ -245,14 +312,56 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         var page = GetCurrentPage();
         if (page == null) return;
 
-        var result = await page.DisplayPromptAsync(
+        // Edit medication name
+        var name = await page.DisplayPromptAsync(
+            "Edit Medication",
+            $"Medication name:",
+            initialValue: medication.Name);
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            medication.Name = name;
+        }
+
+        // Edit dosage
+        var dosage = await page.DisplayPromptAsync(
             "Edit Dosage",
-            $"Edit dosage for {medication.Name}:",
+            $"Dosage for {medication.Name}:",
             initialValue: medication.Dosage);
 
-        if (!string.IsNullOrWhiteSpace(result))
+        if (!string.IsNullOrWhiteSpace(dosage))
         {
-            medication.Dosage = result;
+            medication.Dosage = dosage;
+        }
+
+        // Edit frequency
+        var frequency = await page.DisplayPromptAsync(
+            "Edit Frequency",
+            $"Frequency (e.g., 'Twice daily'):",
+            initialValue: medication.Frequency);
+
+        if (!string.IsNullOrWhiteSpace(frequency))
+        {
+            medication.Frequency = frequency;
+        }
+
+        // Edit duration
+        var durationStr = await page.DisplayPromptAsync(
+            "Edit Duration",
+            $"Duration in days:",
+            initialValue: medication.DurationDays.ToString(),
+            keyboard: Keyboard.Numeric);
+
+        if (!string.IsNullOrWhiteSpace(durationStr) && int.TryParse(durationStr, out var duration))
+        {
+            medication.DurationDays = duration;
+        }
+
+        // Refresh the collection view
+        var index = ExtractedMedications.IndexOf(medication);
+        if (index >= 0)
+        {
+            ExtractedMedications[index] = medication;
         }
     }
 
@@ -266,5 +375,19 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         ResultMessage = string.Empty;
         ConfidenceScore = 0;
         _imageBase64 = null;
+        _imagePath = null;
+
+        // Clean up cached image
+        if (!string.IsNullOrEmpty(_imagePath) && File.Exists(_imagePath))
+        {
+            try
+            {
+                File.Delete(_imagePath);
+            }
+            catch
+            {
+                // Ignore file deletion errors
+            }
+        }
     }
 }

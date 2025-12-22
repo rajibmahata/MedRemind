@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MedRemind.Mobile")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+f999b85168809971efa2471ab35faa412b32f47a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+2d046c868897bfc72def79c9b99d30f952247079")]
 [assembly: System.Reflection.AssemblyProductAttribute("MedRemind.Mobile")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MedRemind.Mobile")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

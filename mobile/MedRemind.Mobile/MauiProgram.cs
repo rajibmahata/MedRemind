@@ -45,7 +45,22 @@ public static class MauiProgram
         builder.Services.AddSingleton<IValidationAgentService, MedicineValidationAgent>();
         
         builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-        builder.Services.AddScoped<IPrescriptionReaderService, OpenAIPrescriptionReaderService>();
+        
+        // Register HttpClient as singleton
+        builder.Services.AddSingleton<HttpClient>();
+        
+        // Register OpenAIPrescriptionReaderService with factory to inject HttpClient and API key
+        builder.Services.AddScoped<IPrescriptionReaderService>(sp =>
+        {
+            var httpClient = sp.GetRequiredService<HttpClient>();
+            var validationAgent = sp.GetRequiredService<IValidationAgentService>();
+            
+            // TODO: Replace with your actual OpenAI API key or load from secure storage/config
+            var apiKey = "your-openai-api-key-here";
+            
+            return new OpenAIPrescriptionReaderService(httpClient, apiKey, validationAgent);
+        });
+        
         builder.Services.AddScoped<MedicationService>();
         builder.Services.AddScoped<AdherenceService>();
         builder.Services.AddScoped<PrescriptionService>();

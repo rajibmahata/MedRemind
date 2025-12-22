@@ -10,7 +10,7 @@
         <VerticalStackLayout Padding="16" Spacing="16">
             
             <!-- Header -->
-            <Label Text="?? AI Prescription Scanner"
+            <Label Text="📋 Prescription Scanner"
                    Style="{StaticResource HeaderLabel}"/>
             
             <Label Text="Take a photo or select from gallery to extract medication details automatically"
@@ -19,7 +19,7 @@
             <!-- Image Selection -->
             <Frame Style="{StaticResource CardFrame}">
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Step 1: Select Image"
+                    <Label Text="Step 1: Select Scanned Prescription Image"
                            Style="{StaticResource SubHeaderLabel}"/>
 
                     <!-- Image Preview -->
@@ -34,12 +34,12 @@
 
                     <!-- Image Selection Buttons -->
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <Button Text="?? Camera"
+                        <Button Text="📷 Camera"
                                Command="{Binding TakePhotoCommand}"
                                Style="{StaticResource PrimaryButton}"/>
 
                         <Button Grid.Column="1"
-                               Text="??? Gallery"
+                               Text="🖼️ Gallery"
                                Command="{Binding PickPhotoCommand}"
                                Style="{StaticResource SecondaryButton}"/>
                     </Grid>
@@ -53,7 +53,7 @@
                     <Label Text="Step 2: Process"
                            Style="{StaticResource SubHeaderLabel}"/>
 
-                    <Button Text="?? Process with AI"
+                    <Button Text="🤖 Process with AI"
                            Command="{Binding ProcessPrescriptionCommand}"
                            Style="{StaticResource PrimaryButton}"
                            IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
@@ -160,12 +160,12 @@
                     <!-- Save Buttons -->
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12"
                           IsVisible="{Binding ExtractedMedications.Count, Converter={StaticResource IntToBoolConverter}}">
-                        <Button Text="?? Save All"
+                        <Button Text="💾 Save All"
                                Command="{Binding SaveMedicationsCommand}"
                                Style="{StaticResource PrimaryButton}"/>
 
                         <Button Grid.Column="1"
-                               Text="?? Try Again"
+                               Text="🔄 Try Again"
                                Command="{Binding ClearDataCommand}"
                                Style="{StaticResource SecondaryButton}"/>
                     </Grid>
@@ -176,19 +176,24 @@
             <Frame Style="{StaticResource CardFrame}"
                    BackgroundColor="{StaticResource PrimaryLight}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="?? Tips for Best Results"
+                    <Label Text="💡 Tips for Best Results"
                            FontAttributes="Bold"
                            TextColor="{StaticResource PrimaryDark}"/>
                     
-                    <Label TextColor="{StaticResource PrimaryDark}"
-                           FontSize="12">
-                        <Label.Text>
-� Ensure good lighting
-� Keep prescription flat
-� Capture all medication details
-� Avoid shadows and glare
-                        </Label.Text>
-                    </Label>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="✓ Ensure good lighting"
+                               TextColor="{StaticResource PrimaryDark}"
+                               FontSize="14"/>
+                        <Label Text="✓ Keep prescription flat"
+                               TextColor="{StaticResource PrimaryDark}"
+                               FontSize="14"/>
+                        <Label Text="✓ Capture all medication details"
+                               TextColor="{StaticResource PrimaryDark}"
+                               FontSize="14"/>
+                        <Label Text="✓ Avoid shadows and glare"
+                               TextColor="{StaticResource PrimaryDark}"
+                               FontSize="14"/>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
             </Frame>
 

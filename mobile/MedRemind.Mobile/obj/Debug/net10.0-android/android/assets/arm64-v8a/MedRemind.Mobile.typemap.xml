@@ -1,0 +1,10 @@
+<api type="debug" assembly-name="MedRemind.Mobile" mvid="5fa35357ce8c41b09f7178447b0f9295">
+  <java-to-managed>
+    <entry java-name="crc647bcc42e42994a7b4/MainActivity" managed-name="MedRemind.Mobile.MainActivity, MedRemind.Mobile" managed-type-token-id="33554454" />
+    <entry java-name="crc647bcc42e42994a7b4/MainApplication" managed-name="MedRemind.Mobile.MainApplication, MedRemind.Mobile" managed-type-token-id="33554455" />
+  </java-to-managed>
+  <managed-to-java>
+    <entry java-name="crc647bcc42e42994a7b4/MainActivity" managed-name="MedRemind.Mobile.MainActivity, MedRemind.Mobile" managed-type-token-id="33554454" />
+    <entry java-name="crc647bcc42e42994a7b4/MainApplication" managed-name="MedRemind.Mobile.MainApplication, MedRemind.Mobile" managed-type-token-id="33554455" />
+  </managed-to-java>
+</api>

@@ -165,9 +165,8 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         {
             try
             {
-                // Get user ID from secure storage
-                var userIdString = await SecureStorage.GetAsync("UserId");
-                int userId = int.TryParse(userIdString, out var id) ? id : 1;
+                // Get user ID safely
+                var userId = await GetCurrentUserIdAsync();
 
                 // Save prescription to database
                 var prescription = new Prescription
@@ -251,8 +250,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
         await ExecuteAsync(async () =>
         {
-            var userIdString = await SecureStorage.GetAsync("UserId");
-            int userId = int.TryParse(userIdString, out var id) ? id : 1;
+            var userId = await GetCurrentUserIdAsync();
             int savedCount = 0;
 
             foreach (var medData in ExtractedMedications)

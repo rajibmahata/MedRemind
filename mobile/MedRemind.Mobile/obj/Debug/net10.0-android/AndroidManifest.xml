@@ -7,8 +7,15 @@
     -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" package="com.medremind.app" android:versionName="1.0">
   <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="36" />
-  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.CAMERA" />
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-feature android:name="android.hardware.camera" android:required="false" />
   <application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true" android:label="MedRemind" android:name="crc647bcc42e42994a7b4.MainApplication" android:debuggable="true" android:extractNativeLibs="true">
     <activity android:configChanges="density|orientation|smallestScreenSize|screenLayout|screenSize|uiMode" android:launchMode="singleTop" android:theme="@style/Maui.SplashTheme" android:name="crc647bcc42e42994a7b4.MainActivity" android:exported="true">
       <intent-filter>
@@ -27,4 +34,8 @@
     <service android:name="crc64396a3fe5f8138e3f.KeepAliveService" />
     <provider android:name="mono.MonoRuntimeProvider" android:exported="false" android:initOrder="1999999999" android:authorities="com.medremind.app.mono.MonoRuntimeProvider.__mono_init__" />
   </application>
+  <!-- Network -->
+  <!-- Camera -->
+  <!-- Storage/Gallery -->
+  <!-- Notifications -->
 </manifest>

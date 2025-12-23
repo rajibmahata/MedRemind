@@ -31,7 +31,27 @@ public partial class BaseViewModel : ObservableObject
 
     protected Page? GetCurrentPage()
     {
-        return Application.Current?.Windows?.FirstOrDefault()?.Page;
+        return Application.Current?.MainPage;
+    }
+
+    /// <summary>
+    /// Get the current logged-in user ID from secure storage
+    /// </summary>
+    protected async Task<int> GetCurrentUserIdAsync()
+    {
+        var userIdString = await SecureStorage.GetAsync("user_id");
+
+        if (string.IsNullOrEmpty(userIdString))
+        {
+            throw new InvalidOperationException("User not logged in. Please login first.");
+        }
+
+        if (!int.TryParse(userIdString, out var userId) || userId <= 0)
+        {
+            throw new InvalidOperationException("Invalid user ID. Please login again.");
+        }
+
+        return userId;
     }
 
     protected async Task ExecuteAsync(Func<Task> operation, string? loadingMessage = null)

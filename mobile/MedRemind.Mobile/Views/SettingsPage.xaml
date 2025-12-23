@@ -19,7 +19,7 @@
                            Style="{StaticResource SubHeaderLabel}"/>
                     
                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*">
-                        <Label Text="??"
+                        <Label Text="👤"
                               FontSize="48"
                               Grid.RowSpan="2"/>
                         

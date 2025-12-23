@@ -4,6 +4,87 @@
         <name>MedRemind.Mobile</name>
     </assembly>
     <members>
+        <member name="T:MedRemind.Mobile.Services.BiometricService">
+            <summary>
+            Simple biometric service implementation
+            Note: Full biometric implementation requires platform-specific code
+            For now, this provides a stub that can be extended
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.EmbeddedConfigurationLoader">
+            <summary>
+            Loads configuration from embedded appsettings.json
+            Configuration is embedded in app binary and encrypted at runtime
+            Not accessible after app installation
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.LoadConfiguration">
+            <summary>
+            Load configuration from embedded resource
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetEnvironmentConfig(System.String)">
+            <summary>
+            Get API keys for specific environment
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetActiveEnvironmentConfig">
+            <summary>
+            Get active environment configuration
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetOpenAIApiKey">
+            <summary>
+            Get OpenAI API key for active environment
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetTwoFactorApiKey">
+            <summary>
+            Get 2Factor API key for active environment
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.IsFeatureEnabled(System.String)">
+            <summary>
+            Check if feature is enabled for active environment
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.EmbeddedConfiguration">
+            <summary>
+            Root configuration model
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.EnvironmentConfiguration">
+            <summary>
+            Environment-specific configuration
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.OpenAIConfiguration">
+            <summary>
+            OpenAI API configuration
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.TwoFactorConfiguration">
+            <summary>
+            2Factor API configuration
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.FeaturesConfiguration">
+            <summary>
+            Feature flags configuration
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.EnvironmentConfigService">
+            <summary>
+            Environment-specific configuration service with encrypted storage
+            Keys are stored per environment and encrypted with AES-256
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.SecureConfigurationService">
+            <summary>
+            Secure configuration service with AES-256 encryption for sensitive data
+            Stores configuration in encrypted format in SecureStorage
+            </summary>
+        </member>
         <member name="T:MedRemind.Mobile.ViewModels.AdherenceViewModel">
             <inheritdoc/>
             <inheritdoc/>
@@ -57,6 +138,11 @@
         </member>
         <member name="T:MedRemind.Mobile.ViewModels.BaseViewModel">
             <inheritdoc/>
+        </member>
+        <member name="M:MedRemind.Mobile.ViewModels.BaseViewModel.GetCurrentUserIdAsync">
+            <summary>
+            Get the current logged-in user ID from secure storage
+            </summary>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.BaseViewModel.IsBusy">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.BaseViewModel._isBusy"/>
@@ -134,6 +220,7 @@
             <inheritdoc/>
             <inheritdoc/>
             <inheritdoc/>
+            <inheritdoc/>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.LoginViewModel.PhoneNumber">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.LoginViewModel._phoneNumber"/>
@@ -149,6 +236,21 @@
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.LoginViewModel.ButtonText">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.LoginViewModel._buttonText"/>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.LoginViewModel.BiometricAvailable">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.LoginViewModel._biometricAvailable"/>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.LoginViewModel.ShowBiometricButton">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.LoginViewModel._showBiometricButton"/>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.LoginViewModel.BiometricButtonText">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.LoginViewModel._biometricButtonText"/>
+        </member>
+        <member name="F:MedRemind.Mobile.ViewModels.LoginViewModel.biometricLoginCommand">
+            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.LoginViewModel.BiometricLoginCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.LoginViewModel.BiometricLoginCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.LoginViewModel.BiometricLoginAsync"/>.</summary>
         </member>
         <member name="F:MedRemind.Mobile.ViewModels.LoginViewModel.sendOtpCommand">
             <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.LoginViewModel.SendOtpCommand"/>.</summary>
@@ -635,6 +737,15 @@
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ButtonText">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ButtonText" generated properties.</summary>
         </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.BiometricAvailable">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "BiometricAvailable" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ShowBiometricButton">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ShowBiometricButton" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.BiometricButtonText">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "BiometricButtonText" generated properties.</summary>
+        </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Medications">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Medications" generated properties.</summary>
         </member>
@@ -769,6 +880,15 @@
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ButtonText">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ButtonText" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.BiometricAvailable">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "BiometricAvailable" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ShowBiometricButton">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ShowBiometricButton" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.BiometricButtonText">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "BiometricButtonText" generated properties.</summary>
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Medications">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Medications" generated properties.</summary>

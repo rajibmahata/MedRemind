@@ -6,6 +6,11 @@
        FlyoutBehavior="Disabled"
        Shell.NavBarIsVisible="False">
 
+    <!-- Login Page (No Tabs) -->
+    <ShellContent Route="LoginPage"
+                  ContentTemplate="{DataTemplate views:LoginPage}"
+                  Shell.TabBarIsVisible="False"/>
+
     <TabBar>
         <Tab Title="Home" 
              Icon="home.png">

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MedRemind.Services")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98ad499637e29b59c31bece8a0e53b0f92d35834")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bea48fd2400ad38bdeb4b936a24a34b3eee156a6")]
 [assembly: System.Reflection.AssemblyProductAttribute("MedRemind.Services")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MedRemind.Services")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Maui;
+using MedRemind.Core.Configuration;
 using MedRemind.Core.Data;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Repositories;
+using MedRemind.Mobile.Services;
 using MedRemind.Services.AI;
 using MedRemind.Services.Authentication;
 using MedRemind.Services.Medications;
@@ -33,34 +35,74 @@ public static class MauiProgram
         builder.Services.AddDbContext<MedRemindDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
+        // Configuration Service (must be registered first)
+        builder.Services.AddSingleton<IConfigurationService, SecureConfigurationService>();
+        builder.Services.AddSingleton<IEnvironmentConfigService, EnvironmentConfigService>();
+
         // Repository & Unit of Work
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Services
         builder.Services.AddSingleton<ISecureStorageService, SecureStorageService>();
-        builder.Services.AddSingleton<IAudioService, AudioService>();
-        builder.Services.AddSingleton<INotificationService, LocalNotificationService>();
+        builder.Services.AddSingleton<IBiometricService, BiometricService>();
         builder.Services.AddSingleton<IReminderSchedulingService, ReminderSchedulingService>();
         builder.Services.AddSingleton<IValidationAgentService, MedicineValidationAgent>();
-        
-        builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-        
-        // Register HttpClient as singleton
-        builder.Services.AddSingleton<HttpClient>();
-        
-        // Register OpenAIPrescriptionReaderService with factory to inject HttpClient and API key
+
+        // Register AuthenticationService with 2Factor API key from embedded config
+        builder.Services.AddScoped<IAuthenticationService>(sp =>
+        {
+            var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
+            var secureStorage = sp.GetRequiredService<ISecureStorageService>();
+            var httpClient = sp.GetRequiredService<HttpClient>();
+            
+            // Load 2Factor API key from embedded configuration
+            var twoFactorApiKey = EmbeddedConfigurationLoader.GetTwoFactorApiKey();
+            
+            if (string.IsNullOrEmpty(twoFactorApiKey) || twoFactorApiKey.Contains("_KEY_HERE"))
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ WARNING: 2Factor API key not configured in appsettings.json");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"✅ 2Factor API key loaded from embedded config");
+            }
+            
+            return new AuthenticationService(unitOfWork, secureStorage, twoFactorApiKey, httpClient);
+        });
+
+        // Register HttpClient with configuration-based timeout
+        builder.Services.AddSingleton<HttpClient>(sp =>
+        {
+            var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30) // Default, can be overridden
+            };
+            return httpClient;
+        });
+
+        // Register OpenAIPrescriptionReaderService with embedded configuration
         builder.Services.AddScoped<IPrescriptionReaderService>(sp =>
         {
             var httpClient = sp.GetRequiredService<HttpClient>();
             var validationAgent = sp.GetRequiredService<IValidationAgentService>();
             
-            // TODO: Replace with your actual OpenAI API key or load from secure storage/config
-            var apiKey = "your-openai-api-key-here";
+            // Load API key from embedded configuration
+            var apiKey = EmbeddedConfigurationLoader.GetOpenAIApiKey();
+            
+            if (string.IsNullOrEmpty(apiKey) || apiKey.Contains("_KEY_HERE"))
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ WARNING: OpenAI API key not configured in appsettings.json");
+            }
+            else
+            {
+                var activeEnv = EmbeddedConfigurationLoader.LoadConfiguration().ActiveEnvironment;
+                System.Diagnostics.Debug.WriteLine($"✅ OpenAI API key loaded from embedded config for environment: {activeEnv}");
+            }
             
             return new OpenAIPrescriptionReaderService(httpClient, apiKey, validationAgent);
         });
-        
+
         builder.Services.AddScoped<MedicationService>();
         builder.Services.AddScoped<AdherenceService>();
         builder.Services.AddScoped<PrescriptionService>();
@@ -95,6 +137,34 @@ public static class MauiProgram
             var context = scope.ServiceProvider.GetRequiredService<MedRemindDbContext>();
             context.Database.EnsureCreated();
         }
+
+        // Initialize configuration on first launch
+        Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = app.Services.CreateScope();
+                var configService = scope.ServiceProvider.GetRequiredService<IConfigurationService>();
+                await configService.InitializeAsync();
+                System.Diagnostics.Debug.WriteLine("✅ Configuration initialized successfully");
+                
+                // Load and validate embedded configuration
+                var embeddedConfig = EmbeddedConfigurationLoader.LoadConfiguration();
+                System.Diagnostics.Debug.WriteLine($"✅ Embedded configuration loaded - Active Environment: {embeddedConfig.ActiveEnvironment}");
+                
+                // Log available environments
+                foreach (var env in embeddedConfig.Environments.Keys)
+                {
+                    var envConfig = embeddedConfig.Environments[env];
+                    var hasOpenAI = !string.IsNullOrEmpty(envConfig.OpenAI.ApiKey) && !envConfig.OpenAI.ApiKey.Contains("_KEY_HERE");
+                    System.Diagnostics.Debug.WriteLine($"  - {env}: OpenAI configured = {hasOpenAI}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Configuration initialization failed: {ex.Message}");
+            }
+        }).Wait();
 
         return app;
     }

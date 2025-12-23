@@ -115,6 +115,27 @@
                             FontAttributes="Bold"
                             Margin="0,10,0,0"/>
 
+                    <!-- Biometric Login Button -->
+                    <Button Text="{Binding BiometricButtonText}"
+                            Command="{Binding BiometricLoginCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource Primary}"
+                            BorderColor="{StaticResource Primary}"
+                            BorderWidth="2"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            IsVisible="{Binding ShowBiometricButton}"
+                            Margin="0,5,0,0"/>
+
+                    <!-- OR Divider -->
+                    <Grid ColumnDefinitions="*,Auto,*" IsVisible="{Binding ShowBiometricButton}" Margin="0,5">
+                        <BoxView Color="{StaticResource Gray300}" HeightRequest="1" VerticalOptions="Center"/>
+                        <Label Grid.Column="1" Text="OR" FontSize="12" TextColor="{StaticResource Gray600}" Margin="10,0"/>
+                        <BoxView Grid.Column="2" Color="{StaticResource Gray300}" HeightRequest="1" VerticalOptions="Center"/>
+                    </Grid>
+
                     <!-- Loading Indicator -->
                     <ActivityIndicator IsRunning="{Binding IsBusy}"
                                      IsVisible="{Binding IsBusy}"

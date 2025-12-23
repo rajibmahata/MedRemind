@@ -25,8 +25,12 @@ public interface IAuthenticationService
 public interface IBiometricService
 {
     Task<bool> IsBiometricAvailableAsync();
+    Task<bool> IsBiometricEnabledAsync();
+    Task<bool> EnableBiometricAsync();
+    Task DisableBiometricAsync();
     Task<(bool Success, string? ErrorMessage)> AuthenticateAsync(string reason, CancellationToken cancellationToken = default);
     Task<bool> EnrollBiometricAsync();
+    Task<string> GetBiometricTypeAsync();
 }
 
 public interface ISecureStorageService

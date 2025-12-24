@@ -108,6 +108,33 @@ public class EmbeddedConfigurationLoader
     }
 
     /// <summary>
+    /// Get 2Factor Send OTP URL for active environment
+    /// </summary>
+    public static string GetTwoFactorSendOtpUrl()
+    {
+        var config = GetActiveEnvironmentConfig();
+        return config.TwoFactor.SendOtpUrl;
+    }
+
+    /// <summary>
+    /// Get 2Factor Verify OTP URL for active environment
+    /// </summary>
+    public static string GetTwoFactorVerifyOtpUrl()
+    {
+        var config = GetActiveEnvironmentConfig();
+        return config.TwoFactor.VerifyOtpUrl;
+    }
+
+    /// <summary>
+    /// Get 2Factor OTP Template for active environment
+    /// </summary>
+    public static string GetTwoFactorOtpTemplate()
+    {
+        var config = GetActiveEnvironmentConfig();
+        return config.TwoFactor.OtpTemplate;
+    }
+
+    /// <summary>
     /// Check if feature is enabled for active environment
     /// </summary>
     public static bool IsFeatureEnabled(string featureName)
@@ -215,6 +242,9 @@ public class OpenAIConfiguration
 public class TwoFactorConfiguration
 {
     public string ApiKey { get; set; } = string.Empty;
+    public string SendOtpUrl { get; set; } = string.Empty;
+    public string VerifyOtpUrl { get; set; } = string.Empty;
+    public string OtpTemplate { get; set; } = "OTP1";
     public int TimeoutSeconds { get; set; } = 10;
 }
 

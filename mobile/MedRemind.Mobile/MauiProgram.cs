@@ -56,8 +56,11 @@ public static class MauiProgram
             var secureStorage = sp.GetRequiredService<ISecureStorageService>();
             var httpClient = sp.GetRequiredService<HttpClient>();
             
-            // Load 2Factor API key from embedded configuration
+            // Load 2Factor configuration from embedded configuration
             var twoFactorApiKey = EmbeddedConfigurationLoader.GetTwoFactorApiKey();
+            var sendOtpUrl = EmbeddedConfigurationLoader.GetTwoFactorSendOtpUrl();
+            var verifyOtpUrl = EmbeddedConfigurationLoader.GetTwoFactorVerifyOtpUrl();
+            var otpTemplate = EmbeddedConfigurationLoader.GetTwoFactorOtpTemplate();
             
             if (string.IsNullOrEmpty(twoFactorApiKey) || twoFactorApiKey.Contains("_KEY_HERE"))
             {
@@ -65,10 +68,15 @@ public static class MauiProgram
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"✅ 2Factor API key loaded from embedded config");
+                System.Diagnostics.Debug.WriteLine($"✅ 2Factor API configured:");
+                System.Diagnostics.Debug.WriteLine($"   API Key: {twoFactorApiKey.Substring(0, 8)}...");
+                System.Diagnostics.Debug.WriteLine($"   Send URL: {sendOtpUrl}");
+                System.Diagnostics.Debug.WriteLine($"   Verify URL: {verifyOtpUrl}");
+                System.Diagnostics.Debug.WriteLine($"   Template: {otpTemplate}");
             }
             
-            return new AuthenticationService(unitOfWork, secureStorage, twoFactorApiKey, httpClient);
+            return new AuthenticationService(unitOfWork, secureStorage, twoFactorApiKey, httpClient, 
+                sendOtpUrl, verifyOtpUrl, otpTemplate);
         });
 
         // Register HttpClient with configuration-based timeout

@@ -43,6 +43,21 @@
             Get 2Factor API key for active environment
             </summary>
         </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetTwoFactorSendOtpUrl">
+            <summary>
+            Get 2Factor Send OTP URL for active environment
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetTwoFactorVerifyOtpUrl">
+            <summary>
+            Get 2Factor Verify OTP URL for active environment
+            </summary>
+        </member>
+        <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.GetTwoFactorOtpTemplate">
+            <summary>
+            Get 2Factor OTP Template for active environment
+            </summary>
+        </member>
         <member name="M:MedRemind.Mobile.Services.EmbeddedConfigurationLoader.IsFeatureEnabled(System.String)">
             <summary>
             Check if feature is enabled for active environment

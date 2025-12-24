@@ -4,9 +4,18 @@ namespace MedRemind.Mobile.Views;
 
 public partial class PrescriptionUploadPage : ContentPage
 {
+    private readonly PrescriptionUploadViewModel _viewModel;
+
     public PrescriptionUploadPage(PrescriptionUploadViewModel viewModel)
     {
         InitializeComponent();
-        BindingContext = viewModel;
+        _viewModel = viewModel;
+        BindingContext = _viewModel;
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        _viewModel.OnAppearing();
     }
 }

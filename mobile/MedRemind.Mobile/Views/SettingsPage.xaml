@@ -81,15 +81,34 @@
                             <Label Text="Biometric Authentication"
                                   FontAttributes="Bold"
                                   Style="{StaticResource BodyLabel}"/>
-                            <Label Text="Use fingerprint or face to unlock"
+                            <Label Text="{Binding BiometricType}"
                                   FontSize="12"
-                                  TextColor="{StaticResource Gray600}"/>
+                                  TextColor="{StaticResource Gray600}"
+                                  IsVisible="{Binding BiometricAvailable}"/>
+                            <Label Text="Not available on this device"
+                                  FontSize="12"
+                                  TextColor="{StaticResource Error}"
+                                  IsVisible="{Binding BiometricAvailable, Converter={StaticResource InvertedBoolConverter}}"/>
                         </VerticalStackLayout>
                         <Switch Grid.Column="1"
                                IsToggled="{Binding BiometricEnabled}"
                                Command="{Binding ToggleBiometricCommand}"
                                OnColor="{StaticResource Primary}"
+                               IsEnabled="{Binding BiometricAvailable}"
                                VerticalOptions="Center"/>
+                    </Grid>
+
+                    <BoxView HeightRequest="1"
+                            Color="{StaticResource Gray300}"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Auto-logout after inactivity"
+                              VerticalOptions="Center"
+                              Style="{StaticResource BodyLabel}"/>
+                        <Label Grid.Column="1"
+                              Text="30 days"
+                              TextColor="{StaticResource Gray600}"
+                              VerticalOptions="Center"/>
                     </Grid>
                 </VerticalStackLayout>
             </Frame>

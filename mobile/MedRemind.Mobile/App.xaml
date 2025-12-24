@@ -16,6 +16,7 @@
             <converters:IntToBoolConverter x:Key="IntToBoolConverter"/>
             <converters:StringEqualConverter x:Key="StringEqualConverter"/>
             <converters:PeriodToColorConverter x:Key="PeriodToColorConverter"/>
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             
             <!-- Colors -->
             <Color x:Key="Primary">#4CAF50</Color>

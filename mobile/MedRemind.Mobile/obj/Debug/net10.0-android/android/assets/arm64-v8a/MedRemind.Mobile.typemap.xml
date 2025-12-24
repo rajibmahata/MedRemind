@@ -1,4 +1,4 @@
-<api type="debug" assembly-name="MedRemind.Mobile" mvid="98ba68c7e7a54be2997bc3af0b4849b3">
+<api type="debug" assembly-name="MedRemind.Mobile" mvid="75610fcbbaca4f6bb695a9fef80d70b6">
   <java-to-managed>
     <entry java-name="crc647bcc42e42994a7b4/MainActivity" managed-name="MedRemind.Mobile.MainActivity, MedRemind.Mobile" managed-type-token-id="33554454" />
     <entry java-name="crc647bcc42e42994a7b4/MainApplication" managed-name="MedRemind.Mobile.MainApplication, MedRemind.Mobile" managed-type-token-id="33554455" />

@@ -48,6 +48,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IBiometricService, BiometricService>();
         builder.Services.AddSingleton<IReminderSchedulingService, ReminderSchedulingService>();
         builder.Services.AddSingleton<IValidationAgentService, MedicineValidationAgent>();
+        builder.Services.AddSingleton<INotificationService, LocalNotificationService>();
 
         // Register AuthenticationService with 2Factor API key from embedded config
         builder.Services.AddScoped<IAuthenticationService>(sp =>

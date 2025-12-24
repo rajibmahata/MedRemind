@@ -170,6 +170,7 @@ public partial class LoginViewModel : BaseViewModel
                     }
                 }
 
+                System.Diagnostics.Debug.WriteLine("? Login successful - navigating to HomePage");
                 await Shell.Current.GoToAsync("///HomePage");
             }
             else

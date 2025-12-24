@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using MedRemind.Core.Interfaces;
@@ -38,7 +38,7 @@ public class AuthenticationService : IAuthenticationService
     }
 
     public async Task<(bool Success, string? ErrorMessage)> SendOtpAsync(
-        string phoneNumber, 
+        string phoneNumber,
         CancellationToken cancellationToken = default)
     {
         try
@@ -55,6 +55,9 @@ public class AuthenticationService : IAuthenticationService
             // Generate random 6-digit OTP
             var otp = GenerateOtp();
 
+            // Log OTP for development/testing purposes
+            System.Diagnostics.Debug.WriteLine($"🔐 Generated OTP: {otp} for phone number: {phoneNumber}");
+
             // Build URL from template
             // URL format: https://2factor.in/API/V1/{apiKey}/SMS/{phoneNumber}/{otpValue}/{templateName}
             var url = _sendOtpUrl
@@ -63,27 +66,30 @@ public class AuthenticationService : IAuthenticationService
                 .Replace("{otpValue}", otp)
                 .Replace("{templateName}", _otpTemplate);
 
-            System.Diagnostics.Debug.WriteLine($"?? Sending OTP to {phoneNumber}");
+            System.Diagnostics.Debug.WriteLine($"📤 Sending OTP to {phoneNumber}");
 
-            // Call 2Factor.in API
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            // Remove: Simulate API response for testing without actual HTTP call
+            //// Call 2Factor.in API
+            //var response = await _httpClient.GetAsync(url, cancellationToken);
+            //var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            string content = "{\"Status\":\"Success\",\"Details\":\"SIMULATED_SESSION_ID_123456\"}";
+            //System.Diagnostics.Debug.WriteLine($"📥 2Factor Response: {content}");
 
-            System.Diagnostics.Debug.WriteLine($"?? 2Factor Response: {content}");
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    return (false, $"Failed to send OTP. Please try again.");
+            //}
 
-            if (!response.IsSuccessStatusCode)
-            {
-                return (false, $"Failed to send OTP. Please try again.");
-            }
-
-            // Parse response to get session ID
             try
             {
+                // Parse response to get session ID
                 var jsonResponse = JsonSerializer.Deserialize<TwoFactorSendResponse>(content);
+
                 if (jsonResponse?.Status == "Success")
                 {
                     _lastSessionId = jsonResponse.Details;
-                    System.Diagnostics.Debug.WriteLine($"? OTP sent successfully. Session ID: {_lastSessionId}");
+                    System.Diagnostics.Debug.WriteLine($"✅ OTP sent successfully. Session ID: {_lastSessionId}");
+
                     return (true, null);
                 }
                 else
@@ -103,14 +109,14 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"? Error sending OTP: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"❌ Error sending OTP: {ex.Message}");
             return (false, $"Error sending OTP: {ex.Message}");
         }
     }
 
     public async Task<(bool Success, string? Token, string? ErrorMessage)> VerifyOtpAsync(
-        string phoneNumber, 
-        string otp, 
+        string phoneNumber,
+        string otp,
         CancellationToken cancellationToken = default)
     {
         try
@@ -133,40 +139,48 @@ public class AuthenticationService : IAuthenticationService
                 .Replace("{phoneNumber}", phoneNumber) // Don't add +91 for verify endpoint
                 .Replace("{otpValue}", otp);
 
-            System.Diagnostics.Debug.WriteLine($"?? Verifying OTP for {phoneNumber}");
+            System.Diagnostics.Debug.WriteLine($"🔍 Verifying OTP for {phoneNumber}");
 
-            // Call 2Factor.in verify API
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            System.Diagnostics.Debug.WriteLine($"?? Verify Response: {content}");
+            // Remove: Simulate API response for testing without actual HTTP call
+            //// Call 2Factor.in verify API
+            //var response = await _httpClient.GetAsync(url, cancellationToken);
+            //var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            string content = "{\"Status\":\"Success\",\"Details\":\"OTP Matched\"}";
+            //System.Diagnostics.Debug.WriteLine($"📥 Verify Response: {content}");
 
             // Parse response
             try
             {
                 var jsonResponse = JsonSerializer.Deserialize<TwoFactorVerifyResponse>(content);
-                
+
+
                 if (jsonResponse?.Status == "Success" && jsonResponse?.Details == "OTP Matched")
                 {
-                    System.Diagnostics.Debug.WriteLine("? OTP verified successfully");
-                    
+                    System.Diagnostics.Debug.WriteLine("✅ OTP verified successfully");
+
                     // Find or create user
                     var userRepo = _unitOfWork.Repository<User>();
                     var user = await userRepo.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
 
                     if (user == null)
                     {
+                        // Create new user
                         user = new User
                         {
                             PhoneNumber = phoneNumber,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.UtcNow,
+                            LastLoginAt = DateTime.UtcNow
                         };
                         await userRepo.AddAsync(user);
-                        System.Diagnostics.Debug.WriteLine($"?? New user created: {phoneNumber}");
+                        await _unitOfWork.SaveChangesAsync(); // Save first to get ID
+                        System.Diagnostics.Debug.WriteLine($"👤 New user created: {phoneNumber} with ID: {user.Id}");
+                    }
+                    else
+                    {
+                        // Update existing user
+                        user.LastLoginAt = DateTime.UtcNow;
                     }
 
-                    user.LastLoginAt = DateTime.UtcNow;
-                    
                     // Generate session token
                     var token = await GenerateSessionTokenAsync(user.Id);
                     user.SessionToken = token;
@@ -179,7 +193,7 @@ public class AuthenticationService : IAuthenticationService
                     await _secureStorage.SetAsync("user_id", user.Id.ToString());
                     await _secureStorage.SetAsync("phone_number", phoneNumber);
 
-                    System.Diagnostics.Debug.WriteLine($"? User logged in: {user.Id}");
+                    System.Diagnostics.Debug.WriteLine($"✅ User logged in: {user.Id}");
 
                     return (true, token, null);
                 }
@@ -199,15 +213,22 @@ public class AuthenticationService : IAuthenticationService
 
                     if (user == null)
                     {
+                        // Create new user
                         user = new User
                         {
                             PhoneNumber = phoneNumber,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.UtcNow,
+                            LastLoginAt = DateTime.UtcNow
                         };
                         await userRepo.AddAsync(user);
+                        await _unitOfWork.SaveChangesAsync(); // Save first to get ID
+                    }
+                    else
+                    {
+                        // Update existing user
+                        user.LastLoginAt = DateTime.UtcNow;
                     }
 
-                    user.LastLoginAt = DateTime.UtcNow;
                     var token = await GenerateSessionTokenAsync(user.Id);
                     user.SessionToken = token;
 
@@ -220,13 +241,13 @@ public class AuthenticationService : IAuthenticationService
 
                     return (true, token, null);
                 }
-                
+
                 return (false, null, "Invalid OTP. Please try again.");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"? Error verifying OTP: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"❌ Error verifying OTP: {ex.Message}");
             return (false, null, $"Error verifying OTP: {ex.Message}");
         }
     }
@@ -260,7 +281,7 @@ public class AuthenticationService : IAuthenticationService
             // Validate token hasn't expired (30 days)
             var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
             var parts = decoded.Split(':');
-            
+
             if (parts.Length != 3)
             {
                 return false;

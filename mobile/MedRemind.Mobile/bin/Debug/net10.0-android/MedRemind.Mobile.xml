@@ -4,11 +4,15 @@
         <name>MedRemind.Mobile</name>
     </assembly>
     <members>
+        <member name="T:MedRemind.Mobile.Converters.InvertedBoolConverter">
+            <summary>
+            Converter that inverts a boolean value
+            </summary>
+        </member>
         <member name="T:MedRemind.Mobile.Services.BiometricService">
             <summary>
-            Simple biometric service implementation
-            Note: Full biometric implementation requires platform-specific code
-            For now, this provides a stub that can be extended
+            Biometric authentication service - simplified for immediate functionality
+            TODO: Add platform-specific biometric APIs after adding required NuGet packages
             </summary>
         </member>
         <member name="T:MedRemind.Mobile.Services.EmbeddedConfigurationLoader">
@@ -480,49 +484,33 @@
             <inheritdoc/>
             <inheritdoc/>
             <inheritdoc/>
-            <inheritdoc/>
-            <inheritdoc/>
-            <inheritdoc/>
-            <inheritdoc/>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.UserName">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._userName"/>
         </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.UserPhone">
-            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._userPhone"/>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.PhoneNumber">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._phoneNumber"/>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.NotificationsEnabled">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._notificationsEnabled"/>
         </member>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.SoundEnabled">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._soundEnabled"/>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.VibrationEnabled">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._vibrationEnabled"/>
+        </member>
         <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.BiometricEnabled">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._biometricEnabled"/>
         </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.Theme">
-            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._theme"/>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.BiometricAvailable">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._biometricAvailable"/>
         </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.FontSize">
-            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._fontSize"/>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.BiometricType">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._biometricType"/>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.AppVersion">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.SettingsViewModel._appVersion"/>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.loadSettingsCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.LoadSettingsCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.LoadSettingsCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.LoadSettingsAsync"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.updateProfileCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.UpdateProfileCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.UpdateProfileCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.UpdateProfileAsync"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.toggleNotificationsCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ToggleNotificationsCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ToggleNotificationsCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.ToggleNotificationsAsync"/>.</summary>
         </member>
         <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.toggleBiometricCommand">
             <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ToggleBiometricCommand"/>.</summary>
@@ -530,29 +518,23 @@
         <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ToggleBiometricCommand">
             <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.ToggleBiometricAsync"/>.</summary>
         </member>
-        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.changeThemeCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ChangeThemeCommand"/>.</summary>
+        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.saveNotificationSettingsCommand">
+            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.SaveNotificationSettingsCommand"/>.</summary>
         </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ChangeThemeCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand`1"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.ChangeThemeAsync(System.String)"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.viewPrivacyPolicyCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ViewPrivacyPolicyCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ViewPrivacyPolicyCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.ViewPrivacyPolicyAsync"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.viewTermsCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ViewTermsCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.ViewTermsCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.ViewTermsAsync"/>.</summary>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.SaveNotificationSettingsCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.SaveNotificationSettingsAsync"/>.</summary>
         </member>
         <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.logoutCommand">
             <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.LogoutCommand"/>.</summary>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.LogoutCommand">
             <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.LogoutAsync"/>.</summary>
+        </member>
+        <member name="F:MedRemind.Mobile.ViewModels.SettingsViewModel.editProfileCommand">
+            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.SettingsViewModel.EditProfileCommand"/>.</summary>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.SettingsViewModel.EditProfileCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.SettingsViewModel.EditProfileAsync"/>.</summary>
         </member>
         <member name="T:MedRemind.Mobile.Resource">
             <summary>
@@ -806,20 +788,20 @@
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.UserName">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "UserName" generated properties.</summary>
         </member>
-        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.UserPhone">
-            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "UserPhone" generated properties.</summary>
-        </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.NotificationsEnabled">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "NotificationsEnabled" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.SoundEnabled">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "SoundEnabled" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.VibrationEnabled">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "VibrationEnabled" generated properties.</summary>
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.BiometricEnabled">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "BiometricEnabled" generated properties.</summary>
         </member>
-        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Theme">
-            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Theme" generated properties.</summary>
-        </member>
-        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.FontSize">
-            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "FontSize" generated properties.</summary>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.BiometricType">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "BiometricType" generated properties.</summary>
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.AppVersion">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "AppVersion" generated properties.</summary>
@@ -950,20 +932,20 @@
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.UserName">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "UserName" generated properties.</summary>
         </member>
-        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.UserPhone">
-            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "UserPhone" generated properties.</summary>
-        </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.NotificationsEnabled">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "NotificationsEnabled" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.SoundEnabled">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "SoundEnabled" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.VibrationEnabled">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "VibrationEnabled" generated properties.</summary>
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.BiometricEnabled">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "BiometricEnabled" generated properties.</summary>
         </member>
-        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Theme">
-            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Theme" generated properties.</summary>
-        </member>
-        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.FontSize">
-            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "FontSize" generated properties.</summary>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.BiometricType">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "BiometricType" generated properties.</summary>
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.AppVersion">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "AppVersion" generated properties.</summary>

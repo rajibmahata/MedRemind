@@ -56,6 +56,29 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         Title = "Upload Prescription";
     }
 
+    public async void OnAppearing()
+    {
+        // User is authenticated by AppShell - verify session
+        try
+        {
+            var userId = await SecureStorage.GetAsync("user_id");
+            var sessionToken = await SecureStorage.GetAsync("session_token");
+            
+            System.Diagnostics.Debug.WriteLine($"?? PrescriptionUpload: Page loaded");
+            System.Diagnostics.Debug.WriteLine($"   User ID: {userId ?? "NULL"}");
+            System.Diagnostics.Debug.WriteLine($"   Session Token: {(string.IsNullOrEmpty(sessionToken) ? "NULL" : "EXISTS")}");
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                System.Diagnostics.Debug.WriteLine("?? Warning: user_id is empty in SecureStorage!");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"? Error in OnAppearing: {ex.Message}");
+        }
+    }
+
     [RelayCommand]
     private async Task TakePhotoAsync()
     {
@@ -165,8 +188,16 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         {
             try
             {
-                // Get user ID safely
+                System.Diagnostics.Debug.WriteLine("?? ProcessPrescription: Starting...");
+                
+                // Check SecureStorage state
+                var userId_check = await SecureStorage.GetAsync("user_id");
+                var sessionToken_check = await SecureStorage.GetAsync("session_token");
+                System.Diagnostics.Debug.WriteLine($"   SecureStorage check - user_id: {userId_check ?? "NULL"}, session: {(string.IsNullOrEmpty(sessionToken_check) ? "NULL" : "EXISTS")}");
+
+                // Get user ID - user is already authenticated by AppShell
                 var userId = await GetCurrentUserIdAsync();
+                System.Diagnostics.Debug.WriteLine($"?? Processing prescription for user ID: {userId}");
 
                 // Save prescription to database
                 var prescription = new Prescription
@@ -178,13 +209,18 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     CreatedAt = DateTime.UtcNow
                 };
 
+                System.Diagnostics.Debug.WriteLine($"?? Saving prescription for user {userId}");
                 prescription = await _prescriptionService.AddPrescriptionAsync(prescription);
+                System.Diagnostics.Debug.WriteLine($"? Prescription saved with ID: {prescription.Id}");
 
                 // Process with AI
+                System.Diagnostics.Debug.WriteLine($"?? Starting AI processing...");
                 var result = await _prescriptionReader.ReadPrescriptionFromBase64Async(_imageBase64);
                 Result = result;
                 ConfidenceScore = result.ConfidenceScore;
                 HasResult = true;
+
+                System.Diagnostics.Debug.WriteLine($"? AI processing complete. Success: {result.Success}, Medications: {result.Medications?.Count ?? 0}");
 
                 if (result.Success && result.Medications.Any())
                 {
@@ -207,6 +243,8 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                         null,
                         result.ConfidenceScore);
 
+                    System.Diagnostics.Debug.WriteLine($"? Prescription status updated to Processed");
+
                     // Check for warnings
                     if (result.Warnings != null && result.Warnings.Any())
                     {
@@ -219,6 +257,16 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     {
                         ResultMessage = "? All medications validated successfully!";
                     }
+
+                    var currentPage = GetCurrentPage();
+                    if (currentPage != null)
+                    {
+                        await currentPage.DisplayAlertAsync(
+                            "Success",
+                            $"Found {result.Medications.Count} medication(s).\nReview and tap 'Save Medications' to continue.",
+                            "OK"
+                        );
+                    }
                 }
                 else
                 {
@@ -226,11 +274,29 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     await _prescriptionService.UpdatePrescriptionStatusAsync(
                         prescription.Id,
                         "Failed",
-                        null);
+                        result.ErrorMessage);
+                    
+                    System.Diagnostics.Debug.WriteLine($"? AI processing failed: {result.ErrorMessage}");
                 }
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("User not logged in"))
+            {
+                System.Diagnostics.Debug.WriteLine("? User not logged in exception caught!");
+                System.Diagnostics.Debug.WriteLine($"   Exception: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"   Stack: {ex.StackTrace}");
+                
+                // Check SecureStorage state again
+                var userId_final = await SecureStorage.GetAsync("user_id");
+                var sessionToken_final = await SecureStorage.GetAsync("session_token");
+                System.Diagnostics.Debug.WriteLine($"   Final check - user_id: {userId_final ?? "NULL"}, session: {(string.IsNullOrEmpty(sessionToken_final) ? "NULL" : "EXISTS")}");
+                
+                throw; // Re-throw to be caught by ExecuteAsync
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"? Exception in ProcessPrescriptionAsync: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"   Type: {ex.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine($"   Stack trace: {ex.StackTrace}");
                 ResultMessage = $"? Error: {ex.Message}";
                 HasResult = true;
             }
@@ -250,7 +316,10 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
         await ExecuteAsync(async () =>
         {
+            // Get user ID - user is already authenticated by AppShell
             var userId = await GetCurrentUserIdAsync();
+            System.Diagnostics.Debug.WriteLine($"?? Saving medications for user ID: {userId}");
+
             int savedCount = 0;
 
             foreach (var medData in ExtractedMedications)
@@ -260,29 +329,37 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     // Validate medication data
                     if (string.IsNullOrWhiteSpace(medData.Name))
                     {
-                        continue; // Skip invalid medications
+                        System.Diagnostics.Debug.WriteLine($"?? Skipping medication with empty name");
+                        continue;
                     }
+
+                    System.Diagnostics.Debug.WriteLine($"?? Saving medication: {medData.Name}");
 
                     // Create medication
                     var savedMed = await _medicationService.CreateMedicationAsync(userId, medData);
+                    System.Diagnostics.Debug.WriteLine($"? Medication saved with ID: {savedMed.Id}");
 
                     // Create reminders based on frequency
                     await _medicationService.CreateRemindersAsync(savedMed.Id, medData.FrequencyCount);
+                    System.Diagnostics.Debug.WriteLine($"? Created {medData.FrequencyCount} reminder(s) for {medData.Name}");
 
                     savedCount++;
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error saving medication {medData.Name}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"? Error saving medication {medData.Name}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 }
             }
 
-            var page = GetCurrentPage();
-            if (page != null)
+            var savePage = GetCurrentPage();
+            if (savePage != null)
             {
                 if (savedCount > 0)
                 {
-                    await page.DisplayAlertAsync(
+                    System.Diagnostics.Debug.WriteLine($"? Successfully saved {savedCount} medication(s)");
+                    
+                    await savePage.DisplayAlertAsync(
                         "Success",
                         $"Saved {savedCount} medication(s) with reminders!",
                         "OK");
@@ -293,7 +370,9 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 }
                 else
                 {
-                    await page.DisplayAlertAsync(
+                    System.Diagnostics.Debug.WriteLine($"? Failed to save any medications");
+                    
+                    await savePage.DisplayAlertAsync(
                         "Error",
                         "Failed to save medications. Please verify the extracted data and try again.",
                         "OK");

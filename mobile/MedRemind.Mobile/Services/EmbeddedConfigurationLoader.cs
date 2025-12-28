@@ -221,8 +221,12 @@ public class EmbeddedConfiguration
 public class EnvironmentConfiguration
 {
     public OpenAIConfiguration OpenAI { get; set; } = new();
+    public DeepSeekConfiguration? DeepSeek { get; set; }
+    public ClaudeConfiguration? Claude { get; set; }
+    public AzureDocumentIntelligenceConfiguration AzureDocumentIntelligence { get; set; } = new();
     public TwoFactorConfiguration TwoFactor { get; set; } = new();
     public FeaturesConfiguration Features { get; set; } = new();
+    public AIParserConfiguration? AIParser { get; set; }
 }
 
 /// <summary>
@@ -234,6 +238,39 @@ public class OpenAIConfiguration
     public string Model { get; set; } = "gpt-4o";
     public int TimeoutSeconds { get; set; } = 30;
     public int MaxTokens { get; set; } = 1000;
+}
+
+/// <summary>
+/// DeepSeek API configuration
+/// </summary>
+public class DeepSeekConfiguration
+{
+    public string ApiKey { get; set; } = string.Empty;
+    public string Model { get; set; } = "deepseek-chat";
+    public string ApiUrl { get; set; } = "https://api.deepseek.com/chat/completions";
+    public bool Enabled { get; set; } = false;
+    public int Priority { get; set; } = 1;
+}
+
+/// <summary>
+/// Claude API configuration
+/// </summary>
+public class ClaudeConfiguration
+{
+    public string ApiKey { get; set; } = string.Empty;
+    public string Model { get; set; } = "claude-3-5-sonnet-20241022";
+    public bool Enabled { get; set; } = false;
+    public int Priority { get; set; } = 3;
+}
+
+/// <summary>
+/// Azure Document Intelligence configuration
+/// </summary>
+public class AzureDocumentIntelligenceConfiguration
+{
+    public string Endpoint { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
+    public int TimeoutSeconds { get; set; } = 60;
 }
 
 /// <summary>
@@ -257,4 +294,14 @@ public class FeaturesConfiguration
     public bool EnableVoiceReminders { get; set; } = true;
     public bool EnableAnalytics { get; set; } = false;
     public bool EnableCrashReporting { get; set; } = false;
+}
+
+/// <summary>
+/// AI Parser configuration
+/// </summary>
+public class AIParserConfiguration
+{
+    public int OpenAIPriority { get; set; } = 2;
+    public bool SkipClaudeIfComplete { get; set; } = true;
+    public double MinimumConfidenceScore { get; set; } = 0.7;
 }

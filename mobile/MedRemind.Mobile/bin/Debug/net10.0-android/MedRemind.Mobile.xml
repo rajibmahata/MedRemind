@@ -82,6 +82,21 @@
             OpenAI API configuration
             </summary>
         </member>
+        <member name="T:MedRemind.Mobile.Services.DeepSeekConfiguration">
+            <summary>
+            DeepSeek API configuration
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.ClaudeConfiguration">
+            <summary>
+            Claude API configuration
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.AzureDocumentIntelligenceConfiguration">
+            <summary>
+            Azure Document Intelligence configuration
+            </summary>
+        </member>
         <member name="T:MedRemind.Mobile.Services.TwoFactorConfiguration">
             <summary>
             2Factor API configuration
@@ -92,10 +107,21 @@
             Feature flags configuration
             </summary>
         </member>
+        <member name="T:MedRemind.Mobile.Services.AIParserConfiguration">
+            <summary>
+            AI Parser configuration
+            </summary>
+        </member>
         <member name="T:MedRemind.Mobile.Services.EnvironmentConfigService">
             <summary>
             Environment-specific configuration service with encrypted storage
             Keys are stored per environment and encrypted with AES-256
+            </summary>
+        </member>
+        <member name="T:MedRemind.Mobile.Services.MauiSecureStorageService">
+            <summary>
+            MAUI platform-specific SecureStorage implementation
+            Uses Microsoft.Maui.Storage.SecureStorage for encrypted key-value storage
             </summary>
         </member>
         <member name="T:MedRemind.Mobile.Services.SecureConfigurationService">
@@ -370,9 +396,11 @@
             <inheritdoc/>
             <inheritdoc/>
             <inheritdoc/>
-            <inheritdoc/>
-            <inheritdoc/>
-            <inheritdoc/>
+        </member>
+        <member name="M:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.CompressImageAsync(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Compress image using platform-native APIs to stay under Azure Document Intelligence 4MB limit
+            </summary>
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.SelectedImage">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel._selectedImage"/>
@@ -395,6 +423,12 @@
         <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ConfidenceScore">
             <inheritdoc cref="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel._confidenceScore"/>
         </member>
+        <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ProcessingAttempts">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel._processingAttempts"/>
+        </member>
+        <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.MatchScore">
+            <inheritdoc cref="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel._matchScore"/>
+        </member>
         <member name="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.takePhotoCommand">
             <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.TakePhotoCommand"/>.</summary>
         </member>
@@ -412,24 +446,6 @@
         </member>
         <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ProcessPrescriptionCommand">
             <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ProcessPrescriptionAsync"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.saveMedicationsCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.SaveMedicationsCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.SaveMedicationsCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.SaveMedicationsAsync"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.editMedicationCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.EditMedicationCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.EditMedicationCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand`1"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.EditMedicationAsync(MedRemind.Core.DTOs.MedicationData)"/>.</summary>
-        </member>
-        <member name="F:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.clearDataCommand">
-            <summary>The backing field for <see cref="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ClearDataCommand"/>.</summary>
-        </member>
-        <member name="P:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ClearDataCommand">
-            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IRelayCommand"/> instance wrapping <see cref="M:MedRemind.Mobile.ViewModels.PrescriptionUploadViewModel.ClearData"/>.</summary>
         </member>
         <member name="T:MedRemind.Mobile.ViewModels.RemindersViewModel">
             <inheritdoc/>
@@ -776,6 +792,12 @@
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ConfidenceScore">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ConfidenceScore" generated properties.</summary>
         </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ProcessingAttempts">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ProcessingAttempts" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.MatchScore">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "MatchScore" generated properties.</summary>
+        </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Reminders">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Reminders" generated properties.</summary>
         </member>
@@ -919,6 +941,12 @@
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ConfidenceScore">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ConfidenceScore" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ProcessingAttempts">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ProcessingAttempts" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.MatchScore">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "MatchScore" generated properties.</summary>
         </member>
         <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Reminders">
             <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Reminders" generated properties.</summary>

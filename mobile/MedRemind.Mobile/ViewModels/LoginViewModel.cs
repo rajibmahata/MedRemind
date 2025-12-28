@@ -31,7 +31,7 @@ public partial class LoginViewModel : BaseViewModel
     private bool _showBiometricButton;
 
     [ObservableProperty]
-    private string _biometricButtonText = "?? Login with Biometric";
+    private string _biometricButtonText = "Login with Biometric";
 
     public LoginViewModel(
         IAuthenticationService authService,
@@ -140,11 +140,32 @@ public partial class LoginViewModel : BaseViewModel
 
         await ExecuteAsync(async () =>
         {
+            System.Diagnostics.Debug.WriteLine($"?? Login: Verifying OTP for {PhoneNumber}...");
+            
             var result = await _authService.VerifyOtpAsync(PhoneNumber, Otp);
             
             if (result.Success)
             {
-                // Store phone number for biometric login
+                System.Diagnostics.Debug.WriteLine($"? Login: OTP verified successfully");
+                
+                // Verify session was stored
+                var storedUserId = await SecureStorage.GetAsync("user_id");
+                var storedSession = await SecureStorage.GetAsync("session_token");
+                var storedPhone = await SecureStorage.GetAsync("phone_number");
+                
+                System.Diagnostics.Debug.WriteLine($"?? Login: Session verification:");
+                System.Diagnostics.Debug.WriteLine($"   User ID stored: {storedUserId ?? "NULL"}");
+                System.Diagnostics.Debug.WriteLine($"   Session stored: {(string.IsNullOrEmpty(storedSession) ? "NULL" : "EXISTS")}");
+                System.Diagnostics.Debug.WriteLine($"   Phone stored: {storedPhone ?? "NULL"}");
+                
+                if (string.IsNullOrEmpty(storedUserId))
+                {
+                    System.Diagnostics.Debug.WriteLine($"? Login: Session not stored properly!");
+                    ShowError("Login succeeded but session storage failed. Please try again.");
+                    return;
+                }
+                
+                // Store phone number for biometric login (redundant but safe)
                 await SecureStorage.SetAsync("phone_number", PhoneNumber);
 
                 // Ask user if they want to enable biometric
@@ -175,6 +196,7 @@ public partial class LoginViewModel : BaseViewModel
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine($"? Login: OTP verification failed: {result.ErrorMessage}");
                 ShowError(result.ErrorMessage ?? "Invalid OTP. Please try again.");
             }
         });

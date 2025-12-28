@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+        Android Network Security Configuration
+        Handles SSL/TLS certificate validation for API connections
+    -->
+    
+    <!-- Base configuration for all connections -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system-installed CAs -->
+            <certificates src="system" />
+            <!-- Trust user-installed CAs (for debugging with proxy tools) -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Domain-specific configuration for AI services -->
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- OpenAI API -->
+        <domain includeSubdomains="true">api.openai.com</domain>
+        <domain includeSubdomains="true">openai.com</domain>
+        
+        <!-- Azure Cognitive Services -->
+        <domain includeSubdomains="true">cognitiveservices.azure.com</domain>
+        <domain includeSubdomains="true">documentintelligence.azure.com</domain>
+        <domain includeSubdomains="true">documentintelligencecustomermodelservice.cognitiveservices.azure.com</domain>
+        <domain includeSubdomains="true">azure.com</domain>
+        <domain includeSubdomains="true">windows.net</domain>
+        
+        <!-- 2Factor SMS Service -->
+        <domain includeSubdomains="true">2factor.in</domain>
+        
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+        
+        <!-- Pin certificates for critical services (optional but recommended) -->
+        <pin-set expiration="2025-12-31">
+            <!-- OpenAI certificate pins (update these periodically) -->
+            <!-- You can get these using: openssl s_client -connect api.openai.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64 -->
+        </pin-set>
+    </domain-config>
+    
+    <!-- Debug configuration - allows all certificates in DEBUG mode -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

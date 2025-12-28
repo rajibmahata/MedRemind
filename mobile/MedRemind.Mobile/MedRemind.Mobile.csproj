@@ -39,6 +39,7 @@
 
 		<!-- Raw Assets -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<AndroidResource Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
 		
 		<!-- Embedded Configuration -->
 		<embeddedResource Include="appsettings.json" />
@@ -57,5 +58,11 @@
 	  <ProjectReference Include="..\..\backend\MedRemind.Core\MedRemind.Core.csproj" />
 	  <ProjectReference Include="..\..\backend\MedRemind.Services\MedRemind.Services.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+    <!-- Android Resources -->
+    <AndroidResource Include="Platforms\Android\Resources\**\*.xml" />
+    <AndroidResource Include="Platforms\Android\Resources\xml\network_security_config.xml" />
+  </ItemGroup>
 
 </Project>

@@ -9,6 +9,8 @@ using MedRemind.Services.Notifications;
 using MedRemind.Services.Prescriptions;
 using MedRemind.Services.Reminders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,9 +57,118 @@ builder.Services.AddScoped<IPrescriptionReaderService>(sp =>
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
     var config = sp.GetRequiredService<IConfiguration>();
     var validationAgent = sp.GetRequiredService<IValidationAgentService>();
-    var apiKey = config["OpenAI:ApiKey"] ?? "";
-    return new OpenAIPrescriptionReaderService(httpClient, apiKey, validationAgent);
+    
+    // OpenAI configuration
+    var openAIKey = config["OpenAI:ApiKey"] ?? "";
+    var openAIModel = config["OpenAI:Model"] ?? "gpt-4o"; // NEW: Get model from config with fallback
+    
+    // Azure Document Intelligence configuration
+    var azureEndpoint = config["AzureDocumentIntelligence:Endpoint"] ?? "";
+    var azureKey = config["AzureDocumentIntelligence:ApiKey"] ?? "";
+    
+    // Create Azure Document Intelligence service
+    var azureDocService = new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey);
+    
+    // Create ChatClient for OpenAI with configured model
+    var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey); // Use config model
+    
+    // Create Medical Prescription Parser Agent with ChatClient
+    var parserAgent = new MedicalPrescriptionParserAgent(chatClient);
+    
+    return new OpenAIPrescriptionReaderService(httpClient, openAIKey, validationAgent, azureDocService, parserAgent, openAIModel); // Pass model
 });
+
+// ============================================
+// SEMANTIC KERNEL MULTI-AGENT SYSTEM
+// ============================================
+
+// Register Semantic Kernel with OpenAI
+builder.Services.AddSingleton<Microsoft.SemanticKernel.Kernel>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var openAIKey = config["OpenAI:ApiKey"] ?? "";
+    var openAIModel = config["OpenAI:Model"] ?? "gpt-4o"; // NEW: Get model from config with fallback
+
+    var kernelBuilder = Microsoft.SemanticKernel.Kernel.CreateBuilder();
+    kernelBuilder.AddOpenAIChatCompletion(openAIModel, openAIKey); // Use config model
+
+    return kernelBuilder.Build();
+});
+
+// Register OCR Storage Path
+builder.Services.AddSingleton<string>(sp =>
+{
+    var ocrStoragePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
+        "medremind_api", 
+        "ocr_texts");
+    
+    if (!Directory.Exists(ocrStoragePath))
+    {
+        Directory.CreateDirectory(ocrStoragePath);
+    }
+    
+    return ocrStoragePath;
+});
+
+// Register the Three Agents
+builder.Services.AddScoped<MedRemind.Services.AI.Agents.OCRTextSaverAgent>(sp =>
+{
+    var storagePath = sp.GetRequiredService<string>();
+    return new MedRemind.Services.AI.Agents.OCRTextSaverAgent(storagePath);
+});
+
+builder.Services.AddScoped<MedRemind.Services.AI.Agents.PrescriptionDataExtractionAgent>(sp =>
+{
+    var kernel = sp.GetRequiredService<Microsoft.SemanticKernel.Kernel>();
+    return new MedRemind.Services.AI.Agents.PrescriptionDataExtractionAgent(kernel);
+});
+
+builder.Services.AddScoped<MedRemind.Services.AI.Agents.ValidationAgent>(sp =>
+{
+    var extractionAgent = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionDataExtractionAgent>();
+    return new MedRemind.Services.AI.Agents.ValidationAgent(extractionAgent);
+});
+
+// Register Deduplication Service
+builder.Services.AddScoped<MedRemind.Services.Prescriptions.PrescriptionDeduplicationService>();
+
+// Register result merger and validation services
+builder.Services.AddScoped<MedRemind.Services.AI.PrescriptionResultMergerService>();
+builder.Services.AddScoped<MedRemind.Services.AI.PrescriptionValidationService>();
+
+// Register Agent Orchestrator
+builder.Services.AddScoped<MedRemind.Services.AI.Agents.AgentOrchestrator>(sp =>
+{
+    var ocrSaver = sp.GetRequiredService<MedRemind.Services.AI.Agents.OCRTextSaverAgent>();
+    var extraction = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionDataExtractionAgent>();
+    var validation = sp.GetRequiredService<MedRemind.Services.AI.Agents.ValidationAgent>();
+    
+    // Get OpenAI parser
+    var config = sp.GetRequiredService<IConfiguration>();
+    var openAIKey = config["OpenAI:ApiKey"] ?? "";
+    var openAIModel = config["OpenAI:Model"] ?? "gpt-4o";
+    var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
+    var openAIParser = new MedRemind.Services.AI.MedicalPrescriptionParserAgent(chatClient);
+    
+    // Get deduplication service
+    var deduplicationService = sp.GetRequiredService<MedRemind.Services.Prescriptions.PrescriptionDeduplicationService>();
+    
+    // Get merger and validation services
+    var mergerService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionResultMergerService>();
+    var validationService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionValidationService>();
+    
+    return new MedRemind.Services.AI.Agents.AgentOrchestrator(
+        ocrSaver, 
+        extraction, 
+        validation,
+        openAIParser,
+        deduplicationService,
+        mergerService,
+        validationService
+    );
+});
+
 
 // CORS
 builder.Services.AddCors(options =>

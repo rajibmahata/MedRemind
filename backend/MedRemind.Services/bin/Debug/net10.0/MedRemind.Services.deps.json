@@ -8,10 +8,68 @@
     ".NETCoreApp,Version=v10.0": {
       "MedRemind.Services/1.0.0": {
         "dependencies": {
-          "MedRemind.Core": "1.0.0"
+          "Azure.AI.DocumentIntelligence": "1.0.0",
+          "MedRemind.Core": "1.0.0",
+          "Microsoft.SemanticKernel": "1.68.0",
+          "Microsoft.SemanticKernel.Connectors.OpenAI": "1.68.0",
+          "OpenAI": "2.8.0",
+          "SkiaSharp": "3.116.0"
         },
         "runtime": {
           "MedRemind.Services.dll": {}
+        }
+      },
+      "Azure.AI.DocumentIntelligence/1.0.0": {
+        "dependencies": {
+          "Azure.Core": "1.50.0",
+          "System.ClientModel": "1.8.1"
+        },
+        "runtime": {
+          "lib/net8.0/Azure.AI.DocumentIntelligence.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.24.61602"
+          }
+        }
+      },
+      "Azure.AI.OpenAI/2.7.0-beta.2": {
+        "dependencies": {
+          "Azure.Core": "1.50.0",
+          "OpenAI": "2.8.0"
+        },
+        "runtime": {
+          "lib/net8.0/Azure.AI.OpenAI.dll": {
+            "assemblyVersion": "2.7.0.0",
+            "fileVersion": "2.700.25.60101"
+          }
+        }
+      },
+      "Azure.Core/1.50.0": {
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "8.0.0",
+          "System.ClientModel": "1.8.1",
+          "System.Memory.Data": "10.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Azure.Core.dll": {
+            "assemblyVersion": "1.50.0.0",
+            "fileVersion": "1.5000.25.55604"
+          }
+        }
+      },
+      "Microsoft.Bcl.AsyncInterfaces/8.0.0": {
+        "runtime": {
+          "lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
+      "Microsoft.Bcl.HashCode/1.1.1": {
+        "runtime": {
+          "lib/netcoreapp2.1/Microsoft.Bcl.HashCode.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.700.20.56604"
+          }
         }
       },
       "Microsoft.Data.Sqlite.Core/10.0.1": {
@@ -85,6 +143,42 @@
           "lib/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll": {
             "assemblyVersion": "10.0.1.0",
             "fileVersion": "10.0.125.57005"
+          }
+        }
+      },
+      "Microsoft.Extensions.AI/10.0.1": {
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.0.1",
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.1",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.1",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.1",
+          "System.Numerics.Tensors": "10.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.AI.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.125.57105"
+          }
+        }
+      },
+      "Microsoft.Extensions.AI.Abstractions/10.0.1": {
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.AI.Abstractions.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.125.57105"
+          }
+        }
+      },
+      "Microsoft.Extensions.AI.OpenAI/10.0.1-preview.1.25571.5": {
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.0.1",
+          "OpenAI": "2.8.0",
+          "System.Memory.Data": "10.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.AI.OpenAI.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.125.57105"
           }
         }
       },
@@ -193,6 +287,132 @@
           "lib/net10.0/Microsoft.Extensions.Primitives.dll": {
             "assemblyVersion": "10.0.0.0",
             "fileVersion": "10.0.125.57005"
+          }
+        }
+      },
+      "Microsoft.Extensions.VectorData.Abstractions/9.7.0": {
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.0.1"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.VectorData.Abstractions.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.0.0"
+          }
+        }
+      },
+      "Microsoft.SemanticKernel/1.68.0": {
+        "dependencies": {
+          "Microsoft.SemanticKernel.Connectors.AzureOpenAI": "1.68.0",
+          "Microsoft.SemanticKernel.Core": "1.68.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.SemanticKernel.dll": {
+            "assemblyVersion": "1.68.0.0",
+            "fileVersion": "1.68.0.0"
+          }
+        }
+      },
+      "Microsoft.SemanticKernel.Abstractions/1.68.0": {
+        "dependencies": {
+          "Microsoft.Bcl.HashCode": "1.1.1",
+          "Microsoft.Extensions.AI": "10.0.1",
+          "Microsoft.Extensions.VectorData.Abstractions": "9.7.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.SemanticKernel.Abstractions.dll": {
+            "assemblyVersion": "1.68.0.0",
+            "fileVersion": "1.68.0.0"
+          }
+        }
+      },
+      "Microsoft.SemanticKernel.Connectors.AzureOpenAI/1.68.0": {
+        "dependencies": {
+          "Azure.AI.OpenAI": "2.7.0-beta.2",
+          "Microsoft.SemanticKernel.Connectors.OpenAI": "1.68.0",
+          "Microsoft.SemanticKernel.Core": "1.68.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.SemanticKernel.Connectors.AzureOpenAI.dll": {
+            "assemblyVersion": "1.68.0.0",
+            "fileVersion": "1.68.0.0"
+          }
+        }
+      },
+      "Microsoft.SemanticKernel.Connectors.OpenAI/1.68.0": {
+        "dependencies": {
+          "Microsoft.Extensions.AI.OpenAI": "10.0.1-preview.1.25571.5",
+          "Microsoft.SemanticKernel.Core": "1.68.0",
+          "OpenAI": "2.8.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.SemanticKernel.Connectors.OpenAI.dll": {
+            "assemblyVersion": "1.68.0.0",
+            "fileVersion": "1.68.0.0"
+          }
+        }
+      },
+      "Microsoft.SemanticKernel.Core/1.68.0": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "10.0.1",
+          "Microsoft.SemanticKernel.Abstractions": "1.68.0",
+          "System.Numerics.Tensors": "10.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.SemanticKernel.Core.dll": {
+            "assemblyVersion": "1.68.0.0",
+            "fileVersion": "1.68.0.0"
+          }
+        }
+      },
+      "OpenAI/2.8.0": {
+        "dependencies": {
+          "System.ClientModel": "1.8.1"
+        },
+        "runtime": {
+          "lib/net8.0/OpenAI.dll": {
+            "assemblyVersion": "2.8.0.0",
+            "fileVersion": "2.8.0.0"
+          }
+        }
+      },
+      "SkiaSharp/3.116.0": {
+        "dependencies": {
+          "SkiaSharp.NativeAssets.Win32": "3.116.0",
+          "SkiaSharp.NativeAssets.macOS": "3.116.0"
+        },
+        "runtime": {
+          "lib/net8.0/SkiaSharp.dll": {
+            "assemblyVersion": "3.116.0.0",
+            "fileVersion": "3.116.0.0"
+          }
+        }
+      },
+      "SkiaSharp.NativeAssets.macOS/3.116.0": {
+        "runtimeTargets": {
+          "runtimes/osx/native/libSkiaSharp.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "SkiaSharp.NativeAssets.Win32/3.116.0": {
+        "runtimeTargets": {
+          "runtimes/win-arm64/native/libSkiaSharp.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/libSkiaSharp.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/libSkiaSharp.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -346,6 +566,34 @@
           }
         }
       },
+      "System.ClientModel/1.8.1": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.1",
+          "System.Memory.Data": "10.0.0"
+        },
+        "runtime": {
+          "lib/net9.0/System.ClientModel.dll": {
+            "assemblyVersion": "1.8.1.0",
+            "fileVersion": "1.800.125.56003"
+          }
+        }
+      },
+      "System.Memory.Data/10.0.0": {
+        "runtime": {
+          "lib/net10.0/System.Memory.Data.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "System.Numerics.Tensors/10.0.0": {
+        "runtime": {
+          "lib/net10.0/System.Numerics.Tensors.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
       "MedRemind.Core/1.0.0": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Sqlite": "10.0.1"
@@ -364,6 +612,41 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "Azure.AI.DocumentIntelligence/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RSpMmlRY5vvGy2TrAk4djJTqOsdHUunvhcSoSN+FJtexqZh6RFn+a2ylehIA/N+HV2IK0i+XK4VG3rDa8h2tsA==",
+      "path": "azure.ai.documentintelligence/1.0.0",
+      "hashPath": "azure.ai.documentintelligence.1.0.0.nupkg.sha512"
+    },
+    "Azure.AI.OpenAI/2.7.0-beta.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HeiOYWoxubHyCPL33hgbGSh1KaDRCofJiyFtaEO86A8RLTZSfoPZx2DosiDZMLCqraOfTSWYaWS0FLxbVHFWzQ==",
+      "path": "azure.ai.openai/2.7.0-beta.2",
+      "hashPath": "azure.ai.openai.2.7.0-beta.2.nupkg.sha512"
+    },
+    "Azure.Core/1.50.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-GBNKZEhdIbTXxedvD3R7I/yDVFX9jJJEz02kCziFSJxspSQ5RMHc3GktulJ1s7+ffXaXD7kMgrtdQTaggyInLw==",
+      "path": "azure.core/1.50.0",
+      "hashPath": "azure.core.1.50.0.nupkg.sha512"
+    },
+    "Microsoft.Bcl.AsyncInterfaces/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3WA9q9yVqJp222P3x1wYIGDAkpjAku0TMUaaQV22g6L67AI0LdOIrVS7Ht2vJfLHGSPVuqN94vIr15qn+HEkHw==",
+      "path": "microsoft.bcl.asyncinterfaces/8.0.0",
+      "hashPath": "microsoft.bcl.asyncinterfaces.8.0.0.nupkg.sha512"
+    },
+    "Microsoft.Bcl.HashCode/1.1.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MalY0Y/uM/LjXtHfX/26l2VtN4LDNZ2OE3aumNOHDLsT4fNYy2hiHXI4CXCqKpNUNm7iJ2brrc4J89UdaL56FA==",
+      "path": "microsoft.bcl.hashcode/1.1.1",
+      "hashPath": "microsoft.bcl.hashcode.1.1.1.nupkg.sha512"
     },
     "Microsoft.Data.Sqlite.Core/10.0.1": {
       "type": "package",
@@ -406,6 +689,27 @@
       "sha512": "sha512-1rWpcHxWb5JbTPsJrrl2SN3qub3vajfr5zz8zu9fTFFHx1/GZdE8PkmdvFTKb11AGcmqjH8eA3siA+4bssjGfw==",
       "path": "microsoft.entityframeworkcore.sqlite.core/10.0.1",
       "hashPath": "microsoft.entityframeworkcore.sqlite.core.10.0.1.nupkg.sha512"
+    },
+    "Microsoft.Extensions.AI/10.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1J4KAyZQsdHt0Dcq5Qsb9l+c5mtZM8F6//VwQse8iIov874aFX1E11UA+Fy/6Krkg2LCw8EtRnobeyADW4slNQ==",
+      "path": "microsoft.extensions.ai/10.0.1",
+      "hashPath": "microsoft.extensions.ai.10.0.1.nupkg.sha512"
+    },
+    "Microsoft.Extensions.AI.Abstractions/10.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SR78I0BV7ljDovyVsZQqpt2NezdLoDtoIOCNwqAteuPc8f5PEmvDjokOQxKnTwXo/9RBKnmrzuPzbsuvueZcrg==",
+      "path": "microsoft.extensions.ai.abstractions/10.0.1",
+      "hashPath": "microsoft.extensions.ai.abstractions.10.0.1.nupkg.sha512"
+    },
+    "Microsoft.Extensions.AI.OpenAI/10.0.1-preview.1.25571.5": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IxSdb75Di7Ryper1O86vSpxKs+pvC72Q+wuzSGd/WH/6hc8tQ+h8wnovDP0HBeh7o1KSshEbZ584njcOTHTTsw==",
+      "path": "microsoft.extensions.ai.openai/10.0.1-preview.1.25571.5",
+      "hashPath": "microsoft.extensions.ai.openai.10.0.1-preview.1.25571.5.nupkg.sha512"
     },
     "Microsoft.Extensions.Caching.Abstractions/10.0.1": {
       "type": "package",
@@ -477,6 +781,76 @@
       "path": "microsoft.extensions.primitives/10.0.1",
       "hashPath": "microsoft.extensions.primitives.10.0.1.nupkg.sha512"
     },
+    "Microsoft.Extensions.VectorData.Abstractions/9.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Vth/omSCX2vR0JabzSRU/hdPhr0CvUVZlaS2lJPWHrEwvak8ntrQLDtLMtMiWKSvviGBe/WmjUW8gA3qqn9tjw==",
+      "path": "microsoft.extensions.vectordata.abstractions/9.7.0",
+      "hashPath": "microsoft.extensions.vectordata.abstractions.9.7.0.nupkg.sha512"
+    },
+    "Microsoft.SemanticKernel/1.68.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rbiosePBbcdBPPz/Dszxcmbc2jC0+EB89Kf/NzxI4IaxenvM9+aRWM9kjVUQV/HLANpVMM1NnHrcfS+PL7fldA==",
+      "path": "microsoft.semantickernel/1.68.0",
+      "hashPath": "microsoft.semantickernel.1.68.0.nupkg.sha512"
+    },
+    "Microsoft.SemanticKernel.Abstractions/1.68.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SHckYydWmM2C9/CrjjW0os+9sy5i1us35GhDncby6CUw+PbK4APp7Tpy+Pt+zF74a9sFzwHIcVaPorUWlYWI+Q==",
+      "path": "microsoft.semantickernel.abstractions/1.68.0",
+      "hashPath": "microsoft.semantickernel.abstractions.1.68.0.nupkg.sha512"
+    },
+    "Microsoft.SemanticKernel.Connectors.AzureOpenAI/1.68.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ennELtALtxoYUE6J3vTJS59vGpuqq/gxDpeYED3nYURjhFn6+0o1EwVzy+8rQZ8IlioW+gdsLZAhzY1DwGV/xw==",
+      "path": "microsoft.semantickernel.connectors.azureopenai/1.68.0",
+      "hashPath": "microsoft.semantickernel.connectors.azureopenai.1.68.0.nupkg.sha512"
+    },
+    "Microsoft.SemanticKernel.Connectors.OpenAI/1.68.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-q3vmVM+pUGdgX2Dj419wmsf7WYj4GsE7cVCYSX/oUa0+A99wbXNdDsdk9JwgYELfjCjq6TW+GyzzRx0nCn9CSQ==",
+      "path": "microsoft.semantickernel.connectors.openai/1.68.0",
+      "hashPath": "microsoft.semantickernel.connectors.openai.1.68.0.nupkg.sha512"
+    },
+    "Microsoft.SemanticKernel.Core/1.68.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-q/5J4Yg7cPY+Sxto9TGXSQF+TM0c+1u0gVQb5OOKQPWMQg+FQF41sQWv8FYYBzsSkhSq7YupCjOR0tQBDJxcFQ==",
+      "path": "microsoft.semantickernel.core/1.68.0",
+      "hashPath": "microsoft.semantickernel.core.1.68.0.nupkg.sha512"
+    },
+    "OpenAI/2.8.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-KcYpZ9IhuxFD2hGAJlL5vABtkr00CjeJU0SY8CjZQyzvzkzLop8jhdX3iDvteVJg6e3y4TEiY+Kti4gDJAagnA==",
+      "path": "openai/2.8.0",
+      "hashPath": "openai.2.8.0.nupkg.sha512"
+    },
+    "SkiaSharp/3.116.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HvLQXua/TWp7eYWaY3R69b4Tm8AdedfXkKHY3MIgjYFNoQqwPfOd7/u1Bqs8WiBoSa2ISjqUnqzitpihlkvFfQ==",
+      "path": "skiasharp/3.116.0",
+      "hashPath": "skiasharp.3.116.0.nupkg.sha512"
+    },
+    "SkiaSharp.NativeAssets.macOS/3.116.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-k98/ZVE7U2omT/NtPiSwRGG9NbqfRA35L89/NqR6G0MVLuedR7Vi25NIxaYr/ExZyORUAq7Gtd3XOgGQvZTAPw==",
+      "path": "skiasharp.nativeassets.macos/3.116.0",
+      "hashPath": "skiasharp.nativeassets.macos.3.116.0.nupkg.sha512"
+    },
+    "SkiaSharp.NativeAssets.Win32/3.116.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0uYDLypyfKGfzW/pfRcDNBTMXYKLwF3IUqL0RBF1hyi63ghFxFNr2q4o/00lhxwvKj34rP3RHekY4CA2c8i9LA==",
+      "path": "skiasharp.nativeassets.win32/3.116.0",
+      "hashPath": "skiasharp.nativeassets.win32.3.116.0.nupkg.sha512"
+    },
     "SQLitePCLRaw.bundle_e_sqlite3/2.1.11": {
       "type": "package",
       "serviceable": true,
@@ -504,6 +878,27 @@
       "sha512": "sha512-Y/0ZkR+r0Cg3DQFuCl1RBnv/tmxpIZRU3HUvelPw6MVaKHwYYR8YNvgs0vuNuXCMvlyJ+Fh88U1D4tah1tt6qw==",
       "path": "sqlitepclraw.provider.e_sqlite3/2.1.11",
       "hashPath": "sqlitepclraw.provider.e_sqlite3.2.1.11.nupkg.sha512"
+    },
+    "System.ClientModel/1.8.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4oUQgw/vaO4FBOk3YsH40hbrjxRED1l95rRLvTMtHXfQxapXya9IfPpm/KgwValFFtYTfYGFOs/qzGmGyexicQ==",
+      "path": "system.clientmodel/1.8.1",
+      "hashPath": "system.clientmodel.1.8.1.nupkg.sha512"
+    },
+    "System.Memory.Data/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-r+m+05b+TndDQIN6/yMkotk7wNsUPpYgLKOac8QR9DdU9gcPTJIU1RoyXY8otCqPxH55XF4hewEt6lJu0lSz3Q==",
+      "path": "system.memory.data/10.0.0",
+      "hashPath": "system.memory.data.10.0.0.nupkg.sha512"
+    },
+    "System.Numerics.Tensors/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PxZKFx8ACAt7gRnTSDgtZFA06cimls5XL1Olv63bWF8qKL5+EQdqq3K02etW4LNut4xDoREPe9z7QYATLMkBPA==",
+      "path": "system.numerics.tensors/10.0.0",
+      "hashPath": "system.numerics.tensors.10.0.0.nupkg.sha512"
     },
     "MedRemind.Core/1.0.0": {
       "type": "project",

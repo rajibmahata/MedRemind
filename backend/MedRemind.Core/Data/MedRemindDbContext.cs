@@ -12,6 +12,7 @@ public class MedRemindDbContext : DbContext
     public DbSet<VoiceRecording> VoiceRecordings { get; set; }
     public DbSet<DoseLog> DoseLogs { get; set; }
     public DbSet<AppSettings> AppSettings { get; set; }
+    public DbSet<PrescriptionOCRResult> PrescriptionOCRResults { get; set; } // NEW
 
     public MedRemindDbContext(DbContextOptions<MedRemindDbContext> options)
         : base(options)
@@ -82,6 +83,24 @@ public class MedRemindDbContext : DbContext
             entity.HasOne(e => e.User)
                 .WithMany(u => u.Prescriptions)
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PrescriptionOCRResult configuration (NEW)
+        modelBuilder.Entity<PrescriptionOCRResult>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.PrescriptionId);
+            entity.HasIndex(e => e.OCRTextHash); // For duplicate detection
+            entity.Property(e => e.OCRText).IsRequired();
+            entity.Property(e => e.OCRTextHash).IsRequired().HasMaxLength(64); // SHA256 hash
+            entity.Property(e => e.SelectedProvider).HasMaxLength(50);
+            entity.Property(e => e.DoctorName).HasMaxLength(100);
+            entity.Property(e => e.PatientName).HasMaxLength(100);
+
+            entity.HasOne(e => e.Prescription)
+                .WithMany()
+                .HasForeignKey(e => e.PrescriptionId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

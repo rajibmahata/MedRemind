@@ -137,7 +137,7 @@ public static class MauiProgram
 
             var httpClient = new HttpClient(handler)
             {
-                Timeout = TimeSpan.FromSeconds(120) // Increased timeout for slow networks
+                Timeout = TimeSpan.FromSeconds(30) // Reduced from 120s for faster failure detection
             };
 
             // Add default headers

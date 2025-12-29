@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MedRemind.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+40cd19b34136cd0ad74742a57c61783493a67987")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6d16d743e2bbd33e22d3ac9656237a74ea3c3b31")]
 [assembly: System.Reflection.AssemblyProductAttribute("MedRemind.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MedRemind.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

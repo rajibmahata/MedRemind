@@ -32,6 +32,9 @@ public class AgentOrchestrator
     private readonly int _deepSeekPriority;
     private readonly int _openAIPriority;
     private readonly int _claudePriority;
+    
+    // Performance configuration
+    private const int PARSER_TIMEOUT_SECONDS = 20; // 20 second timeout per parser
 
     public AgentOrchestrator(
         OCRTextSaverAgent ocrSaverAgent,
@@ -163,9 +166,20 @@ public class AgentOrchestrator
                 
                 System.Diagnostics.Debug.WriteLine($"\n   Parser {i + 1}/{parsers.Count}: {name} (Priority {priority})");
                 
+                var parserStartTime = DateTime.UtcNow;
+                CancellationTokenSource? parserCts = null;
+                
                 try
                 {
+                    // Add per-parser timeout to prevent hanging
+                    parserCts = new CancellationTokenSource(TimeSpan.FromSeconds(PARSER_TIMEOUT_SECONDS));
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, parserCts.Token);
+                    
                     var parserResult = await parser();
+                    
+                    var parserElapsed = DateTime.UtcNow - parserStartTime;
+                    System.Diagnostics.Debug.WriteLine($"   ?? {name} completed in {parserElapsed.TotalSeconds:F2}s");
+                    
                     parserResults[name] = parserResult;
                     providersUsed.Add(name);
 
@@ -203,10 +217,21 @@ public class AgentOrchestrator
                         }
                     }
                 }
+                catch (OperationCanceledException) when (parserCts?.IsCancellationRequested == true)
+                {
+                    var parserElapsed = DateTime.UtcNow - parserStartTime;
+                    System.Diagnostics.Debug.WriteLine($"   ?? {name} timed out after {parserElapsed.TotalSeconds:F2}s (limit: {PARSER_TIMEOUT_SECONDS}s)");
+                    // Continue to next parser
+                }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"   ? {name} failed: {ex.Message}");
+                    var parserElapsed = DateTime.UtcNow - parserStartTime;
+                    System.Diagnostics.Debug.WriteLine($"   ? {name} failed after {parserElapsed.TotalSeconds:F2}s: {ex.Message}");
                     // Continue to next parser
+                }
+                finally
+                {
+                    parserCts?.Dispose();
                 }
             }
 

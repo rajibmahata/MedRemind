@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using MedRemind.Core.DTOs;
 
 namespace MedRemind.Services.AI;
@@ -15,8 +16,8 @@ public class DeepSeekPrescriptionParserAgent
     private readonly string _apiKey;
     private readonly string _apiUrl;
     private readonly string _model = "deepseek-chat"; // DeepSeek Chat model
-    private const int MAX_RETRIES = 3;
-    private const int RETRY_DELAY_MS = 1000;
+    private const int MAX_RETRIES = 2; // Reduced from 3 to 2 for faster processing
+    private const int RETRY_DELAY_MS = 500; // Reduced from 1000ms to 500ms
 
     public DeepSeekPrescriptionParserAgent(HttpClient httpClient, string apiKey, string apiUrl = "https://api.deepseek.com/chat/completions")
     {
@@ -99,7 +100,7 @@ public class DeepSeekPrescriptionParserAgent
                 }
 
                 var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
-                var result = JsonSerializer.Deserialize<DeepSeekResponse>(jsonResponse);
+                var result = JsonSerializer.Deserialize<DeepSeekApiResponse>(jsonResponse);
 
                 if (result?.Choices == null || result.Choices.Count == 0)
                 {
@@ -352,19 +353,79 @@ Rules:
     }
 
     // Response models
-    private class DeepSeekResponse
+    private class DeepSeekApiResponse
     {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("object")]
+        public string Object { get; set; } = string.Empty;
+
+        [JsonPropertyName("created")]
+        public long Created { get; set; }
+
+        [JsonPropertyName("model")]
+        public string Model { get; set; } = string.Empty;
+
+        [JsonPropertyName("choices")]
         public List<DeepSeekChoice> Choices { get; set; } = new();
+
+        [JsonPropertyName("usage")]
+        public DeepSeekUsage? Usage { get; set; }
+
+        [JsonPropertyName("system_fingerprint")]
+        public string? SystemFingerprint { get; set; }
     }
 
     private class DeepSeekChoice
     {
+        [JsonPropertyName("index")]
+        public int Index { get; set; }
+
+        [JsonPropertyName("message")]
         public DeepSeekMessage Message { get; set; } = new();
+
+        [JsonPropertyName("logprobs")]
+        public object? Logprobs { get; set; }
+
+        [JsonPropertyName("finish_reason")]
+        public string FinishReason { get; set; } = string.Empty;
     }
 
     private class DeepSeekMessage
     {
+        [JsonPropertyName("role")]
+        public string Role { get; set; } = string.Empty;
+
+        [JsonPropertyName("content")]
         public string Content { get; set; } = string.Empty;
+    }
+
+    private class DeepSeekUsage
+    {
+        [JsonPropertyName("prompt_tokens")]
+        public int PromptTokens { get; set; }
+
+        [JsonPropertyName("completion_tokens")]
+        public int CompletionTokens { get; set; }
+
+        [JsonPropertyName("total_tokens")]
+        public int TotalTokens { get; set; }
+
+        [JsonPropertyName("prompt_tokens_details")]
+        public DeepSeekPromptTokensDetails? PromptTokensDetails { get; set; }
+
+        [JsonPropertyName("prompt_cache_hit_tokens")]
+        public int? PromptCacheHitTokens { get; set; }
+
+        [JsonPropertyName("prompt_cache_miss_tokens")]
+        public int? PromptCacheMissTokens { get; set; }
+    }
+
+    private class DeepSeekPromptTokensDetails
+    {
+        [JsonPropertyName("cached_tokens")]
+        public int CachedTokens { get; set; }
     }
 
     // Structured data models
@@ -389,4 +450,6 @@ Rules:
         public string? Instructions { get; set; }
         public double ConfidenceScore { get; set; }
     }
+
+    
 }

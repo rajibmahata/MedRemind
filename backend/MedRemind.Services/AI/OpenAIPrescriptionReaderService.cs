@@ -11,16 +11,16 @@ public class OpenAIPrescriptionReaderService : IPrescriptionReaderService
     private readonly string _apiKey;
     private readonly IValidationAgentService _validationAgent;
     private readonly AzureDocumentIntelligenceService _azureDocService;
-    private readonly MedicalPrescriptionParserAgent _parserAgent;
-    private readonly string _modelName; // NEW: Store model name
+    private readonly OpenAIPrescriptionParserAgent _parserAgent;
+    private readonly string _modelName; // Store model name
 
     public OpenAIPrescriptionReaderService(
         HttpClient httpClient,
         string apiKey,
         IValidationAgentService validationAgent,
         AzureDocumentIntelligenceService azureDocService,
-        MedicalPrescriptionParserAgent parserAgent,
-        string modelName = "gpt-4o") // NEW: Add model parameter with default
+        OpenAIPrescriptionParserAgent parserAgent,
+        string modelName = "gpt-4o") // Add model parameter with default
     {
         _httpClient = httpClient;
         _apiKey = apiKey;

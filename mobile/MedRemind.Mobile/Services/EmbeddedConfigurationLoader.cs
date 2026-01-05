@@ -238,6 +238,8 @@ public class OpenAIConfiguration
     public string Model { get; set; } = "gpt-4o";
     public int TimeoutSeconds { get; set; } = 30;
     public int MaxTokens { get; set; } = 1000;
+    public bool Enabled { get; set; } = true;  // NEW: Allow enabling/disabling
+    public int Priority { get; set; } = 2;      // NEW: Priority for parser system
 }
 
 /// <summary>
@@ -248,6 +250,8 @@ public class DeepSeekConfiguration
     public string ApiKey { get; set; } = string.Empty;
     public string Model { get; set; } = "deepseek-chat";
     public string ApiUrl { get; set; } = "https://api.deepseek.com/chat/completions";
+    public int TimeoutSeconds { get; set; } = 30;
+    public int MaxTokens { get; set; } = 5000;
     public bool Enabled { get; set; } = false;
     public int Priority { get; set; } = 1;
 }
@@ -259,6 +263,8 @@ public class ClaudeConfiguration
 {
     public string ApiKey { get; set; } = string.Empty;
     public string Model { get; set; } = "claude-3-5-sonnet-20241022";
+    public int TimeoutSeconds { get; set; } = 30;
+    public int MaxTokens { get; set; } = 5000;
     public bool Enabled { get; set; } = false;
     public int Priority { get; set; } = 3;
 }

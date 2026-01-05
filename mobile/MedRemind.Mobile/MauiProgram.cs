@@ -137,7 +137,7 @@ public static class MauiProgram
 
             var httpClient = new HttpClient(handler)
             {
-                Timeout = TimeSpan.FromSeconds(30) // Reduced from 120s for faster failure detection
+                Timeout = TimeSpan.FromSeconds(60) // Reduced from 120s for faster failure detection
             };
 
             // Add default headers
@@ -198,9 +198,9 @@ public static class MauiProgram
             var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey); // Use config model
             System.Diagnostics.Debug.WriteLine($"✅ OpenAI ChatClient initialized with model: {openAIModel}");
             
-            // Create Medical Prescription Parser Agent with ChatClient
-            var parserAgent = new MedicalPrescriptionParserAgent(chatClient);
-            System.Diagnostics.Debug.WriteLine($"✅ Medical Parser Agent initialized");
+            // Create OpenAI Parser Agent with ChatClient
+            var parserAgent = new OpenAIPrescriptionParserAgent(chatClient);
+            System.Diagnostics.Debug.WriteLine($"✅ OpenAI Parser Agent initialized");
             
             return new OpenAIPrescriptionReaderService(httpClient, openAIKey, validationAgent, azureDocService, parserAgent, openAIModel); // Pass model
         });
@@ -277,10 +277,12 @@ public static class MauiProgram
                 var httpClient = sp.GetRequiredService<HttpClient>();
                 System.Diagnostics.Debug.WriteLine($"✅ DeepSeek Parser: Enabled (Priority {deepSeek.Priority})");
                 System.Diagnostics.Debug.WriteLine($"   API URL: {deepSeek.ApiUrl}");
+                System.Diagnostics.Debug.WriteLine($"   Max Tokens: {deepSeek.MaxTokens}");
                 return new MedRemind.Services.AI.DeepSeekPrescriptionParserAgent(
                     httpClient, 
                     deepSeek.ApiKey,
-                    deepSeek.ApiUrl);
+                    deepSeek.ApiUrl,
+                    deepSeek.MaxTokens); // Pass MaxTokens from config
             }
             
             System.Diagnostics.Debug.WriteLine($"❌ DeepSeek Parser: Disabled");
@@ -296,9 +298,12 @@ public static class MauiProgram
             if (claude != null && claude.Enabled && !string.IsNullOrEmpty(claude.ApiKey) && !claude.ApiKey.Contains("_KEY_HERE"))
             {
                 System.Diagnostics.Debug.WriteLine($"✅ Claude Parser: Enabled (Priority {claude.Priority})");
-                System.Diagnostics.Debug.WriteLine($"⚠️ Note: Claude parser requires ClaudePrescriptionParserAgent implementation");
-                // TODO: Implement ClaudePrescriptionParserAgent
-                return null; // Not implemented yet
+                System.Diagnostics.Debug.WriteLine($"   Model: {claude.Model}");
+                System.Diagnostics.Debug.WriteLine($"   Max Tokens: {claude.MaxTokens}");
+                return new MedRemind.Services.AI.ClaudePrescriptionParserAgent(
+                    claude.ApiKey,
+                    claude.Model,
+                    claude.MaxTokens); // Pass MaxTokens from config
             }
             
             System.Diagnostics.Debug.WriteLine($"❌ Claude Parser: Disabled");
@@ -342,7 +347,7 @@ public static class MauiProgram
             var openAIKey = config.OpenAI.ApiKey;
             var openAIModel = config.OpenAI.Model;
             var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
-            var openAIParser = new MedRemind.Services.AI.MedicalPrescriptionParserAgent(chatClient);
+            var openAIParser = new OpenAIPrescriptionParserAgent(chatClient);
             
             // Get optional parsers - Use GetService instead of GetRequiredService
             var deepSeekParser = sp.GetService<MedRemind.Services.AI.DeepSeekPrescriptionParserAgent?>();
@@ -382,6 +387,98 @@ public static class MauiProgram
                 claudePriority: claudeConfig?.Priority ?? 3
             );
         });
+        
+        // ============================================
+        // NEW: AGENT ORCHESTRATOR V2 (Dynamic Architecture)
+        // ============================================
+        
+        // Register Memory Cache for prescription caching
+        builder.Services.AddMemoryCache();
+        
+        // Register PrescriptionCacheService
+        builder.Services.AddSingleton<MedRemind.Services.AI.PrescriptionCacheService>();
+        
+        // Register ParserRegistry
+        builder.Services.AddSingleton<MedRemind.Services.AI.ParserRegistry>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<MedRemind.Services.AI.ParserRegistry>>();
+            var registry = new MedRemind.Services.AI.ParserRegistry(logger);
+            
+            var config = EmbeddedConfigurationLoader.GetActiveEnvironmentConfig();
+            var parserLogger = sp.GetRequiredService<ILogger<MedRemind.Services.AI.ResilientParser>>();
+            
+            // Register DeepSeek Parser (if enabled)
+            var deepSeekParser = sp.GetService<MedRemind.Services.AI.DeepSeekPrescriptionParserAgent?>();
+            if (deepSeekParser != null && config.DeepSeek?.Enabled == true)
+            {
+                var adapter = new MedRemind.Services.AI.Adapters.DeepSeekParserAdapter(
+                    deepSeekParser,
+                    isEnabled: true,
+                    priority: config.DeepSeek.Priority);
+                
+                var resilient = new MedRemind.Services.AI.ResilientParser(adapter, parserLogger);
+                registry.Register(resilient);
+            }
+            
+            // Register OpenAI Parser (if enabled) - FIX: Check Enabled flag!
+            if (config.OpenAI?.Enabled == true)
+            {
+                var openAIKey = config.OpenAI.ApiKey;
+                var openAIModel = config.OpenAI.Model;
+                var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
+                var openAIParser = new OpenAIPrescriptionParserAgent(chatClient);
+                var openAIAdapter = new MedRemind.Services.AI.Adapters.OpenAIParserAdapter(
+                    openAIParser,
+                    priority: config.AIParser?.OpenAIPriority ?? 2);
+                var openAIResilient = new MedRemind.Services.AI.ResilientParser(openAIAdapter, parserLogger);
+                registry.Register(openAIResilient);
+                
+                System.Diagnostics.Debug.WriteLine($"✅ OpenAI Parser: Registered (Priority {config.AIParser?.OpenAIPriority ?? 2})");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ OpenAI Parser: Disabled in configuration");
+            }
+            
+            // Register Claude Parser (if enabled)
+            var claudeParser = sp.GetService<MedRemind.Services.AI.ClaudePrescriptionParserAgent?>();
+            if (claudeParser != null && config.Claude?.Enabled == true)
+            {
+                var adapter = new MedRemind.Services.AI.Adapters.ClaudeParserAdapter(
+                    claudeParser,
+                    isEnabled: true,
+                    priority: config.Claude.Priority);
+                
+                var resilient = new MedRemind.Services.AI.ResilientParser(adapter, parserLogger);
+                registry.Register(resilient);
+            }
+            
+            return registry;
+        });
+        
+        // Register Agent Orchestrator V2
+        builder.Services.AddScoped<MedRemind.Services.AI.AgentOrchestratorV2>(sp =>
+        {
+            var ocrSaver = sp.GetRequiredService<MedRemind.Services.AI.Agents.OCRTextSaverAgent>();
+            var parserRegistry = sp.GetRequiredService<MedRemind.Services.AI.ParserRegistry>();
+            var mergerService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionResultMergerService>();
+            var validationService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionValidationService>();
+            var deduplicationService = sp.GetRequiredService<MedRemind.Services.Prescriptions.PrescriptionDeduplicationService>();
+            var cacheService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionCacheService>();
+            var logger = sp.GetRequiredService<ILogger<MedRemind.Services.AI.AgentOrchestratorV2>>();
+            
+            return new MedRemind.Services.AI.AgentOrchestratorV2(
+                ocrSaver,
+                parserRegistry,
+                mergerService,
+                validationService,
+                deduplicationService,
+                cacheService,
+                logger,
+                executionMode: MedRemind.Services.AI.AgentOrchestratorV2.ExecutionMode.Parallel);
+        });
+        
+        System.Diagnostics.Debug.WriteLine($"✅ Agent Orchestrator V2 registered with dynamic architecture");
 
         // ============================================
         // BUSINESS SERVICES

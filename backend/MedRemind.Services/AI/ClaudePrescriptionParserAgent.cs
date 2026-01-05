@@ -8,10 +8,23 @@ namespace MedRemind.Services.AI;
 /// </summary>
 public class ClaudePrescriptionParserAgent
 {
-    public ClaudePrescriptionParserAgent(string apiKey, string model)
+    private readonly string _apiKey;
+    private readonly string _model;
+    private readonly int _maxTokens;
+
+    public ClaudePrescriptionParserAgent(
+        string apiKey, 
+        string model, 
+        int maxTokens = 5000) // NEW: Accept maxTokens from config
     {
+        _apiKey = apiKey;
+        _model = model;
+        _maxTokens = maxTokens;
+        
         System.Diagnostics.Debug.WriteLine("?? Claude Parser: Not yet implemented");
         System.Diagnostics.Debug.WriteLine("   Requires: Anthropic.SDK NuGet package");
+        System.Diagnostics.Debug.WriteLine($"   Model: {_model}");
+        System.Diagnostics.Debug.WriteLine($"   Max Tokens: {_maxTokens}");
     }
 
     public async Task<PrescriptionParseResult> ParsePrescriptionTextAsync(

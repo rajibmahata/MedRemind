@@ -18,7 +18,7 @@ public class AgentOrchestrator
     private readonly OCRTextSaverAgent _ocrSaverAgent;
     private readonly PrescriptionDataExtractionAgent _extractionAgent;
     private readonly ValidationAgent _validationAgent;
-    private readonly MedicalPrescriptionParserAgent _openAIParser;
+    private readonly OpenAIPrescriptionParserAgent _openAIParser;
     private readonly DeepSeekPrescriptionParserAgent? _deepSeekParser;
     private readonly ClaudePrescriptionParserAgent? _claudeParser;
     private readonly PrescriptionDeduplicationService _deduplicationService;
@@ -40,7 +40,7 @@ public class AgentOrchestrator
         OCRTextSaverAgent ocrSaverAgent,
         PrescriptionDataExtractionAgent extractionAgent,
         ValidationAgent validationAgent,
-        MedicalPrescriptionParserAgent openAIParser,
+        OpenAIPrescriptionParserAgent openAIParser,
         PrescriptionDeduplicationService deduplicationService,
         PrescriptionResultMergerService mergerService,
         PrescriptionValidationService validationService,

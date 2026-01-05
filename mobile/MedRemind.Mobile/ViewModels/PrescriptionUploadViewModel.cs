@@ -6,8 +6,7 @@ using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Medications;
 using MedRemind.Services.Prescriptions;
-using MedRemind.Services.AI.Agents;
-using MedRemind.Services.AI; // NEW: Add this for PrescriptionParseResult
+using MedRemind.Services.AI; // For PrescriptionParseResult and AgentOrchestratorV2
 
 namespace MedRemind.Mobile.ViewModels;
 
@@ -18,8 +17,8 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
     private readonly PrescriptionService _prescriptionService;
     private readonly MedicationService _medicationService;
     private readonly IReminderSchedulingService _reminderScheduling;
-    private readonly AgentOrchestrator _agentOrchestrator;
-    private readonly PrescriptionDeduplicationService _deduplicationService; // NEW
+    private readonly AgentOrchestratorV2 _agentOrchestrator; // UPDATED: Use V2
+    private readonly PrescriptionDeduplicationService _deduplicationService;
     private readonly AzureDocumentIntelligenceService _azureDocumentIntelligenceService; // NEW
 
     [ObservableProperty]
@@ -58,7 +57,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         PrescriptionService prescriptionService,
         MedicationService medicationService,
         IReminderSchedulingService reminderScheduling,
-        AgentOrchestrator agentOrchestrator,
+        AgentOrchestratorV2 agentOrchestrator, // UPDATED: Use V2
         PrescriptionDeduplicationService deduplicationService,
         AzureDocumentIntelligenceService azureDocumentIntelligenceService) // NEW
     {
@@ -67,9 +66,9 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         _prescriptionService = prescriptionService;
         _medicationService = medicationService;
         _reminderScheduling = reminderScheduling;
-        _agentOrchestrator = agentOrchestrator;
-        _deduplicationService = deduplicationService; // NEW
-        _azureDocumentIntelligenceService = azureDocumentIntelligenceService; // NEW
+        _agentOrchestrator = agentOrchestrator; // UPDATED: Use V2
+        _deduplicationService = deduplicationService;
+        _azureDocumentIntelligenceService = azureDocumentIntelligenceService;
         Title = "Upload Prescription";
     }
 
@@ -221,7 +220,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
     /// <summary>
     /// Compress image using platform-native APIs to stay under Azure Document Intelligence 4MB limit
     /// </summary>
-    private async Task<byte[]> CompressImageAsync(byte[] imageBytes, int targetSize, int maxSize)
+    private async Task<byte[]>  CompressImageAsync(byte[] imageBytes, int targetSize, int maxSize)
     {
         try
         {
@@ -300,7 +299,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("🚀 ProcessPrescription: Starting with Multi-Agent System...");
+                System.Diagnostics.Debug.WriteLine("🚀 ProcessPrescription: Starting with AgentOrchestrator V2...");
                 System.Diagnostics.Debug.WriteLine($"   Image size: {_imageBase64.Length} bytes ({(_imageBase64.Length / 1024.0):F2} KB)");
                 
                 // Check SecureStorage state
@@ -345,7 +344,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 System.Diagnostics.Debug.WriteLine($"✅ Prescription saved with ID: {prescription.Id}");
 
                
-                // First, extract OCR text using existing service
+                // First, extract OCR text using Azure Document Intelligence
                 var ocrText = await _azureDocumentIntelligenceService.ExtractTextFromImageAsync(_imageBase64);
                 
                 System.Diagnostics.Debug.WriteLine($"📄 OCR text extracted: {ocrText?.Length ?? 0} characters");
@@ -409,7 +408,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 }
 
                 // ================================================================
-                // NEW: Check for Duplicate Prescription
+                // Check for Duplicate Prescription (V2 also has internal caching)
                 // ================================================================
                 System.Diagnostics.Debug.WriteLine("\n🔍 Checking for duplicate prescription...");
                 
@@ -503,20 +502,26 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     System.Diagnostics.Debug.WriteLine("✅ No duplicate found - proceeding with fresh processing");
                 }
 
-                // Process with Multi-Agent Orchestrator (only if we have valid OCR text)
+                // ================================================================
+                // Process with AgentOrchestrator V2 (Dynamic Multi-Parser System)
+                // Features: Parallel execution, circuit breaker, internal caching
+                // ================================================================
+                System.Diagnostics.Debug.WriteLine("\n⚡ Starting AgentOrchestrator V2 (Parallel Mode)");
+                
                 var prescriptionFileName = Path.GetFileName(_imagePath ?? $"prescription_{prescription.Id}.jpg");
                 var orchestratorResult = await _agentOrchestrator.ProcessPrescriptionAsync(
                     ocrText,
                     prescriptionFileName,
-                    prescription.Id); // Pass prescription ID
+                    prescription.Id);
 
                 // Update UI with orchestrator results
                 ProcessingAttempts = orchestratorResult.TotalAttempts;
                 MatchScore = orchestratorResult.MatchScore;
 
-                System.Diagnostics.Debug.WriteLine($"\n📊 Orchestrator Results:");
+                System.Diagnostics.Debug.WriteLine($"\n📊 Orchestrator V2 Results:");
                 System.Diagnostics.Debug.WriteLine($"   Success: {orchestratorResult.Success}");
-                System.Diagnostics.Debug.WriteLine($"   Attempts: {orchestratorResult.TotalAttempts}");
+                System.Diagnostics.Debug.WriteLine($"   Parsers Used: {orchestratorResult.SelectedProvider}");
+                System.Diagnostics.Debug.WriteLine($"   Total Attempts: {orchestratorResult.TotalAttempts}");
                 System.Diagnostics.Debug.WriteLine($"   Match Score: {orchestratorResult.MatchScore:P0}");
                 System.Diagnostics.Debug.WriteLine($"   Processing Time: {orchestratorResult.ProcessingTime.TotalSeconds:F2}s");
 
@@ -571,20 +576,31 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
                         System.Diagnostics.Debug.WriteLine($"✅ Prescription status updated to Processed");
 
-                        // Build result message
+                        // Build enhanced result message with V2 metrics
                         var resultParts = new List<string>
                         {
-                            $"✅ All medications validated successfully!",
+                            $"✅ Processing complete with V2 architecture!",
                             $"",
                             $"📊 Quality Metrics:",
                             $"   • Match Score: {orchestratorResult.MatchScore:P0}",
-                            $"   • AI Attempts: {orchestratorResult.TotalAttempts}",
-                            $"   • Processing Time: {orchestratorResult.ProcessingTime.TotalSeconds:F1}s"
+                            $"   • Parsers Used: {orchestratorResult.SelectedProvider}",
+                            $"   • Processing Time: {orchestratorResult.ProcessingTime.TotalSeconds:F1}s",
+                            $"   • Medications Found: {result.Medications.Count}"
                         };
 
                         if (!string.IsNullOrWhiteSpace(orchestratorResult.WarningMessage))
                         {
                             resultParts.Add($"\n⚠️ Note: {orchestratorResult.WarningMessage}");
+                        }
+
+                        // Add performance indicator
+                        if (orchestratorResult.ProcessingTime.TotalSeconds < 5)
+                        {
+                            resultParts.Add($"\n⚡ Blazing fast! (Under 5 seconds)");
+                        }
+                        else if (orchestratorResult.ProcessingTime.TotalSeconds < 10)
+                        {
+                            resultParts.Add($"\n🚀 Fast processing! (Under 10 seconds)");
                         }
 
                         ResultMessage = string.Join("\n", resultParts);
@@ -596,7 +612,8 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                                 "Success",
                                 $"Found {result.Medications.Count} medication(s).\n\n" +
                                 $"Match Quality: {orchestratorResult.MatchScore:P0}\n" +
-                                $"AI Attempts: {orchestratorResult.TotalAttempts}\n\n" +
+                                $"Parsers: {orchestratorResult.SelectedProvider}\n" +
+                                $"Time: {orchestratorResult.ProcessingTime.TotalSeconds:F1}s\n\n" +
                                 $"{(!string.IsNullOrWhiteSpace(orchestratorResult.WarningMessage) ? orchestratorResult.WarningMessage + "\n\n" : "")}" +
                                 $"Review and tap 'Save Medications' to continue.",
                                 "OK"

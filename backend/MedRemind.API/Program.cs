@@ -72,8 +72,8 @@ builder.Services.AddScoped<IPrescriptionReaderService>(sp =>
     // Create ChatClient for OpenAI with configured model
     var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey); // Use config model
     
-    // Create Medical Prescription Parser Agent with ChatClient
-    var parserAgent = new MedicalPrescriptionParserAgent(chatClient);
+    // Create OpenAI Parser Agent with ChatClient
+    var parserAgent = new OpenAIPrescriptionParserAgent(chatClient);
     
     return new OpenAIPrescriptionReaderService(httpClient, openAIKey, validationAgent, azureDocService, parserAgent, openAIModel); // Pass model
 });
@@ -149,7 +149,7 @@ builder.Services.AddScoped<MedRemind.Services.AI.Agents.AgentOrchestrator>(sp =>
     var openAIKey = config["OpenAI:ApiKey"] ?? "";
     var openAIModel = config["OpenAI:Model"] ?? "gpt-4o";
     var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
-    var openAIParser = new MedRemind.Services.AI.MedicalPrescriptionParserAgent(chatClient);
+    var openAIParser = new OpenAIPrescriptionParserAgent(chatClient);
     
     // Get deduplication service
     var deduplicationService = sp.GetRequiredService<MedRemind.Services.Prescriptions.PrescriptionDeduplicationService>();

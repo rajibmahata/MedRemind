@@ -137,38 +137,8 @@ builder.Services.AddScoped<MedRemind.Services.Prescriptions.PrescriptionDeduplic
 builder.Services.AddScoped<MedRemind.Services.AI.PrescriptionResultMergerService>();
 builder.Services.AddScoped<MedRemind.Services.AI.PrescriptionValidationService>();
 
-// Register Agent Orchestrator
-builder.Services.AddScoped<MedRemind.Services.AI.Agents.AgentOrchestrator>(sp =>
-{
-    var ocrSaver = sp.GetRequiredService<MedRemind.Services.AI.Agents.OCRTextSaverAgent>();
-    var extraction = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionDataExtractionAgent>();
-    var validation = sp.GetRequiredService<MedRemind.Services.AI.Agents.ValidationAgent>();
-    
-    // Get OpenAI parser
-    var config = sp.GetRequiredService<IConfiguration>();
-    var openAIKey = config["OpenAI:ApiKey"] ?? "";
-    var openAIModel = config["OpenAI:Model"] ?? "gpt-4o";
-    var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
-    var openAIParser = new OpenAIPrescriptionParserAgent(chatClient);
-    
-    // Get deduplication service
-    var deduplicationService = sp.GetRequiredService<MedRemind.Services.Prescriptions.PrescriptionDeduplicationService>();
-    
-    // Get merger and validation services
-    var mergerService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionResultMergerService>();
-    var validationService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionValidationService>();
-    
-    return new MedRemind.Services.AI.Agents.AgentOrchestrator(
-        ocrSaver, 
-        extraction, 
-        validation,
-        openAIParser,
-        deduplicationService,
-        mergerService,
-        validationService
-    );
-});
-
+// AgentOrchestrator has been replaced by AgentOrchestratorV2 (in mobile app)
+// The API uses IPrescriptionReaderService instead
 
 // CORS
 builder.Services.AddCors(options =>

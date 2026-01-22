@@ -1,3 +1,4 @@
+using MedRemind.Core.DTOs;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using System.ComponentModel;
@@ -214,13 +215,4 @@ public class OCRTextSaverAgent
 /// <summary>
 /// Result from OCR save operation
 /// </summary>
-public class OCRSaveResult
-{
-    public bool Success { get; set; }
-    public string? SavedFilePath { get; set; }
-    public string? MetadataFilePath { get; set; }
-    public int TextLength { get; set; }
-    public string? ErrorMessage { get; set; }
-    public bool IsDuplicate { get; set; } // NEW: Indicates if this was a duplicate
-    public string? DuplicateAction { get; set; } // NEW: What action was taken (e.g., "Kept existing file", "Renamed old file")
-}
+

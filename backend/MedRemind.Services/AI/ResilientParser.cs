@@ -29,7 +29,7 @@ public class ResilientParser : IPrescriptionParser
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
-    public async Task<PrescriptionParseResult> ParseAsync(
+    public async Task<PrescriptionReadResult> ParseAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {
@@ -38,7 +38,7 @@ public class ResilientParser : IPrescriptionParser
             _logger.LogWarning($"?? {Name} circuit is OPEN. Skipping parser.");
             _logger.LogWarning($"   Will reset after {GetTimeUntilReset().TotalMinutes:F1} minutes");
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()
@@ -86,7 +86,7 @@ public class ResilientParser : IPrescriptionParser
             _logger.LogWarning($"?? {Name} timed out after {elapsed.TotalSeconds:F2}s (limit: {Timeout.TotalSeconds}s)");
             RecordFailure();
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()
@@ -98,7 +98,7 @@ public class ResilientParser : IPrescriptionParser
             _logger.LogError(ex, $"? {Name} failed after {elapsed.TotalSeconds:F2}s: {ex.Message}");
             RecordFailure();
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()

@@ -27,7 +27,7 @@ public class DeepSeekParserAdapter : IPrescriptionParser
         _priority = priority;
     }
     
-    public Task<PrescriptionParseResult> ParseAsync(
+    public Task<PrescriptionReadResult> ParseAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {
@@ -62,7 +62,7 @@ public class OpenAIParserAdapter : IPrescriptionParser
         _priority = priority;
     }
     
-    public Task<PrescriptionParseResult> ParseAsync(
+    public Task<PrescriptionReadResult> ParseAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {
@@ -99,7 +99,7 @@ public class ClaudeParserAdapter : IPrescriptionParser
         _priority = priority;
     }
     
-    public Task<PrescriptionParseResult> ParseAsync(
+    public Task<PrescriptionReadResult> ParseAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {

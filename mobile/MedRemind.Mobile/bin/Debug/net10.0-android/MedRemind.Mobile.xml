@@ -77,6 +77,11 @@
             Environment-specific configuration
             </summary>
         </member>
+        <member name="T:MedRemind.Mobile.Services.FileStorageConfigurationModel">
+            <summary>
+            File storage configuration model (for embedded config)
+            </summary>
+        </member>
         <member name="T:MedRemind.Mobile.Services.OpenAIConfiguration">
             <summary>
             OpenAI API configuration

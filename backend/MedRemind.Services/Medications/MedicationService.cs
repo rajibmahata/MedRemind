@@ -38,7 +38,7 @@ public class MedicationService
             DurationDays = medicationData.DurationDays,
             Instructions = medicationData.Instructions,
             StartDate = DateTime.UtcNow,
-            EndDate = DateTime.UtcNow.AddDays(medicationData.DurationDays),
+            EndDate = DateTime.UtcNow.AddDays(medicationData?.DurationDays ?? 0),
             IsActive = true
         };
 
@@ -101,16 +101,16 @@ public class MedicationService
         medication.FrequencyCount = updatedData.FrequencyCount;
         medication.DurationDays = updatedData.DurationDays;
         medication.Instructions = updatedData.Instructions;
-        medication.EndDate = medication.StartDate.AddDays(updatedData.DurationDays);
+        medication.EndDate = medication.StartDate.AddDays(updatedData.DurationDays ?? 0);
         medication.UpdatedAt = DateTime.UtcNow;
 
         await medicationRepo.UpdateAsync(medication);
         await _unitOfWork.SaveChangesAsync();
 
         // Reschedule reminders if frequency changed and user confirmed
-        if (frequencyChanged && rescheduleReminders)
+        if (frequencyChanged && rescheduleReminders && updatedData.FrequencyCount.HasValue)
         {
-            await UpdateRemindersAsync(medicationId, updatedData.FrequencyCount);
+            await UpdateRemindersAsync(medicationId, updatedData.FrequencyCount.Value);
         }
 
         return true;

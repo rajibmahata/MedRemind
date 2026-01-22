@@ -200,7 +200,7 @@ public class GeminiParser : IPrescriptionParser
     public bool IsEnabled => true;
     public TimeSpan Timeout => TimeSpan.FromSeconds(15);
     
-    public async Task<PrescriptionParseResult> ParseAsync(...)
+    public async Task<PrescriptionReadResult> ParseAsync(...)
     {
         // Implementation
     }

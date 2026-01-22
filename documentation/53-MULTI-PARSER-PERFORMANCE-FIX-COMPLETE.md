@@ -256,7 +256,7 @@ var parserTasks = parsers.Select(async (p) =>
     }
     catch (Exception ex)
     {
-        return (name, (PrescriptionParseResult?)null, success: false);
+        return (name, (PrescriptionReadResult?)null, success: false);
     }
 });
 
@@ -289,7 +289,7 @@ if (_parserFailureCount.GetValueOrDefault(name) >= MAX_CONSECUTIVE_FAILURES)
 Cache results for identical OCR text:
 
 ```csharp
-private Dictionary<string, PrescriptionParseResult> _cache = new();
+private Dictionary<string, PrescriptionReadResult> _cache = new();
 
 var cacheKey = GetCacheKey(ocrText);
 if (_cache.TryGetValue(cacheKey, out var cachedResult))

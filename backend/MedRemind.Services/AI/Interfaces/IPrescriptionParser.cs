@@ -31,7 +31,7 @@ public interface IPrescriptionParser
     /// <summary>
     /// Parse OCR text into structured prescription data
     /// </summary>
-    Task<PrescriptionParseResult> ParseAsync(
+    Task<PrescriptionReadResult> ParseAsync(
         string ocrText,
         CancellationToken cancellationToken = default);
     

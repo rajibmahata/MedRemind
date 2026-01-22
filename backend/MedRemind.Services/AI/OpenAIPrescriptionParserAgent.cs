@@ -1,6 +1,7 @@
 ﻿using System.ClientModel;
 using System.Text.Json;
 using MedRemind.Core.DTOs;
+using MedRemind.Services.AI.Agents;
 using OpenAI.Chat;
 
 namespace MedRemind.Services.AI;
@@ -24,7 +25,7 @@ public class OpenAIPrescriptionParserAgent
     /// <summary>
     /// Parse OCR text into structured prescription data with retry logic
     /// </summary>
-    public async Task<PrescriptionParseResult> ParsePrescriptionTextAsync(
+    public async Task<PrescriptionReadResult> ParsePrescriptionTextAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {
@@ -42,7 +43,7 @@ public class OpenAIPrescriptionParserAgent
                 if (string.IsNullOrWhiteSpace(ocrText))
                 {
                     System.Diagnostics.Debug.WriteLine("⚠️ OpenAI Parser: OCR text is empty");
-                    return new PrescriptionParseResult
+                    return new PrescriptionReadResult
                     {
                         Success = false,
                         Medications = new List<MedicationData>()
@@ -135,7 +136,7 @@ public class OpenAIPrescriptionParserAgent
                 System.Diagnostics.Debug.WriteLine($"   Status: {ex.Status}");
                 System.Diagnostics.Debug.WriteLine($"   Message: {ex.Message}");
                 
-                return new PrescriptionParseResult
+                return new PrescriptionReadResult
                 {
                     Success = false,
                     Medications = new List<MedicationData>()
@@ -169,7 +170,7 @@ public class OpenAIPrescriptionParserAgent
         System.Diagnostics.Debug.WriteLine($"❌ OpenAI Parser: All {MAX_RETRIES} attempts failed");
         System.Diagnostics.Debug.WriteLine($"   Last error: {lastException?.Message}");
         
-        return new PrescriptionParseResult
+        return new PrescriptionReadResult
         {
             Success = false,
             Medications = new List<MedicationData>()
@@ -224,7 +225,7 @@ Rules:
 7. Return empty medications array if none found";
     }
 
-    private PrescriptionParseResult ParseStructuredData(string jsonContent)
+    private PrescriptionReadResult ParseStructuredData(string jsonContent)
     {
         try
         {
@@ -254,26 +255,26 @@ Rules:
                 // PropertyNamingPolicy = JsonNamingPolicy.CamelCase // Keep commented out
             };
 
-            var data = JsonSerializer.Deserialize<PrescriptionStructuredData>(jsonContent, options);
+            var data = JsonSerializer.Deserialize<PrescriptionReadResult>(jsonContent, options);
 
             if (data == null)
             {
                 System.Diagnostics.Debug.WriteLine("⚠️ OpenAI Parser: Deserialization returned null");
                 System.Diagnostics.Debug.WriteLine($"   JSON content: {jsonContent.Substring(0, Math.Min(500, jsonContent.Length))}");
-                return new PrescriptionParseResult
+                return new PrescriptionReadResult
                 {
                     Success = false,
                     Medications = new List<MedicationData>()
                 };
             }
 
-            // Convert to PrescriptionParseResult
-            var result = new PrescriptionParseResult
+            // Convert to PrescriptionReadResult
+            var result = new PrescriptionReadResult
             {
                 Success = true,
                 Patient = data.Patient,
                 Doctor = data.Doctor,
-                PrescriptionDate = ParseDate(data.PrescriptionDate),
+                PrescriptionDate = data.PrescriptionDate,
                 Medications = ConvertMedications(data.Medications)
             };
 
@@ -286,7 +287,7 @@ Rules:
             System.Diagnostics.Debug.WriteLine($"   Path: {ex.Path}");
             System.Diagnostics.Debug.WriteLine($"   JSON snippet: {jsonContent.Substring(0, Math.Min(500, jsonContent.Length))}");
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()
@@ -298,7 +299,7 @@ Rules:
             System.Diagnostics.Debug.WriteLine($"   Type: {ex.GetType().Name}");
             System.Diagnostics.Debug.WriteLine($"   Stack: {ex.StackTrace}");
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()
@@ -317,7 +318,7 @@ Rules:
         return null;
     }
 
-    private List<MedicationData> ConvertMedications(List<MedicationStructuredData>? medications)
+    private List<MedicationData> ConvertMedications(List<MedicationData>? medications)
     {
         if (medications == null || !medications.Any())
         {
@@ -340,7 +341,7 @@ Rules:
         }).ToList();
     }
 
-    private string BuildInstructions(MedicationStructuredData med)
+    private string BuildInstructions(MedicationData med)
     {
         var parts = new List<string>();
 
@@ -363,57 +364,11 @@ Rules:
     }
 
     // Structured data models
-    private class PrescriptionStructuredData
-    {
-        public PatientData? Patient { get; set; }
-        public DoctorData? Doctor { get; set; }
-        public string? PrescriptionDate { get; set; }
-        public List<MedicationStructuredData>? Medications { get; set; }
-    }
+   
 
-    private class MedicationStructuredData
-    {
-        public string? Name { get; set; }
-        public string? Dosage { get; set; }
-        public string? Unit { get; set; }
-        public string? Frequency { get; set; }
-        public int? FrequencyCount { get; set; }  // ← Made nullable
-        public string? Duration { get; set; }
-        public int? DurationDays { get; set; }    // ← Made nullable (FIX!)
-        public string? Timing { get; set; }
-        public string? Instructions { get; set; }
-        public double? ConfidenceScore { get; set; }  // ← Made nullable
-    }
+   
 }
 
-/// <summary>
-/// Result from prescription parsing
-/// </summary>
-public class PrescriptionParseResult
-{
-    public bool Success { get; set; }
-    public PatientData? Patient { get; set; }
-    public DoctorData? Doctor { get; set; }
-    public DateTime? PrescriptionDate { get; set; }
-    public List<MedicationData> Medications { get; set; } = new();
-}
 
-/// <summary>
-/// Patient information
-/// </summary>
-public class PatientData
-{
-    public string? Name { get; set; }
-    public int? Age { get; set; }
-    public string? Gender { get; set; }
-}
 
-/// <summary>
-/// Doctor information
-/// </summary>
-public class DoctorData
-{
-    public string? Name { get; set; }
-    public string? RegistrationNumber { get; set; }
-    public string? Specialization { get; set; }
-}
+

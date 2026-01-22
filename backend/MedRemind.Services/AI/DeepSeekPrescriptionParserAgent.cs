@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static Microsoft.SemanticKernel.KernelJsonSchema;
 
 namespace MedRemind.Services.AI;
 
@@ -41,7 +42,7 @@ public class DeepSeekPrescriptionParserAgent
     /// <summary>
     /// Parse OCR text into structured prescription data using DeepSeek
     /// </summary>
-    public async Task<PrescriptionParseResult> ParsePrescriptionTextAsync(
+    public async Task<PrescriptionReadResult> ParsePrescriptionTextAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {
@@ -59,23 +60,18 @@ public class DeepSeekPrescriptionParserAgent
                 if (string.IsNullOrWhiteSpace(ocrText))
                 {
                     System.Diagnostics.Debug.WriteLine("?? DeepSeek Parser: OCR text is empty");
-                    return new PrescriptionParseResult
+                    return new PrescriptionReadResult
                     {
                         Success = false,
                         Medications = new List<MedicationData>()
                     };
                 }
-                //// Simplify OCR text to reduce token count
-                //var simplifiedText = SimplifyOcrText(ocrText);
-
-                //if (simplifiedText.Length > 5000) // Prevent very long texts
-                //{
-                //    simplifiedText = simplifiedText.Substring(0, 5000) + "...[truncated]";
-                //}
-
+               
                 var prompt = CreateParserPrompt(ocrText);
 
                 System.Diagnostics.Debug.WriteLine("?? DeepSeek Parser: Sending to DeepSeek API...");
+
+
 
                 var requestBody = new
                 {
@@ -97,6 +93,8 @@ public class DeepSeekPrescriptionParserAgent
                     temperature = 0.0, // Low temperature for consistent parsing
                     response_format = new { type = "json_object" }
                 };
+
+                string jsonRequest = JsonSerializer.Serialize(requestBody);
 
                 using var request = new HttpRequestMessage(HttpMethod.Post, _apiUrl);
                 request.Headers.Add("Authorization", $"Bearer {_apiKey}");
@@ -174,7 +172,7 @@ public class DeepSeekPrescriptionParserAgent
         System.Diagnostics.Debug.WriteLine($"? DeepSeek Parser: All {MAX_RETRIES} attempts failed");
         System.Diagnostics.Debug.WriteLine($"   Last error: {lastException?.Message}");
         
-        return new PrescriptionParseResult
+        return new PrescriptionReadResult
         {
             Success = false,
             Medications = new List<MedicationData>()
@@ -192,19 +190,19 @@ Format:
   ""doctor"": {{""name"": ""string"", ""registration_number"": ""string"", ""specialization"": ""string""}},
   ""prescription_date"": ""YYYY-MM-DD"",
   ""medications"": [
-    {{
-      ""name"": ""string"",
-      ""dosage"": ""string"",
-      ""unit"": ""string"",
-      ""frequency"": ""string"",
-      ""frequencyCount"": number,
-      ""duration"": ""string"",
-      ""durationDays"": number,
-      ""timing"": ""string"",
-      ""instructions"": ""string"",
-      ""confidenceScore"": number
-    }}
-  ]
+        {{
+          ""name"": ""string"",
+          ""dosage"": ""string"",
+          ""unit"": ""string"",
+          ""frequency"": ""string"",
+          ""frequencyCount"": number,
+          ""duration"": ""string"",
+          ""durationDays"": number,
+          ""timing"": ""string"",
+          ""instructions"": ""string"",
+          ""confidenceScore"": number
+        }}
+        ]
 }}
 
 Prescription:
@@ -226,7 +224,7 @@ Return valid JSON. Use null for missing fields.";
         return string.Join("\n", lines);
     }
 
-    private PrescriptionParseResult ParseStructuredData(string jsonContent)
+    private PrescriptionReadResult ParseStructuredData(string jsonContent)
     {
         try
         {
@@ -261,15 +259,15 @@ Return valid JSON. Use null for missing fields.";
             if (data == null)
             {
                 System.Diagnostics.Debug.WriteLine("?? DeepSeek Parser: Deserialization returned null");
-                return new PrescriptionParseResult
+                return new PrescriptionReadResult
                 {
                     Success = false,
                     Medications = new List<MedicationData>()
                 };
             }
 
-            // Convert to PrescriptionParseResult
-            var result = new PrescriptionParseResult
+            // Convert to PrescriptionReadResult
+            var result = new PrescriptionReadResult
             {
                 Success = true,
                 Patient = data.Patient,
@@ -286,7 +284,7 @@ Return valid JSON. Use null for missing fields.";
             System.Diagnostics.Debug.WriteLine($"   Message: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"   Path: {ex.Path}");
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()
@@ -296,7 +294,7 @@ Return valid JSON. Use null for missing fields.";
         {
             System.Diagnostics.Debug.WriteLine($"? DeepSeek Parser: Unexpected parsing error: {ex.Message}");
             
-            return new PrescriptionParseResult
+            return new PrescriptionReadResult
             {
                 Success = false,
                 Medications = new List<MedicationData>()

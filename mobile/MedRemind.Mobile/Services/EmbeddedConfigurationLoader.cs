@@ -227,6 +227,22 @@ public class EnvironmentConfiguration
     public TwoFactorConfiguration TwoFactor { get; set; } = new();
     public FeaturesConfiguration Features { get; set; } = new();
     public AIParserConfiguration? AIParser { get; set; }
+    public FileStorageConfigurationModel? FileStorage { get; set; }
+}
+
+/// <summary>
+/// File storage configuration model (for embedded config)
+/// </summary>
+public class FileStorageConfigurationModel
+{
+    public string OcrLogsFolderName { get; set; } = "MedRemind_OCR_Logs";
+    public string PrescriptionsFolderName { get; set; } = "MedRemind_Prescriptions";
+    public bool EnableFileLogging { get; set; } = true;
+    public bool CopyToPublicStorage { get; set; } = false;
+    public string PublicStorageFolderName { get; set; } = "MedRemind_Debug";
+    public int MaxLogFiles { get; set; } = 100;
+    public bool IncludeTimestampInFileName { get; set; } = true;
+    public string OcrFilePrefix { get; set; } = "Prescription_OCR";
 }
 
 /// <summary>

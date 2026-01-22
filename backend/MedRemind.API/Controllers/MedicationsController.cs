@@ -51,7 +51,7 @@ public class MedicationsController : ControllerBase
 
             if (request.CreateReminders)
             {
-                await _medicationService.CreateRemindersAsync(medication.Id, medication.FrequencyCount);
+                await _medicationService.CreateRemindersAsync(medication.Id, medication.FrequencyCount ?? 1);
             }
 
             return CreatedAtAction(nameof(GetMedication), new { id = medication.Id }, medication);

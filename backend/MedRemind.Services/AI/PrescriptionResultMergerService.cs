@@ -16,9 +16,9 @@ public class PrescriptionResultMergerService
     /// <summary>
     /// Merge two prescription parsing results, preferring non-null/more complete data
     /// </summary>
-    public PrescriptionParseResult MergeResults(
-        PrescriptionParseResult primary,
-        PrescriptionParseResult secondary,
+    public PrescriptionReadResult MergeResults(
+        PrescriptionReadResult primary,
+        PrescriptionReadResult secondary,
         string primaryProvider,
         string secondaryProvider)
     {
@@ -28,7 +28,7 @@ public class PrescriptionResultMergerService
             System.Diagnostics.Debug.WriteLine($"   Primary medications: {primary.Medications.Count}");
             System.Diagnostics.Debug.WriteLine($"   Secondary medications: {secondary.Medications.Count}");
 
-            var merged = new PrescriptionParseResult
+            var merged = new PrescriptionReadResult
             {
                 Success = primary.Success || secondary.Success,
                 Patient = MergePatientData(primary.Patient, secondary.Patient),
@@ -137,7 +137,7 @@ public class PrescriptionResultMergerService
             FrequencyCount = primary.FrequencyCount > 0 ? primary.FrequencyCount : secondary.FrequencyCount,
             DurationDays = primary.DurationDays > 0 ? primary.DurationDays : secondary.DurationDays,
             Instructions = ChooseBetter(primary.Instructions, secondary.Instructions),
-            ConfidenceScore = Math.Max(primary.ConfidenceScore, secondary.ConfidenceScore)
+            ConfidenceScore = Math.MaxMagnitude((double)primary?.ConfidenceScore, (double)secondary?.ConfidenceScore)
         };
     }
 
@@ -174,7 +174,7 @@ public class PrescriptionValidationService
     /// <summary>
     /// Check if prescription result is complete enough to skip additional AI calls
     /// </summary>
-    public ValidationQuality ValidateCompleteness(PrescriptionParseResult result)
+    public ValidationQuality ValidateCompleteness(PrescriptionReadResult result)
     {
         try
         {
@@ -209,7 +209,7 @@ public class PrescriptionValidationService
                 quality.MedicationsHaveDetails = completeMedications.Count == result.Medications.Count;
 
                 // Check confidence
-                quality.AverageConfidence = result.Medications.Average(m => m.ConfidenceScore);
+                quality.AverageConfidence = result.Medications.Average(m =>(double) m.ConfidenceScore);
             }
 
             // Calculate overall completeness

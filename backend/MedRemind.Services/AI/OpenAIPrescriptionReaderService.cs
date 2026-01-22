@@ -118,7 +118,7 @@ public class OpenAIPrescriptionReaderService : IPrescriptionReaderService
                 var result = new PrescriptionReadResult
                 {
                     Success = true,
-                    DoctorName = parseResult.Doctor?.Name,
+                    Doctor = parseResult.Doctor,
                     PrescriptionDate = parseResult.PrescriptionDate,
                     Medications = parseResult.Medications,
                     ConfidenceScore = 0.0
@@ -138,7 +138,7 @@ public class OpenAIPrescriptionReaderService : IPrescriptionReaderService
                         result.Medications,
                         cancellationToken);
 
-                    result.Warnings = warnings;
+                    result.ValidationWarnings = warnings;
                     System.Diagnostics.Debug.WriteLine($"? Validation: Complete. Warnings: {warnings.Count}");
 
                     // Calculate overall confidence score
@@ -366,7 +366,7 @@ Rules:
         if (!medications.Any())
             return 0.0;
 
-        return medications.Average(m => m.ConfidenceScore);
+        return medications.Average(m =>(double) m.ConfidenceScore);
     }
 
     private PrescriptionReadResult ParsePrescriptionData(string jsonContent)
@@ -404,7 +404,7 @@ Rules:
                 PropertyNameCaseInsensitive = true
             };
 
-            var data = JsonSerializer.Deserialize<PrescriptionJsonData>(jsonContent, options);
+            var data = JsonSerializer.Deserialize<PrescriptionReadResult>(jsonContent, options);
 
             if (data == null)
             {
@@ -417,8 +417,8 @@ Rules:
             }
 
             System.Diagnostics.Debug.WriteLine($"? Parsing: Deserialization successful");
-            System.Diagnostics.Debug.WriteLine($"   Doctor: {data.DoctorName ?? "N/A"}");
-            System.Diagnostics.Debug.WriteLine($"   Date: {data.PrescriptionDate ?? "N/A"}");
+            System.Diagnostics.Debug.WriteLine($"   Doctor: {data.Doctor.Name ?? "N/A"}");
+            System.Diagnostics.Debug.WriteLine($"   Date: {(data.PrescriptionDate.HasValue ? data.PrescriptionDate.Value.ToString("dd/MM/yyyy") : "N/A")}");
             System.Diagnostics.Debug.WriteLine($"   Medications: {data.Medications?.Count ?? 0}");
 
             if (data.Medications != null && data.Medications.Any())
@@ -432,8 +432,8 @@ Rules:
             return new PrescriptionReadResult
             {
                 Success = true,
-                DoctorName = data.DoctorName,
-                PrescriptionDate = ParseDate(data.PrescriptionDate),
+                Doctor = data.Doctor,
+                PrescriptionDate = data.PrescriptionDate,
                 Medications = data.Medications ?? new List<MedicationData>(),
                 ConfidenceScore = 0.0
             };
@@ -475,10 +475,5 @@ Rules:
         public string Content { get; set; } = string.Empty;
     }
 
-    private class PrescriptionJsonData
-    {
-        public string? DoctorName { get; set; }
-        public string? PrescriptionDate { get; set; }
-        public List<MedicationData>? Medications { get; set; }
-    }
+    
 }

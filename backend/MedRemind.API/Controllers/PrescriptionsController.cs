@@ -44,9 +44,9 @@ public class PrescriptionsController : ControllerBase
                 UserId = request.UserId,
                 ImagePath = $"data:image/jpeg;base64,{request.ImageBase64.Substring(0, Math.Min(50, request.ImageBase64.Length))}...",
                 PrescriptionDate = result.PrescriptionDate ?? DateTime.UtcNow,
-                DoctorName = result.DoctorName,
+                DoctorName = result?.Doctor?.Name,
                 Status = "Processed",
-                ConfidenceScore = result.ConfidenceScore
+                ConfidenceScore = result?.ConfidenceScore
             };
 
             var prescriptionRepo = _unitOfWork.Repository<Prescription>();
@@ -57,10 +57,10 @@ public class PrescriptionsController : ControllerBase
             {
                 prescriptionId = prescription.Id,
                 medications = result.Medications,
-                doctorName = result.DoctorName,
+                doctorName = result?.Doctor.Name,
                 prescriptionDate = result.PrescriptionDate,
                 confidenceScore = result.ConfidenceScore,
-                warnings = result.Warnings
+                warnings = result.ValidationWarnings
             });
         }
         catch (Exception ex)

@@ -1,8 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
+using MedRemind.Core.DTOs;
 using MedRemind.Services.AI.Agents;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace MedRemind.Services.AI;
 

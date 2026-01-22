@@ -27,7 +27,7 @@ public class ClaudePrescriptionParserAgent
         System.Diagnostics.Debug.WriteLine($"   Max Tokens: {_maxTokens}");
     }
 
-    public async Task<PrescriptionParseResult> ParsePrescriptionTextAsync(
+    public async Task<PrescriptionReadResult> ParsePrescriptionTextAsync(
         string ocrText,
         CancellationToken cancellationToken = default)
     {
@@ -36,7 +36,7 @@ public class ClaudePrescriptionParserAgent
         System.Diagnostics.Debug.WriteLine("? Claude Parser: Not implemented");
         
         // Return empty result
-        return new PrescriptionParseResult
+        return new PrescriptionReadResult
         {
             Success = false,
             Medications = new List<MedicationData>()

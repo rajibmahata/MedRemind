@@ -20,7 +20,7 @@
 ## Pending Items ?
 
 ### Build Errors to Fix
-- [ ] **ViewModel Type Mismatch**: `PrescriptionParseResult` vs `PrescriptionReadResult`
+- [ ] **ViewModel Type Mismatch**: `PrescriptionReadResult` vs `PrescriptionReadResult`
   - File: `mobile/MedRemind.Mobile/ViewModels/PrescriptionUploadViewModel.cs`
   - Line: 302, 319, 321, 322
   - Issue: Need to convert between types or use correct type
@@ -37,7 +37,7 @@
 
 ### Integration Tasks
 - [ ] **Multi-Agent Orchestrator**: Complete ViewModel integration
-- [ ] **Type Conversions**: Fix `PrescriptionParseResult` to `PrescriptionReadResult`
+- [ ] **Type Conversions**: Fix `PrescriptionReadResult` to `PrescriptionReadResult`
 - [ ] **Add Missing Properties**: Add `ProcessingAttempts` and `MatchScore` to ViewModel
 
 ### Testing Tasks
@@ -59,7 +59,7 @@ Result = result; // Already correct type: PrescriptionReadResult
 
 **Option B: Convert from Orchestrator Result**
 ```csharp
-// Convert PrescriptionParseResult to PrescriptionReadResult
+// Convert PrescriptionReadResult to PrescriptionReadResult
 Result = new PrescriptionReadResult
 {
     Success = orchestratorResult.ParseResult.Success,

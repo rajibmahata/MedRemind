@@ -6,7 +6,7 @@ using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Medications;
 using MedRemind.Services.Prescriptions;
-using MedRemind.Services.AI; // For PrescriptionParseResult and AgentOrchestratorV2
+using MedRemind.Services.AI; // For PrescriptionReadResult and AgentOrchestratorV2
 
 namespace MedRemind.Mobile.ViewModels;
 
@@ -345,68 +345,10 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
 
                
                 // First, extract OCR text using Azure Document Intelligence
-                var ocrText = await _azureDocumentIntelligenceService.ExtractTextFromImageAsync(_imageBase64);
+               var ocrText = await _azureDocumentIntelligenceService.ExtractTextFromImageAsync(_imageBase64).ConfigureAwait(false);
                 
                 System.Diagnostics.Debug.WriteLine($"📄 OCR text extracted: {ocrText?.Length ?? 0} characters");
-
-                // If OCR extraction failed or returned empty, use OpenAI Vision directly
-                if (string.IsNullOrWhiteSpace(ocrText) || ocrText.Length < 50)
-                {
-                    System.Diagnostics.Debug.WriteLine("⚠️ OCR text invalid - falling back to OpenAI Vision direct processing");
-                    
-                    // Use the existing prescription reader service which has OpenAI Vision fallback
-                    var directResult = await _prescriptionReader.ReadPrescriptionFromBase64Async(_imageBase64);
-                    
-                    if (directResult.Success && directResult.Medications != null && directResult.Medications.Any())
-                    {
-                        System.Diagnostics.Debug.WriteLine($"✅ OpenAI Vision direct processing successful");
-                        System.Diagnostics.Debug.WriteLine($"   Medications: {directResult.Medications.Count}");
-                        
-                        Result = directResult;
-                        ConfidenceScore = directResult.ConfidenceScore;
-                        HasResult = true;
-                        ExtractedMedications = new ObservableCollection<MedicationData>(directResult.Medications);
-                        
-                        // Update prescription with results
-                        if (!string.IsNullOrEmpty(directResult.DoctorName))
-                            prescription.DoctorName = directResult.DoctorName;
-                        if (directResult.PrescriptionDate.HasValue)
-                            prescription.PrescriptionDate = directResult.PrescriptionDate.Value;
-                        
-                        await _prescriptionService.UpdatePrescriptionStatusAsync(
-                            prescription.Id,
-                            "Processed",
-                            null,
-                            directResult.ConfidenceScore);
-                        
-                        ResultMessage = $"✅ Processing complete!\n\n" +
-                                      $"📊 Quality: {directResult.ConfidenceScore:P0}\n" +
-                                      $"💊 Medications: {directResult.Medications.Count}";
-                        
-                        var currentPage = GetCurrentPage();
-                        if (currentPage != null)
-                        {
-                            await currentPage.DisplayAlertAsync(
-                                "Success",
-                                $"Found {directResult.Medications.Count} medication(s).\n\n" +
-                                $"Confidence: {directResult.ConfidenceScore:P0}\n\n" +
-                                $"Review and tap 'Save Medications' to continue.",
-                                "OK"
-                            );
-                        }
-                        
-                        return; // Skip orchestrator
-                    }
-                    else
-                    {
-                        ResultMessage = "Failed to extract text from image. Please try with a clearer image.";
-                        HasResult = true;
-                        await _prescriptionService.UpdatePrescriptionStatusAsync(
-                            prescription.Id, "Failed", "Both OCR and OpenAI Vision failed");
-                        return;
-                    }
-                }
-
+                            
                 // ================================================================
                 // Check for Duplicate Prescription (V2 also has internal caching)
                 // ================================================================
@@ -421,76 +363,88 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     System.Diagnostics.Debug.WriteLine($"   Existing Prescription ID: {duplicateCheck.ExistingResult.PrescriptionId}");
                     System.Diagnostics.Debug.WriteLine($"   Processed: {duplicateCheck.ExistingResult.ProcessedAt:yyyy-MM-dd HH:mm}");
                     
-                    // Show alert to user
-                    var page = GetCurrentPage();
-                    if (page != null)
+                    // ✅ Dispatch to UI thread for dialog
+                    bool userResponse = false;
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
-                        var userResponse = await page.DisplayAlertAsync(
-                            "Duplicate Prescription Detected",
-                            $"{duplicateCheck.Message}\n\n" +
-                            $"Previously processed: {duplicateCheck.ExistingResult.ProcessedAt:yyyy-MM-dd HH:mm}\n" +
-                            $"Medications found: {duplicateCheck.ExistingResult.MedicationCount}\n" +
-                            $"Doctor: {duplicateCheck.ExistingResult.DoctorName ?? "N/A"}\n\n" +
-                            $"Do you want to use the existing result instead of processing again?",
-                            "Use Existing",
-                            "Process Anyway"
-                        );
+                        var page = GetCurrentPage();
+                        if (page != null)
+                        {
+                            userResponse = await page.DisplayAlertAsync(
+                                "Duplicate Prescription Detected",
+                                $"{duplicateCheck.Message}\n\n" +
+                                $"Previously processed: {duplicateCheck.ExistingResult.ProcessedAt:yyyy-MM-dd HH:mm}\n" +
+                                $"Medications found: {duplicateCheck.ExistingResult.MedicationCount}\n" +
+                                $"Doctor: {duplicateCheck.ExistingResult.DoctorName ?? "N/A"}\n\n" +
+                                $"Do you want to use the existing result instead of processing again?",
+                                "Use Existing",
+                                "Process Anyway"
+                            );
+                        }
+                    });
+                    
+                    if (userResponse)
+                    {
+                        System.Diagnostics.Debug.WriteLine("✅ User chose to use existing result");
                         
-                        if (userResponse)
+                        // Load existing result from JSON
+                        var existingParseResult = System.Text.Json.JsonSerializer.Deserialize<PrescriptionReadResult>(
+                            duplicateCheck.ExistingResult.SelectedResponse ?? "{}");
+                        
+                        if (existingParseResult != null && existingParseResult.Medications.Any())
                         {
-                            System.Diagnostics.Debug.WriteLine("✅ User chose to use existing result");
-                            
-                            // Load existing result from JSON
-                            var existingParseResult = System.Text.Json.JsonSerializer.Deserialize<PrescriptionParseResult>(
-                                duplicateCheck.ExistingResult.SelectedResponse ?? "{}");
-                            
-                            if (existingParseResult != null && existingParseResult.Medications.Any())
+                            // Convert to PrescriptionReadResult
+                            var result = new PrescriptionReadResult
                             {
-                                // Convert to PrescriptionReadResult
-                                var result = new PrescriptionReadResult
+                                Success = true,
+                                Doctor = existingParseResult?.Doctor,
+                                PrescriptionDate = existingParseResult?.PrescriptionDate,
+                                Medications = existingParseResult?.Medications,
+                                ConfidenceScore = duplicateCheck.ExistingResult.ComparisonScore
+                            };
+                            
+                            Result = result;
+                            ConfidenceScore = duplicateCheck.ExistingResult.ComparisonScore;
+                            HasResult = true;
+                            ExtractedMedications = new ObservableCollection<MedicationData>(result.Medications);
+                            
+                            // Update current prescription to reference existing result
+                            prescription.DoctorName = result?.Doctor?.Name;
+                            if (result.PrescriptionDate.HasValue)
+                                prescription.PrescriptionDate = result.PrescriptionDate.Value;
+                        
+                            await _prescriptionService.UpdatePrescriptionStatusAsync(
+                                prescription.Id,
+                                "Processed",
+                                "Using existing duplicate result",
+                                duplicateCheck.ExistingResult.ComparisonScore);
+                        
+                            ResultMessage = $"✅ Using existing prescription data!\n\n" +
+                                          $"📊 Original processed: {duplicateCheck.ExistingResult.ProcessedAt:yyyy-MM-dd}\n" +
+                                          $"💊 Medications: {result.Medications.Count}\n" +
+                                          $"⚡ No AI processing needed - saved costs!";
+                        
+                            // ✅ Dispatch to UI thread for dialog
+                            await MainThread.InvokeOnMainThreadAsync(async () =>
+                            {
+                                var page = GetCurrentPage();
+                                if (page != null)
                                 {
-                                    Success = true,
-                                    DoctorName = existingParseResult.Doctor?.Name,
-                                    PrescriptionDate = existingParseResult.PrescriptionDate,
-                                    Medications = existingParseResult.Medications,
-                                    ConfidenceScore = duplicateCheck.ExistingResult.ComparisonScore
-                                };
-                                
-                                Result = result;
-                                ConfidenceScore = duplicateCheck.ExistingResult.ComparisonScore;
-                                HasResult = true;
-                                ExtractedMedications = new ObservableCollection<MedicationData>(result.Medications);
-                                
-                                // Update current prescription to reference existing result
-                                prescription.DoctorName = result.DoctorName;
-                                if (result.PrescriptionDate.HasValue)
-                                    prescription.PrescriptionDate = result.PrescriptionDate.Value;
-                                
-                                await _prescriptionService.UpdatePrescriptionStatusAsync(
-                                    prescription.Id,
-                                    "Processed",
-                                    "Using existing duplicate result",
-                                    duplicateCheck.ExistingResult.ComparisonScore);
-                                
-                                ResultMessage = $"✅ Using existing prescription data!\n\n" +
-                                              $"📊 Original processed: {duplicateCheck.ExistingResult.ProcessedAt:yyyy-MM-dd}\n" +
-                                              $"💊 Medications: {result.Medications.Count}\n" +
-                                              $"⚡ No AI processing needed - saved costs!";
-                                
-                                await page.DisplayAlertAsync(
-                                    "Existing Data Loaded",
-                                    $"Loaded {result.Medications.Count} medication(s) from previous processing.\n\n" +
-                                    $"Review and tap 'Save Medications' to continue.",
-                                    "OK"
-                                );
-                                
-                                return; // Skip processing
-                            }
+                                    await page.DisplayAlertAsync(
+                                        "Existing Data Loaded",
+                                        $"Loaded {result.Medications.Count} medication(s) from previous processing.\n\n" +
+                                        $"Review and tap 'Save Medications' to continue.",
+                                        "OK"
+                                    );
+                                }
+                            });
+                            
+                            return; // Skip processing
                         }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine("ℹ️ User chose to process anyway (despite duplicate)");
-                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("ℹ️ User chose to process anyway (despite duplicate)");
                     }
                 }
                 else if (!duplicateCheck.IsDuplicate && duplicateCheck.SimilarityScore > 0)
@@ -509,10 +463,14 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 System.Diagnostics.Debug.WriteLine("\n⚡ Starting AgentOrchestrator V2 (Parallel Mode)");
                 
                 var prescriptionFileName = Path.GetFileName(_imagePath ?? $"prescription_{prescription.Id}.jpg");
-                var orchestratorResult = await _agentOrchestrator.ProcessPrescriptionAsync(
-                    ocrText,
-                    prescriptionFileName,
-                    prescription.Id);
+                
+                // Run on background thread to avoid UI blocking
+                var orchestratorResult = await Task.Run(async () =>
+                    await _agentOrchestrator.ProcessPrescriptionAsync(
+                        ocrText,
+                        prescriptionFileName,
+                        prescription.Id)
+                ).ConfigureAwait(false);
 
                 // Update UI with orchestrator results
                 ProcessingAttempts = orchestratorResult.TotalAttempts;
@@ -529,11 +487,11 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                 {
                     var parseResult = orchestratorResult.ParseResult;
                     
-                    // Convert PrescriptionParseResult to PrescriptionReadResult
+                    // Convert PrescriptionReadResult to PrescriptionReadResult
                     var result = new PrescriptionReadResult
                     {
                         Success = parseResult.Success,
-                        DoctorName = parseResult.Doctor?.Name,
+                        Doctor = parseResult.Doctor,
                         PrescriptionDate = parseResult.PrescriptionDate,
                         Medications = parseResult.Medications,
                         ConfidenceScore = orchestratorResult.MatchScore
@@ -556,10 +514,10 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                         }
                         
                         // Update prescription with doctor and date info
-                        if (!string.IsNullOrEmpty(result.DoctorName))
+                        if (!string.IsNullOrEmpty(result.Doctor.Name))
                         {
-                            prescription.DoctorName = result.DoctorName;
-                            System.Diagnostics.Debug.WriteLine($"   Doctor: {result.DoctorName}");
+                            prescription.DoctorName = result.Doctor.Name;
+                            System.Diagnostics.Debug.WriteLine($"   Doctor: {result.Doctor.Name}");
                         }
                         if (result.PrescriptionDate.HasValue)
                         {

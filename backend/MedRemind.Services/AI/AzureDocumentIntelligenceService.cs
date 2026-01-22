@@ -1,7 +1,10 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
 using System.Text;
+using System.Text.Json;
 using SkiaSharp;
+using MedRemind.Services.AI.Extensions;
+using MedRemind.Core.Interfaces;
 
 namespace MedRemind.Services.AI;
 
@@ -13,22 +16,33 @@ namespace MedRemind.Services.AI;
 public class AzureDocumentIntelligenceService
 {
     private readonly DocumentIntelligenceClient _client;
+    private readonly PrescriptionOcrTextPreprocessor _prescriptionOcrTextPreprocessor;
+    private readonly IFileStorageService _fileStorageService;
     private readonly string _endpoint;
-    
+
     // Azure Document Intelligence size limits (4MB for Read API)
     private const int MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024; // 4MB
     private const int TARGET_IMAGE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB target for safety margin
 
-    public AzureDocumentIntelligenceService(HttpClient httpClient, string endpoint, string apiKey)
+    public AzureDocumentIntelligenceService(
+        HttpClient httpClient, 
+        string endpoint, 
+        string apiKey, 
+        PrescriptionOcrTextPreprocessor prescriptionOcrTextPreprocessor,
+        IFileStorageService fileStorageService)
     {
         _endpoint = endpoint.TrimEnd('/');
-        
+
         // Create Azure Document Intelligence client with credentials
         var credential = new AzureKeyCredential(apiKey);
         _client = new DocumentIntelligenceClient(new Uri(_endpoint), credential);
-        
+
+        _prescriptionOcrTextPreprocessor = prescriptionOcrTextPreprocessor;
+        _fileStorageService = fileStorageService;
+
         System.Diagnostics.Debug.WriteLine($"📄 Azure DI: Client initialized");
         System.Diagnostics.Debug.WriteLine($"   Endpoint: {_endpoint}");
+        System.Diagnostics.Debug.WriteLine($"   File Storage: {(_fileStorageService.IsFileLoggingEnabled() ? "Enabled" : "Disabled")}");
     }
 
     /// <summary>
@@ -44,7 +58,7 @@ public class AzureDocumentIntelligenceService
 
             // Convert base64 to bytes
             var imageBytes = Convert.FromBase64String(base64Image);
-            
+
             System.Diagnostics.Debug.WriteLine($"📊 Original image size: {imageBytes.Length / 1024.0:F2} KB ({imageBytes.Length / (1024.0 * 1024.0):F2} MB)");
 
             // Resize if image exceeds target size (3MB for safety margin)
@@ -54,7 +68,7 @@ public class AzureDocumentIntelligenceService
                 imageBytes = await ResizeImageForDocumentAnalysisAsync(imageBytes);
                 System.Diagnostics.Debug.WriteLine($"✅ Resized to: {imageBytes.Length / 1024.0:F2} KB ({imageBytes.Length / (1024.0 * 1024.0):F2} MB)");
             }
-            
+
             // Final safety check
             if (imageBytes.Length > MAX_IMAGE_SIZE_BYTES)
             {
@@ -63,7 +77,7 @@ public class AzureDocumentIntelligenceService
                     $"Image size ({sizeMB:F2} MB) still exceeds Azure Document Intelligence limit (4 MB) after resizing. " +
                     $"Please use a lower resolution image.");
             }
-            
+
             System.Diagnostics.Debug.WriteLine("📄 Azure DI: Creating BinaryData from image bytes...");
 
             // Create BinaryData from image bytes
@@ -74,7 +88,7 @@ public class AzureDocumentIntelligenceService
 
             // Analyze document with prebuilt-read model (optimized for text extraction)
             var operation = await _client.AnalyzeDocumentAsync(
-                WaitUntil.Completed, 
+                WaitUntil.Completed,
                 "prebuilt-read",
                 binaryData,
                 cancellationToken: cancellationToken);
@@ -86,10 +100,16 @@ public class AzureDocumentIntelligenceService
             // Extract text from result
             var extractedText = ExtractTextFromResult(result);
 
+            // Preprocess and normalize OCR text for better AI parsing
+            var normalize_extractedText = _prescriptionOcrTextPreprocessor.Preprocess(extractedText, PrescriptionOcrTextPreprocessor.ProcessingMode.Minimal);
+
+            // Save OCR results using FileStorageService
+            await SaveOcrResultsAsync(extractedText, normalize_extractedText, result);
+
             System.Diagnostics.Debug.WriteLine($"✅ Azure DI: Text extraction complete");
             System.Diagnostics.Debug.WriteLine($"   Extracted text length: {extractedText.Length} characters");
-  
-            return extractedText;
+
+            return normalize_extractedText;
         }
         catch (RequestFailedException ex)
         {
@@ -97,7 +117,7 @@ public class AzureDocumentIntelligenceService
             System.Diagnostics.Debug.WriteLine($"   Status: {ex.Status}");
             System.Diagnostics.Debug.WriteLine($"   Error Code: {ex.ErrorCode}");
             System.Diagnostics.Debug.WriteLine($"   Message: {ex.Message}");
-            
+
             throw new HttpRequestException($"Azure DI Error [{ex.ErrorCode}]: {ex.Message}", ex);
         }
         catch (Exception ex)
@@ -122,18 +142,18 @@ public class AzureDocumentIntelligenceService
         {
             // Use SkiaSharp for cross-platform image processing
             using var originalBitmap = SKBitmap.Decode(imageBytes);
-            
+
             if (originalBitmap == null)
             {
                 System.Diagnostics.Debug.WriteLine("❌ Failed to decode image, returning original");
                 return imageBytes;
             }
-            
+
             System.Diagnostics.Debug.WriteLine($"📐 Original dimensions: {originalBitmap.Width}x{originalBitmap.Height}");
 
             // Calculate scale factor to target size while preserving aspect ratio
             double scaleFactor = Math.Sqrt((double)TARGET_IMAGE_SIZE_BYTES / imageBytes.Length);
-            
+
             // For document analysis, don't scale down too much (minimum 50% of original)
             // to preserve text readability
             scaleFactor = Math.Max(scaleFactor, 0.5);
@@ -146,9 +166,9 @@ public class AzureDocumentIntelligenceService
 
             // Resize with high quality (FilterQuality.High for documents)
             using var resizedBitmap = originalBitmap.Resize(
-                new SKImageInfo(newWidth, newHeight), 
+                new SKImageInfo(newWidth, newHeight),
                 SKFilterQuality.High); // High quality for text preservation
-            
+
             if (resizedBitmap == null)
             {
                 System.Diagnostics.Debug.WriteLine("❌ Failed to resize image, returning original");
@@ -158,13 +178,13 @@ public class AzureDocumentIntelligenceService
             // Encode as JPEG with 90% quality (document standard)
             using var image = SKImage.FromBitmap(resizedBitmap);
             using var data = image.Encode(SKEncodedImageFormat.Jpeg, 90); // 90% quality for documents
-            
+
             if (data == null)
             {
                 System.Diagnostics.Debug.WriteLine("❌ Failed to encode image, returning original");
                 return imageBytes;
             }
-            
+
             var resizedBytes = data.ToArray();
             System.Diagnostics.Debug.WriteLine($"✅ First pass: {resizedBytes.Length / 1024.0:F2} KB ({(1.0 - (double)resizedBytes.Length / imageBytes.Length):P0} reduction)");
 
@@ -173,7 +193,7 @@ public class AzureDocumentIntelligenceService
             {
                 System.Diagnostics.Debug.WriteLine("⚠️ Still above limit, reducing quality to 85%...");
                 using var data2 = image.Encode(SKEncodedImageFormat.Jpeg, 85); // 85% quality
-                
+
                 if (data2 != null)
                 {
                     resizedBytes = data2.ToArray();
@@ -207,7 +227,7 @@ public class AzureDocumentIntelligenceService
         try
         {
             using var originalBitmap = SKBitmap.Decode(imageBytes);
-            
+
             if (originalBitmap == null)
             {
                 return imageBytes;
@@ -217,9 +237,9 @@ public class AzureDocumentIntelligenceService
             int newHeight = (int)(originalBitmap.Height * scaleFactor);
 
             using var resizedBitmap = originalBitmap.Resize(
-                new SKImageInfo(newWidth, newHeight), 
+                new SKImageInfo(newWidth, newHeight),
                 SKFilterQuality.High);
-            
+
             if (resizedBitmap == null)
             {
                 return imageBytes;
@@ -227,18 +247,60 @@ public class AzureDocumentIntelligenceService
 
             using var image = SKImage.FromBitmap(resizedBitmap);
             using var data = image.Encode(SKEncodedImageFormat.Jpeg, 85); // 85% quality
-            
+
             if (data == null)
             {
                 return imageBytes;
             }
-            
+
             return data.ToArray();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"❌ Scale resize failed: {ex.Message}");
             return imageBytes;
+        }
+    }
+
+    /// <summary>
+    /// Save OCR results using FileStorageService
+    /// </summary>
+    private async Task SaveOcrResultsAsync(string extractedText, string normalizedText, AnalyzeResult result)
+    {
+        if (!_fileStorageService.IsFileLoggingEnabled())
+        {
+            System.Diagnostics.Debug.WriteLine("📁 File logging is disabled, skipping save");
+            return;
+        }
+
+        try
+        {
+            // Serialize Azure DI result to JSON
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
+            var jsonContent = JsonSerializer.Serialize(result, jsonOptions);
+
+            // Save all files using FileStorageService
+            var (rawPath, normalizedPath, jsonPath) = await _fileStorageService.SaveOcrResultsAsync(
+                extractedText,
+                normalizedText,
+                jsonContent);
+
+            if (!string.IsNullOrEmpty(rawPath))
+            {
+                System.Diagnostics.Debug.WriteLine($"✅ OCR results saved via FileStorageService:");
+                System.Diagnostics.Debug.WriteLine($"   Raw: {Path.GetFileName(rawPath)}");
+                System.Diagnostics.Debug.WriteLine($"   Normalized: {Path.GetFileName(normalizedPath)}");
+                System.Diagnostics.Debug.WriteLine($"   JSON: {Path.GetFileName(jsonPath)}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"⚠️ Failed to save OCR results: {ex.Message}");
+            // Don't throw - saving logs is optional and shouldn't break the main flow
         }
     }
 
@@ -259,14 +321,14 @@ public class AzureDocumentIntelligenceService
                 for (int i = 0; i < page.Lines.Count; i++)
                 {
                     DocumentLine line = page.Lines[i];
-                    
+
                     if (!string.IsNullOrEmpty(line.Content))
                     {
                         textBuilder.AppendLine(line.Content);
-                        
+
                         // Log line details for debugging
                         System.Diagnostics.Debug.WriteLine($"  Line {i}: '{line.Content}'");
-                        
+
                         // Optional: Log bounding box for spatial analysis
                         if (line.Polygon != null && line.Polygon.Count >= 8)
                         {
@@ -284,7 +346,7 @@ public class AzureDocumentIntelligenceService
             if (result.Styles != null && result.Styles.Count > 0)
             {
                 System.Diagnostics.Debug.WriteLine($"📝 Checking {result.Styles.Count} style(s) for handwritten content...");
-                
+
                 foreach (DocumentStyle style in result.Styles)
                 {
                     bool isHandwritten = style.IsHandwritten.HasValue && style.IsHandwritten == true;
@@ -297,13 +359,13 @@ public class AzureDocumentIntelligenceService
                         {
                             foreach (DocumentSpan span in style.Spans)
                             {
-                                if (!string.IsNullOrEmpty(result.Content) && 
+                                if (!string.IsNullOrEmpty(result.Content) &&
                                     span.Offset < result.Content.Length)
                                 {
                                     int length = Math.Min(span.Length, result.Content.Length - span.Offset);
                                     string handwrittenText = result.Content.Substring(span.Offset, length);
                                     System.Diagnostics.Debug.WriteLine($"  Handwritten: '{handwrittenText}'");
-                                    
+
                                     // Add marker for handwritten content
                                     textBuilder.AppendLine($"[Handwritten: {handwrittenText}]");
                                 }
@@ -317,7 +379,7 @@ public class AzureDocumentIntelligenceService
             if (result.Languages != null && result.Languages.Count > 0)
             {
                 System.Diagnostics.Debug.WriteLine($"🌐 Detected {result.Languages.Count} language(s):");
-                
+
                 foreach (DocumentLanguage language in result.Languages)
                 {
                     System.Diagnostics.Debug.WriteLine($"  Language: '{language.Locale}' (confidence: {language.Confidence:P0})");
@@ -325,7 +387,7 @@ public class AzureDocumentIntelligenceService
             }
 
             var extractedText = textBuilder.ToString();
-            
+
             // Log extraction summary
             System.Diagnostics.Debug.WriteLine($"✅ Text extraction complete:");
             System.Diagnostics.Debug.WriteLine($"   Total characters: {extractedText.Length}");

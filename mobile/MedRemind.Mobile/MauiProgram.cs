@@ -46,6 +46,37 @@ public static class MauiProgram
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // File Storage Service (with configuration from appsettings.json)
+        builder.Services.Configure<FileStorageConfiguration>(options =>
+        {
+            var config = EmbeddedConfigurationLoader.GetActiveEnvironmentConfig();
+            var fileStorageConfig = config.FileStorage;
+            
+            if (fileStorageConfig != null)
+            {
+                options.OcrLogsFolderName = fileStorageConfig.OcrLogsFolderName;
+                options.PrescriptionsFolderName = fileStorageConfig.PrescriptionsFolderName;
+                options.EnableFileLogging = fileStorageConfig.EnableFileLogging;
+                options.CopyToPublicStorage = fileStorageConfig.CopyToPublicStorage;
+                options.PublicStorageFolderName = fileStorageConfig.PublicStorageFolderName;
+                options.MaxLogFiles = fileStorageConfig.MaxLogFiles;
+                options.IncludeTimestampInFileName = fileStorageConfig.IncludeTimestampInFileName;
+                options.OcrFilePrefix = fileStorageConfig.OcrFilePrefix;
+                
+                System.Diagnostics.Debug.WriteLine($"✅ FileStorageConfiguration loaded from appsettings.json");
+                System.Diagnostics.Debug.WriteLine($"   OCR Logs Folder: {options.OcrLogsFolderName}");
+                System.Diagnostics.Debug.WriteLine($"   File Logging: {options.EnableFileLogging}");
+                System.Diagnostics.Debug.WriteLine($"   Copy to Public Storage: {options.CopyToPublicStorage}");
+                System.Diagnostics.Debug.WriteLine($"   Max Log Files: {options.MaxLogFiles}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ FileStorage configuration not found in appsettings.json, using defaults");
+            }
+        });
+        builder.Services.AddSingleton<IFileStorageService, MedRemind.Services.Storage.FileStorageService>();
+        System.Diagnostics.Debug.WriteLine($"✅ FileStorageService registered");
+
         // Services - Use MAUI-specific SecureStorage implementation
         builder.Services.AddSingleton<ISecureStorageService, MauiSecureStorageService>();
         builder.Services.AddSingleton<IBiometricService, BiometricService>();
@@ -89,38 +120,38 @@ public static class MauiProgram
             // Configure HttpClientHandler for better Android compatibility
             var handler = new HttpClientHandler
             {
-#if DEBUG
-                // Allow all SSL certificates in development (Android emulator issues)
+                #if DEBUG
+                  // Allow all SSL certificates in development (Android emulator issues)
                 ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) =>
-                {
-                    if (sslPolicyErrors != System.Net.Security.SslPolicyErrors.None)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"⚠️ SSL Certificate validation warning: {sslPolicyErrors}");
-                        System.Diagnostics.Debug.WriteLine($"   Certificate Subject: {cert?.Subject}");
-                        System.Diagnostics.Debug.WriteLine($"   Certificate Issuer: {cert?.Issuer}");
-                        System.Diagnostics.Debug.WriteLine($"   Valid From: {cert?.NotBefore}");
-                        System.Diagnostics.Debug.WriteLine($"   Valid To: {cert?.NotAfter}");
+                                {
+                                    if (sslPolicyErrors != System.Net.Security.SslPolicyErrors.None)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"⚠️ SSL Certificate validation warning: {sslPolicyErrors}");
+                                        System.Diagnostics.Debug.WriteLine($"   Certificate Subject: {cert?.Subject}");
+                                        System.Diagnostics.Debug.WriteLine($"   Certificate Issuer: {cert?.Issuer}");
+                                        System.Diagnostics.Debug.WriteLine($"   Valid From: {cert?.NotBefore}");
+                                        System.Diagnostics.Debug.WriteLine($"   Valid To: {cert?.NotAfter}");
                         
-                        // Log chain errors
-                        if (chain != null)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"   Chain Status Count: {chain.ChainStatus.Length}");
-                            foreach (var status in chain.ChainStatus)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"      - {status.Status}: {status.StatusInformation}");
-                            }
-                        }
+                                        // Log chain errors
+                                        if (chain != null)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"   Chain Status Count: {chain.ChainStatus.Length}");
+                                            foreach (var status in chain.ChainStatus)
+                                            {
+                                                System.Diagnostics.Debug.WriteLine($"      - {status.Status}: {status.StatusInformation}");
+                                            }
+                                        }
                         
-                        // Accept all certificates in DEBUG mode for emulator compatibility
-                        System.Diagnostics.Debug.WriteLine("   ✅ Accepting certificate in DEBUG mode");
-                        return true;
-                    }
-                    return true;
-                },
-#else
+                                        // Accept all certificates in DEBUG mode for emulator compatibility
+                                        System.Diagnostics.Debug.WriteLine("   ✅ Accepting certificate in DEBUG mode");
+                                        return true;
+                                    }
+                                    return true;
+                                },
+                #else
                 // Production: Use default SSL validation
                 CheckCertificateRevocationList = true,
-#endif
+                #endif
                 // Enable automatic decompression
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
                 
@@ -137,7 +168,7 @@ public static class MauiProgram
 
             var httpClient = new HttpClient(handler)
             {
-                Timeout = TimeSpan.FromSeconds(60) // Reduced from 120s for faster failure detection
+                Timeout = TimeSpan.FromMinutes(15) // Reduced from 15s for faster failure detection
             };
 
             // Add default headers
@@ -149,11 +180,12 @@ public static class MauiProgram
             System.Diagnostics.Debug.WriteLine("✅ HttpClient configured with Android optimizations");
             System.Diagnostics.Debug.WriteLine($"   Timeout: {httpClient.Timeout.TotalSeconds}s");
             System.Diagnostics.Debug.WriteLine($"   SSL Protocols: TLS 1.2, TLS 1.3");
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine($"   SSL Validation: Custom (Accept All in DEBUG)");
-#else
-            System.Diagnostics.Debug.WriteLine($"   SSL Validation: Default (Production)");
-#endif
+
+            #if DEBUG
+                        System.Diagnostics.Debug.WriteLine($"   SSL Validation: Custom (Accept All in DEBUG)");
+            #else
+                        System.Diagnostics.Debug.WriteLine($"   SSL Validation: Default (Production)");
+            #endif
 
             return httpClient;
         });
@@ -192,7 +224,9 @@ public static class MauiProgram
             }
             
             // Create Azure Document Intelligence service
-            var azureDocService = new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey);
+            var prescriptionOcrTextPreprocessor = sp.GetRequiredService<PrescriptionOcrTextPreprocessor>();
+            var fileStorageService = sp.GetRequiredService<IFileStorageService>();
+            var azureDocService = new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey, prescriptionOcrTextPreprocessor, fileStorageService);
             
             // Create ChatClient for OpenAI with configured model
             var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey); // Use config model
@@ -214,7 +248,9 @@ public static class MauiProgram
             var azureKey = config.AzureDocumentIntelligence.ApiKey;
             
             System.Diagnostics.Debug.WriteLine($"✅ Registering standalone Azure Document Intelligence Service");
-            return new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey);
+            var prescriptionOcrTextPreprocessor = sp.GetRequiredService<PrescriptionOcrTextPreprocessor>();
+            var fileStorageService = sp.GetRequiredService<IFileStorageService>();
+            return new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey, prescriptionOcrTextPreprocessor, fileStorageService);
         });
 
         // ============================================
@@ -333,61 +369,7 @@ public static class MauiProgram
             return new MedRemind.Services.AI.Agents.ValidationAgent(extractionAgent);
         });
 
-        // Register Agent Orchestrator with Priority-Based Multi-Parser System
-        builder.Services.AddScoped<MedRemind.Services.AI.Agents.AgentOrchestrator>(sp =>
-        {
-            var ocrSaver = sp.GetRequiredService<MedRemind.Services.AI.Agents.OCRTextSaverAgent>();
-            var extraction = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionDataExtractionAgent>();
-            var validation = sp.GetRequiredService<MedRemind.Services.AI.Agents.ValidationAgent>();
-            
-            // Get config
-            var config = EmbeddedConfigurationLoader.GetActiveEnvironmentConfig();
-            
-            // Get OpenAI parser (always enabled)
-            var openAIKey = config.OpenAI.ApiKey;
-            var openAIModel = config.OpenAI.Model;
-            var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
-            var openAIParser = new OpenAIPrescriptionParserAgent(chatClient);
-            
-            // Get optional parsers - Use GetService instead of GetRequiredService
-            var deepSeekParser = sp.GetService<MedRemind.Services.AI.DeepSeekPrescriptionParserAgent?>();
-            var claudeParser = sp.GetService<MedRemind.Services.AI.ClaudePrescriptionParserAgent?>();
-            
-            // Get services
-            var deduplicationService = sp.GetRequiredService<MedRemind.Services.Prescriptions.PrescriptionDeduplicationService>();
-            var mergerService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionResultMergerService>();
-            var validationService = sp.GetRequiredService<MedRemind.Services.AI.PrescriptionValidationService>();
-            
-            // Get AI parser configuration
-            var parserConfig = config.AIParser ?? new AIParserConfiguration();
-            var deepSeekConfig = config.DeepSeek;
-            var claudeConfig = config.Claude;
-            
-            System.Diagnostics.Debug.WriteLine($"✅ Agent Orchestrator: Priority-Based Multi-Parser System");
-            System.Diagnostics.Debug.WriteLine($"   DeepSeek: {(deepSeekConfig?.Enabled == true ? $"✅ Priority {deepSeekConfig.Priority}" : "❌")}");
-            System.Diagnostics.Debug.WriteLine($"   OpenAI: ✅ Priority {parserConfig.OpenAIPriority}");
-            System.Diagnostics.Debug.WriteLine($"   Claude: {(claudeConfig?.Enabled == true ? $"✅ Priority {claudeConfig.Priority}" : "❌")}");
-            System.Diagnostics.Debug.WriteLine($"   Skip Claude if complete: {parserConfig.SkipClaudeIfComplete}");
-            
-            return new MedRemind.Services.AI.Agents.AgentOrchestrator(
-                ocrSaver, 
-                extraction, 
-                validation,
-                openAIParser,
-                deduplicationService,
-                mergerService,
-                validationService,
-                deepSeekParser,
-                claudeParser,
-                deepSeekEnabled: deepSeekConfig?.Enabled ?? false,
-                claudeEnabled: claudeConfig?.Enabled ?? false,
-                skipClaudeIfComplete: parserConfig.SkipClaudeIfComplete,
-                deepSeekPriority: deepSeekConfig?.Priority ?? 1,
-                openAIPriority: parserConfig.OpenAIPriority,
-                claudePriority: claudeConfig?.Priority ?? 3
-            );
-        });
-        
+       
         // ============================================
         // NEW: AGENT ORCHESTRATOR V2 (Dynamic Architecture)
         // ============================================
@@ -397,7 +379,10 @@ public static class MauiProgram
         
         // Register PrescriptionCacheService
         builder.Services.AddSingleton<MedRemind.Services.AI.PrescriptionCacheService>();
-        
+
+        // Prescription Ocr Text Preprocessor
+        builder.Services.AddSingleton<MedRemind.Services.AI.PrescriptionOcrTextPreprocessor>();
+
         // Register ParserRegistry
         builder.Services.AddSingleton<MedRemind.Services.AI.ParserRegistry>(sp =>
         {

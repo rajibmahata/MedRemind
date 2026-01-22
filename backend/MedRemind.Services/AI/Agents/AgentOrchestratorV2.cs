@@ -20,8 +20,8 @@ public class AgentOrchestratorV2
     private readonly ILogger<AgentOrchestratorV2> _logger;
     
     // Timeout configuration
-    private const int PARSER_TIMEOUT_SECONDS = 30;  // Individual parser timeout (increased from 20s)
-    private const int OVERALL_TIMEOUT_SECONDS = 45; // Overall parallel execution timeout (increased from 30s)
+    private const int PARSER_TIMEOUT_SECONDS = 30;  // Individual parser timeout (increased from 30s)
+    private const int OVERALL_TIMEOUT_SECONDS = 45; // Overall parallel execution timeout (increased from 45s)
     
     // Execution strategy
     public enum ExecutionMode
@@ -169,7 +169,7 @@ public class AgentOrchestratorV2
     /// <summary>
     /// Execute parsers in parallel (FAST)
     /// </summary>
-    private async Task<Dictionary<string, PrescriptionParseResult>> ExecuteParsersParallelAsync(
+    private async Task<Dictionary<string, PrescriptionReadResult>> ExecuteParsersParallelAsync(
         string ocrText,
         CancellationToken cancellationToken)
     {
@@ -181,7 +181,7 @@ public class AgentOrchestratorV2
         if (!enabledParsers.Any())
         {
             _logger.LogWarning("   ⚠️ No enabled parsers found!");
-            return new Dictionary<string, PrescriptionParseResult>();
+            return new Dictionary<string, PrescriptionReadResult>();
         }
         
         var tasks = enabledParsers.Select(async parser =>
@@ -207,13 +207,13 @@ public class AgentOrchestratorV2
             {
                 var elapsed = DateTime.UtcNow - parserStartTime;
                 _logger.LogWarning($"   ⏱️ {parser.Name} timed out after {elapsed.TotalSeconds:F2}s (limit: {PARSER_TIMEOUT_SECONDS}s)");
-                return (Name: parser.Name, Result: (PrescriptionParseResult?)null, Success: false);
+                return (Name: parser.Name, Result: (PrescriptionReadResult?)null, Success: false);
             }
             catch (Exception ex)
             {
                 var elapsed = DateTime.UtcNow - parserStartTime;
                 _logger.LogWarning($"   ❌ {parser.Name} failed after {elapsed.TotalSeconds:F2}s: {ex.Message}");
-                return (Name: parser.Name, Result: (PrescriptionParseResult?)null, Success: false);
+                return (Name: parser.Name, Result: (PrescriptionReadResult?)null, Success: false);
             }
         }).ToList();
         
@@ -248,13 +248,13 @@ public class AgentOrchestratorV2
     /// <summary>
     /// Execute parsers sequentially (SAFE)
     /// </summary>
-    private async Task<Dictionary<string, PrescriptionParseResult>> ExecuteParsersSequentialAsync(
+    private async Task<Dictionary<string, PrescriptionReadResult>> ExecuteParsersSequentialAsync(
         string ocrText,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("🔄 Executing parsers in SEQUENTIAL mode");
         
-        var results = new Dictionary<string, PrescriptionParseResult>();
+        var results = new Dictionary<string, PrescriptionReadResult>();
         var enabledParsers = _parserRegistry.GetEnabledParsers().ToList();
         
         _logger.LogInformation($"   Active parsers: {enabledParsers.Count}");
@@ -294,11 +294,11 @@ public class AgentOrchestratorV2
     /// <summary>
     /// Merge results from multiple parsers
     /// </summary>
-    private PrescriptionParseResult MergeParserResults(Dictionary<string, PrescriptionParseResult> parserResults)
+    private PrescriptionReadResult MergeParserResults(Dictionary<string, PrescriptionReadResult> parserResults)
     {
         if (!parserResults.Any())
         {
-            return new PrescriptionParseResult { Success = false, Medications = new List<MedicationData>() };
+            return new PrescriptionReadResult { Success = false, Medications = new List<MedicationData>() };
         }
         
         if (parserResults.Count == 1)
@@ -331,8 +331,8 @@ public class AgentOrchestratorV2
     private async Task StoreResultAsync(
         int prescriptionId,
         string ocrText,
-        Dictionary<string, PrescriptionParseResult> parserResults,
-        PrescriptionParseResult mergedResult,
+        Dictionary<string, PrescriptionReadResult> parserResults,
+        PrescriptionReadResult mergedResult,
         ValidationQuality validation,
         PrescriptionProcessingResult processingResult)
     {

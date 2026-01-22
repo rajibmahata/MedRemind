@@ -11,8 +11,8 @@ public class Medication
     public string Dosage { get; set; } = string.Empty;
     public string Unit { get; set; } = string.Empty; // Tablet, Capsule, ml, mg, drops, puffs
     public string Frequency { get; set; } = string.Empty; // Once daily, Twice daily, etc.
-    public int FrequencyCount { get; set; } // Number of times per day
-    public int DurationDays { get; set; }
+    public int? FrequencyCount { get; set; } // Number of times per day
+    public int? DurationDays { get; set; }
     public string? Instructions { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

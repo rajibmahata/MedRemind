@@ -2,12 +2,14 @@ using MedRemind.Core.DTOs;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Medications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MedRemind.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // Require JWT authentication for all endpoints
 public class MedicationsController : ControllerBase
 {
     private readonly MedicationService _medicationService;

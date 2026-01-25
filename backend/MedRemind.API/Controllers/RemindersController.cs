@@ -1,11 +1,13 @@
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MedRemind.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // Require JWT authentication
 public class RemindersController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;

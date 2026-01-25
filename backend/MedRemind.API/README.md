@@ -1,53 +1,295 @@
 # MedRemind REST API
 
-RESTful API for MedRemind - Medication Reminder & Prescription Management System
+A comprehensive medication reminder and prescription management API built with .NET 10 and ASP.NET Core.
 
-## ?Status: 95% Complete - Minor Fixes Needed
-
-**See [API-SETUP-COMPLETE.md](API-SETUP-COMPLETE.md) for full setup details and remaining fixes.**
-
----
-
-## ? Getting Started
+## ?? Quick Start
 
 ### Prerequisites
 - .NET 10 SDK
 - SQLite (included)
+- API Keys (OpenAI, Azure Document Intelligence, 2Factor.in)
 
-### Configuration
+### 1. Configure Environment
 
-1. Update `appsettings.json` with your API keys:
+Update `appsettings.json` - set your active environment:
 ```json
 {
-  "OpenAI": {
-    "ApiKey": "YOUR_OPENAI_API_KEY"
-  },
-  "TwoFactor": {
-    "ApiKey": "YOUR_2FACTOR_API_KEY"
+  "ActiveEnvironment": "Development"
+}
+```
+
+Configure API keys in the respective environment section (`Development`, `Staging`, or `Production`).
+
+### 2. Run the API
+
+**Option 1: Using batch file (Windows)**
+```bash
+run-api.bat
+```
+
+**Option 2: Using dotnet CLI**
+```bash
+cd backend/MedRemind.API
+dotnet run
+```
+
+**Option 3: From solution root**
+```bash
+dotnet run --project backend\MedRemind.API\MedRemind.API.csproj
+```
+
+### 3. Access Swagger UI
+
+Open your browser:
+- **Primary**: http://localhost:5124/swagger
+- **Alternative**: https://localhost:7073/swagger
+
+---
+
+## ?? Project Structure
+
+```
+backend/MedRemind.API/
+??? Controllers/              # API Controllers
+?   ??? AuthController.cs    # Authentication endpoints
+?   ??? MedicationsController.cs
+?   ??? PrescriptionsController.cs
+?   ??? RemindersController.cs
+?   ??? AdherenceController.cs
+??? Database/                 # SQLite database storage
+?   ??? medremindDB.db     # Created on first run
+??? Docs/                     # ?? Documentation
+?   ??? SWAGGER_SETUP.md     # Complete Swagger setup guide
+?   ??? CURL_EXAMPLES.md     # cURL testing examples
+??? Program.cs                # Main configuration
+??? appsettings.json         # Configuration settings
+??? README.md                 # This file
+```
+
+---
+
+## ?? Documentation
+
+Comprehensive documentation is available in the [`Docs`](Docs/) folder:
+
+### ?? Available Guides
+
+| Document | Description |
+|----------|-------------|
+| **[SWAGGER_SETUP.md](Docs/SWAGGER_SETUP.md)** | Complete setup guide, configuration, testing with Swagger UI, deployment options, and troubleshooting |
+| **[CURL_EXAMPLES.md](Docs/CURL_EXAMPLES.md)** | Ready-to-use cURL commands for testing all API endpoints from command line |
+
+### Quick Links
+
+- **[Complete Setup Guide](Docs/SWAGGER_SETUP.md)** - Everything you need to get started
+- **[API Testing Guide](Docs/CURL_EXAMPLES.md)** - cURL examples for all endpoints
+- **[Environment Configuration](#-configuration)** - Configuration options below
+
+---
+
+## ?? Configuration
+
+The API uses environment-based configuration. Each environment (Development/Staging/Production) has its own settings.
+
+### Active Environment
+
+Set in `appsettings.json`:
+```json
+"ActiveEnvironment": "Development"
+```
+
+### Environment Sections
+
+Each environment contains:
+- **OpenAI**: GPT-4 configuration for prescription parsing
+- **DeepSeek**: Alternative AI provider (optional)
+- **Claude**: Anthropic Claude configuration (optional)
+- **Azure Document Intelligence**: OCR service
+- **TwoFactor**: Phone OTP authentication
+- **Features**: Feature flags
+- **FileStorage**: File storage settings
+- **Database**: Connection string
+- **JWT**: Authentication tokens
+
+### Example Configuration
+```json
+{
+  "Environments": {
+    "Development": {
+      "OpenAI": {
+        "ApiKey": "your-api-key",
+        "Model": "gpt-4o-mini",
+        "Enabled": true
+      },
+      "Database": {
+        "ConnectionString": "Data Source=medremindDB.db"
+      }
+    }
   }
 }
 ```
 
-### Run the API
+---
 
-```bash
-cd backend/MedRemind.API
-dotnet restore
-dotnet build  # May show 4 minor errors - see API-SETUP-COMPLETE.md for fixes
-dotnet run
-```
+## ?? API Endpoints
 
-The API will be available at:
-- **HTTP**: http://localhost:5000
-- **HTTPS**: https://localhost:7001
-- **Swagger UI**: https://localhost:7001/swagger
+### Authentication (`/api/Auth`)
+- `POST /send-otp` - Send OTP to phone number
+- `POST /verify-otp` - Verify OTP and login
+- `POST /validate-token` - Validate session token
+
+### Medications (`/api/Medications`)
+- Full CRUD operations for medications
+- Filter by user, active status, etc.
+
+### Prescriptions (`/api/Prescriptions`)
+- Upload and process prescription images
+- AI-powered OCR and data extraction
+- CRUD operations for prescriptions
+
+### Reminders (`/api/Reminders`)
+- Schedule medication reminders
+- Manage reminder settings
+- Voice recording support
+
+### Adherence (`/api/Adherence`)
+- Track medication adherence
+- View statistics and history
+- Log medication intake
+
+?? **[See complete cURL examples](Docs/CURL_EXAMPLES.md)**
 
 ---
 
-## ?? What's Included
+## ?? Testing with Swagger
 
-### 5 Complete Controllers:
-1. **AuthController** - OTP authentication (3 endpoints)
+1. Start the API: `dotnet run`
+2. Open Swagger UI: `http://localhost:5124/swagger`
+3. Test authentication endpoints
+4. Get auth token
+5. Authorize with token (click "Authorize" button)
+6. Test all protected endpoints
+
+?? **[Detailed testing guide](Docs/SWAGGER_SETUP.md#-testing-with-swagger)**
+
+---
+
+## ?? Database
+
+**Location:** `backend/MedRemind.API/Database/medremindDB.db`
+
+- SQLite database created automatically on first run
+- Entity Framework Core migrations applied automatically
+- To reset: Delete the `.db` file and restart
+
+---
+
+## ?? Integration with Client Applications
+
+### .NET MAUI Mobile App
+
+Update `mobile/MedRemind.Mobile/appsettings.json`:
+```json
+{
+  "ApiSettings": {
+    "BaseUrl": "http://localhost:5124"
+  }
+}
+```
+
+### Web or Third-Party Apps
+
+1. Get OpenAPI spec: `http://localhost:5124/swagger/v1/swagger.json`
+2. Generate client code using NSwag, AutoRest, or similar tools
+3. Implement authentication flow
+4. Make API calls with bearer token
+
+?? **[Integration guide](Docs/SWAGGER_SETUP.md#-integration-with-client-applications)**
+
+---
+
+## ?? Deployment
+
+### Options
+- Azure App Service
+- Docker containers
+- IIS (Windows Server)
+- Linux with Nginx/Apache
+
+### Before Deployment
+1. Update API keys in production environment section
+2. Set `ActiveEnvironment` to `"Production"`
+3. Configure CORS for your domain
+4. Enable HTTPS
+5. Implement rate limiting
+
+?? **[Deployment guide](Docs/SWAGGER_SETUP.md#-deployment-options)**
+
+---
+
+## ?? Security Notes
+
+?? **Important:**
+- Never commit API keys to version control
+- Update default JWT secret key
+- Configure proper CORS policy for production
+- Use environment variables or Azure Key Vault
+- Enable HTTPS in production
+- Implement rate limiting
+
+---
+
+## ?? Troubleshooting
+
+### Common Issues
+
+**Database not created?**
+- Check `Database` folder permissions
+- View console output for errors
+
+**Swagger not loading?**
+- Verify correct URL: `http://localhost:5124/swagger`
+- Check if API is running
+
+**CORS errors?**
+- Update CORS policy in `Program.cs`
+- Add your client domain to allowed origins
+
+?? **[Full troubleshooting guide](Docs/SWAGGER_SETUP.md#-troubleshooting)**
+
+---
+
+## ?? Support & Resources
+
+### Documentation
+- **[Complete Setup Guide](Docs/SWAGGER_SETUP.md)**
+- **[cURL Testing Examples](Docs/CURL_EXAMPLES.md)**
+- **Swagger UI**: Available when API is running
+- **OpenAPI Spec**: `/swagger/v1/swagger.json`
+
+### Repository
+- **GitHub**: https://github.com/rajibmahata/MedRemind
+- **Issues**: Create an issue for bugs or feature requests
+- **Branch**: `Developer`
+
+### Quick Commands
+```bash
+# Run API
+dotnet run --project backend\MedRemind.API\MedRemind.API.csproj
+
+# Build only
+dotnet build backend\MedRemind.API\MedRemind.API.csproj
+
+# Clean and rebuild
+dotnet clean && dotnet build
+```
+
+---
+
+## ? What's Included
+
+### 5 Complete Controllers
+1. **AuthController** - Phone OTP authentication (3 endpoints)
 2. **PrescriptionsController** - AI prescription processing (3 endpoints)
 3. **MedicationsController** - Full CRUD + dose logging (9 endpoints)
 4. **AdherenceController** - Stats and streaks (4 endpoints)
@@ -317,7 +559,7 @@ Import the API into Postman:
 
 The API uses SQLite database stored at:
 ```
-%LocalAppData%/medremind_api.db
+%LocalAppData%/medremindDB.db
 ```
 
 Database is automatically created on first run with all tables and relationships.
@@ -476,3 +718,4 @@ dotnet run
 **Last Updated**: December 21, 2024  
 **Status**: ? 95% Complete - See API-SETUP-COMPLETE.md for remaining fixes  
 **Ready for**: Testing & Integration
+

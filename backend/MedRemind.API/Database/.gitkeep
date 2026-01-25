@@ -1,0 +1,3 @@
+# This file ensures the Database folder is tracked in Git
+# The actual database files will be ignored
++++

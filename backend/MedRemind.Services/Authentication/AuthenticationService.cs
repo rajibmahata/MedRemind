@@ -1,8 +1,11 @@
-﻿using System.Security.Cryptography;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
+using Microsoft.IdentityModel.Tokens;
 
 namespace MedRemind.Services.Authentication;
 
@@ -16,6 +19,10 @@ public class AuthenticationService : IAuthenticationService
     private readonly string _otpTemplate;
     private readonly HttpClient _httpClient;
     private string? _lastSessionId; // Store session ID from send OTP response
+    private readonly string _jwtSecretKey;
+    private readonly string _jwtIssuer;
+    private readonly string _jwtAudience;
+    private readonly int _jwtExpirationDays;
 
     public AuthenticationService(
         IUnitOfWork unitOfWork,
@@ -24,7 +31,11 @@ public class AuthenticationService : IAuthenticationService
         HttpClient httpClient,
         string? sendOtpUrl = null,
         string? verifyOtpUrl = null,
-        string? otpTemplate = null)
+        string? otpTemplate = null,
+        string? jwtSecretKey = null,
+        string? jwtIssuer = null,
+        string? jwtAudience = null,
+        int jwtExpirationDays = 30)
     {
         _unitOfWork = unitOfWork;
         _secureStorage = secureStorage;
@@ -35,6 +46,12 @@ public class AuthenticationService : IAuthenticationService
         _sendOtpUrl = sendOtpUrl ?? "https://2factor.in/API/V1/{apiKey}/SMS/{phoneNumber}/{otpValue}/{templateName}";
         _verifyOtpUrl = verifyOtpUrl ?? "https://2factor.in/API/V1/{apiKey}/SMS/VERIFY3/{phoneNumber}/{otpValue}";
         _otpTemplate = otpTemplate ?? "OTP1";
+
+        // JWT Configuration
+        _jwtSecretKey = jwtSecretKey ?? "YOUR_SECRET_KEY_HERE_MINIMUM_32_CHARACTERS";
+        _jwtIssuer = jwtIssuer ?? "MedRemind.API";
+        _jwtAudience = jwtAudience ?? "MedRemind.Mobile";
+        _jwtExpirationDays = jwtExpirationDays;
     }
 
     public async Task<(bool Success, string? ErrorMessage)> SendOtpAsync(
@@ -254,47 +271,67 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<string> GenerateSessionTokenAsync(int userId)
     {
-        // Generate a secure random token
-        var bytes = new byte[32];
-        using (var rng = RandomNumberGenerator.Create())
+        // Create claims for the JWT token
+        var claims = new[]
         {
-            rng.GetBytes(bytes);
-        }
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+        };
 
-        var token = Convert.ToBase64String(bytes);
-        var timestamp = DateTime.UtcNow.Ticks.ToString();
-        var combined = $"{userId}:{timestamp}:{token}";
+        // Create the signing key
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(combined));
+        // Create the JWT token
+        var token = new JwtSecurityToken(
+            issuer: _jwtIssuer,
+            audience: _jwtAudience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(_jwtExpirationDays),
+            signingCredentials: credentials
+        );
+
+        // Generate the token string
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var tokenString = tokenHandler.WriteToken(token);
+
+        System.Diagnostics.Debug.WriteLine($"🔑 Generated JWT token for user {userId}");
+
+        return tokenString;
     }
 
     public async Task<bool> ValidateSessionTokenAsync(string token)
     {
         try
         {
-            var storedToken = await _secureStorage.GetAsync("session_token");
-            if (string.IsNullOrEmpty(storedToken))
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_jwtSecretKey);
+
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
-                return false;
-            }
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = _jwtIssuer,
+                ValidateAudience = true,
+                ValidAudience = _jwtAudience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
 
-            // Validate token hasn't expired (30 days)
-            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(token));
-            var parts = decoded.Split(':');
-
-            if (parts.Length != 3)
-            {
-                return false;
-            }
-
-            var timestamp = long.Parse(parts[1]);
-            var tokenDate = new DateTime(timestamp);
-            var daysSinceCreation = (DateTime.UtcNow - tokenDate).TotalDays;
-
-            return daysSinceCreation <= 30 && token == storedToken;
+            System.Diagnostics.Debug.WriteLine($"✅ JWT token validated successfully");
+            return true;
         }
-        catch
+        catch (SecurityTokenExpiredException)
         {
+            System.Diagnostics.Debug.WriteLine($"❌ JWT token has expired");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ JWT token validation failed: {ex.Message}");
             return false;
         }
     }

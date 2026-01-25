@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
@@ -18,9 +20,12 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Moq" />
+    <Using Include="FluentAssertions" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MedRemind.API\MedRemind.API.csproj" />
     <ProjectReference Include="..\MedRemind.Core\MedRemind.Core.csproj" />
     <ProjectReference Include="..\MedRemind.Services\MedRemind.Services.csproj" />
   </ItemGroup>

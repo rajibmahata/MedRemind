@@ -1,10 +1,12 @@
 using MedRemind.Services.Medications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MedRemind.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // Require JWT authentication
 public class AdherenceController : ControllerBase
 {
     private readonly AdherenceService _adherenceService;

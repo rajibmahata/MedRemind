@@ -1,57 +1,34 @@
 namespace MedRemind.Core.Configuration;
 
 /// <summary>
-/// Configuration for file storage locations and settings
+/// Configuration for file storage service
+/// Manages storage of prescription images and OCR logs
+/// Structure: files/prescriptions/ and files/OCRs/
 /// </summary>
 public class FileStorageConfiguration
 {
     /// <summary>
-    /// Base folder name for OCR logs (relative to app data directory)
-    /// Default: "MedRemind_OCR_Logs"
+    /// Folder name for OCR logs (default: "OCRs")
     /// </summary>
-    public string OcrLogsFolderName { get; set; } = "MedRemind_OCR_Logs";
+    public string OcrLogsFolderName { get; set; } = "OCRs";
 
     /// <summary>
-    /// Base folder name for prescription images (relative to app data directory)
-    /// Default: "MedRemind_Prescriptions"
+    /// Folder name for prescription images (default: "prescriptions")
     /// </summary>
-    public string PrescriptionsFolderName { get; set; } = "MedRemind_Prescriptions";
+    public string PrescriptionsFolderName { get; set; } = "Prescriptions";
 
     /// <summary>
-    /// Whether to enable file logging
-    /// Default: true
+    /// Enable or disable file logging (default: true)
     /// </summary>
     public bool EnableFileLogging { get; set; } = true;
 
     /// <summary>
-    /// Whether to copy files to public storage (for testing/debugging only)
-    /// WARNING: Public storage is accessible to all apps and users
-    /// Default: false (disabled for security)
-    /// </summary>
-    public bool CopyToPublicStorage { get; set; } = false;
-
-    /// <summary>
-    /// Public storage folder name (if CopyToPublicStorage is enabled)
-    /// Will be created in: /storage/emulated/0/Documents/{PublicStorageFolderName}
-    /// Default: "MedRemind_Debug"
-    /// </summary>
-    public string PublicStorageFolderName { get; set; } = "MedRemind_Debug";
-
-    /// <summary>
-    /// Maximum number of log files to keep (older files will be deleted)
-    /// Default: 100
+    /// Maximum number of log files to keep (0 = unlimited, default: 100)
     /// </summary>
     public int MaxLogFiles { get; set; } = 100;
 
     /// <summary>
-    /// Whether to include timestamps in file names
-    /// Default: true
+    /// Prefix for OCR file names (default: "OCR")
     /// </summary>
-    public bool IncludeTimestampInFileName { get; set; } = true;
-
-    /// <summary>
-    /// File name prefix for OCR logs
-    /// Default: "Prescription_OCR"
-    /// </summary>
-    public string OcrFilePrefix { get; set; } = "Prescription_OCR";
+    public string OcrFilePrefix { get; set; } = "OCR";
 }

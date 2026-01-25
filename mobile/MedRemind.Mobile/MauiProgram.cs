@@ -57,16 +57,13 @@ public static class MauiProgram
                 options.OcrLogsFolderName = fileStorageConfig.OcrLogsFolderName;
                 options.PrescriptionsFolderName = fileStorageConfig.PrescriptionsFolderName;
                 options.EnableFileLogging = fileStorageConfig.EnableFileLogging;
-                options.CopyToPublicStorage = fileStorageConfig.CopyToPublicStorage;
-                options.PublicStorageFolderName = fileStorageConfig.PublicStorageFolderName;
                 options.MaxLogFiles = fileStorageConfig.MaxLogFiles;
-                options.IncludeTimestampInFileName = fileStorageConfig.IncludeTimestampInFileName;
                 options.OcrFilePrefix = fileStorageConfig.OcrFilePrefix;
                 
                 System.Diagnostics.Debug.WriteLine($"✅ FileStorageConfiguration loaded from appsettings.json");
                 System.Diagnostics.Debug.WriteLine($"   OCR Logs Folder: {options.OcrLogsFolderName}");
+                System.Diagnostics.Debug.WriteLine($"   Prescriptions Folder: {options.PrescriptionsFolderName}");
                 System.Diagnostics.Debug.WriteLine($"   File Logging: {options.EnableFileLogging}");
-                System.Diagnostics.Debug.WriteLine($"   Copy to Public Storage: {options.CopyToPublicStorage}");
                 System.Diagnostics.Debug.WriteLine($"   Max Log Files: {options.MaxLogFiles}");
             }
             else
@@ -190,7 +187,7 @@ public static class MauiProgram
             return httpClient;
         });
 
-        // Register OpenAIPrescriptionReaderService with embedded configuration
+        // Register OpenAIPrescriptionReaderService with MultiLlmAPIOrchestrator
         builder.Services.AddScoped<IPrescriptionReaderService>(sp =>
         {
             var httpClient = sp.GetRequiredService<HttpClient>();
@@ -199,7 +196,14 @@ public static class MauiProgram
             // Load API keys from embedded configuration
             var config = EmbeddedConfigurationLoader.GetActiveEnvironmentConfig();
             var openAIKey = config.OpenAI.ApiKey;
-            var openAIModel = config.OpenAI.Model; // NEW: Get model from config
+            var openAIModel = config.OpenAI.Model;
+            var deepSeekKey = config.DeepSeek.ApiKey;
+            var deepSeekModel = config.DeepSeek.Model;
+            var deepSeekApiUrl = config.DeepSeek.ApiUrl;
+            var deepSeekMaxTokens = config.DeepSeek.MaxTokens;
+            var claudeKey = config.Claude.ApiKey;
+            var claudeModel = config.Claude.Model;
+            var claudeMaxTokens = config.Claude.MaxTokens;
             var azureEndpoint = config.AzureDocumentIntelligence.Endpoint;
             var azureKey = config.AzureDocumentIntelligence.ApiKey;
             
@@ -211,7 +215,7 @@ public static class MauiProgram
             {
                 var activeEnv = EmbeddedConfigurationLoader.LoadConfiguration().ActiveEnvironment;
                 System.Diagnostics.Debug.WriteLine($"✅ OpenAI API key loaded from embedded config for environment: {activeEnv}");
-                System.Diagnostics.Debug.WriteLine($"   Model: {openAIModel}"); // Log configured model
+                System.Diagnostics.Debug.WriteLine($"   Model: {openAIModel}");
             }
             
             if (string.IsNullOrEmpty(azureEndpoint) || string.IsNullOrEmpty(azureKey))
@@ -226,17 +230,30 @@ public static class MauiProgram
             // Create Azure Document Intelligence service
             var prescriptionOcrTextPreprocessor = sp.GetRequiredService<PrescriptionOcrTextPreprocessor>();
             var fileStorageService = sp.GetRequiredService<IFileStorageService>();
-            var azureDocService = new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey, prescriptionOcrTextPreprocessor, fileStorageService);
+            var azureDocService = new AzureDocumentIntelligenceService(
+                httpClient, azureEndpoint, azureKey, prescriptionOcrTextPreprocessor, fileStorageService);
             
-            // Create ChatClient for OpenAI with configured model
-            var chatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey); // Use config model
-            System.Diagnostics.Debug.WriteLine($"✅ OpenAI ChatClient initialized with model: {openAIModel}");
+            // Create parser agents with correct constructors
+            var openAIChatClient = new OpenAI.Chat.ChatClient(openAIModel, openAIKey);
+            var openAIAgent = new OpenAIPrescriptionParserAgent(openAIChatClient);
+            System.Diagnostics.Debug.WriteLine($"✅ OpenAI Parser Agent initialized with model: {openAIModel}");
             
-            // Create OpenAI Parser Agent with ChatClient
-            var parserAgent = new OpenAIPrescriptionParserAgent(chatClient);
-            System.Diagnostics.Debug.WriteLine($"✅ OpenAI Parser Agent initialized");
+            var deepSeekAgent = new DeepSeekPrescriptionParserAgent(httpClient, deepSeekKey, deepSeekApiUrl, deepSeekMaxTokens);
+            System.Diagnostics.Debug.WriteLine($"✅ DeepSeek Parser Agent initialized");
             
-            return new OpenAIPrescriptionReaderService(httpClient, openAIKey, validationAgent, azureDocService, parserAgent, openAIModel); // Pass model
+            var claudeAgent = new ClaudePrescriptionParserAgent(claudeKey, claudeModel, claudeMaxTokens);
+            System.Diagnostics.Debug.WriteLine($"✅ Claude Parser Agent initialized");
+            
+            // Create MultiLlmAPIOrchestrator (simple version for mobile)
+            var agentOrchestrator = new MedRemind.Services.AI.Agents.MultiLlmAPIOrchestrator(openAIAgent, deepSeekAgent, claudeAgent);
+            System.Diagnostics.Debug.WriteLine($"✅ MultiLlmAPIOrchestrator configured with all parsers");
+            
+            return new PrescriptionReaderService(
+                httpClient, 
+                openAIKey, 
+                validationAgent, 
+                azureDocService, 
+                agentOrchestrator);
         });
 
         // Register AzureDocumentIntelligenceService separately for injection into ViewModels
@@ -318,14 +335,14 @@ public static class MauiProgram
                     httpClient, 
                     deepSeek.ApiKey,
                     deepSeek.ApiUrl,
-                    deepSeek.MaxTokens); // Pass MaxTokens from config
+                    deepSeek.MaxTokens);
             }
             
             System.Diagnostics.Debug.WriteLine($"❌ DeepSeek Parser: Disabled");
             return null;
         });
         
-        // Register Claude Parser (if enabled) - Note: requires Anthropic SDK
+        // Register Claude Parser (if enabled)
         builder.Services.AddScoped<MedRemind.Services.AI.ClaudePrescriptionParserAgent?>(sp =>
         {
             var config = EmbeddedConfigurationLoader.GetActiveEnvironmentConfig();
@@ -339,7 +356,7 @@ public static class MauiProgram
                 return new MedRemind.Services.AI.ClaudePrescriptionParserAgent(
                     claude.ApiKey,
                     claude.Model,
-                    claude.MaxTokens); // Pass MaxTokens from config
+                    claude.MaxTokens);
             }
             
             System.Diagnostics.Debug.WriteLine($"❌ Claude Parser: Disabled");

@@ -25,9 +25,9 @@ public class AzureDocumentIntelligenceService
     private const int TARGET_IMAGE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB target for safety margin
 
     public AzureDocumentIntelligenceService(
-        HttpClient httpClient, 
-        string endpoint, 
-        string apiKey, 
+        HttpClient httpClient,
+        string endpoint,
+        string apiKey,
         PrescriptionOcrTextPreprocessor prescriptionOcrTextPreprocessor,
         IFileStorageService fileStorageService)
     {
@@ -49,7 +49,7 @@ public class AzureDocumentIntelligenceService
     /// Extract text from prescription image using Azure Document Intelligence
     /// Automatically resizes images larger than 4MB while preserving document content quality
     /// </summary>
-    public async Task<string> ExtractTextFromImageAsync(string base64Image, CancellationToken cancellationToken = default)
+    public async Task<string> ExtractTextFromImageAsync(string base64Image, string uniqueFileName = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -104,7 +104,7 @@ public class AzureDocumentIntelligenceService
             var normalize_extractedText = _prescriptionOcrTextPreprocessor.Preprocess(extractedText, PrescriptionOcrTextPreprocessor.ProcessingMode.Minimal);
 
             // Save OCR results using FileStorageService
-            await SaveOcrResultsAsync(extractedText, normalize_extractedText, result);
+            await SaveOcrResultsAsync(uniqueFileName, extractedText, normalize_extractedText, result);
 
             System.Diagnostics.Debug.WriteLine($"✅ Azure DI: Text extraction complete");
             System.Diagnostics.Debug.WriteLine($"   Extracted text length: {extractedText.Length} characters");
@@ -265,7 +265,7 @@ public class AzureDocumentIntelligenceService
     /// <summary>
     /// Save OCR results using FileStorageService
     /// </summary>
-    private async Task SaveOcrResultsAsync(string extractedText, string normalizedText, AnalyzeResult result)
+    private async Task SaveOcrResultsAsync(string prescriptionFileName, string extractedText, string normalizedText, AnalyzeResult result)
     {
         if (!_fileStorageService.IsFileLoggingEnabled())
         {
@@ -287,7 +287,8 @@ public class AzureDocumentIntelligenceService
             var (rawPath, normalizedPath, jsonPath) = await _fileStorageService.SaveOcrResultsAsync(
                 extractedText,
                 normalizedText,
-                jsonContent);
+                jsonContent,
+                prescriptionFileName);
 
             if (!string.IsNullOrEmpty(rawPath))
             {

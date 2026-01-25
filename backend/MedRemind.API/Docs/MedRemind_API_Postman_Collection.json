@@ -1,0 +1,1186 @@
+{
+	"info": {
+		"_postman_id": "medremind-api-collection",
+		"name": "MedRemind API",
+		"description": "Complete collection of MedRemind API endpoints for medication management, prescription processing, reminders, and adherence tracking.\n\n## Authentication\nMost endpoints require JWT Bearer token authentication. Get your token from `/api/Auth/verify-otp` endpoint.\n\n## Base URL\nDevelopment: `http://localhost:5124`\n\n## Usage\n1. Set `baseUrl` variable to your API server URL\n2. Run `Send OTP` request\n3. Run `Verify OTP` to get JWT token (automatically saved to `authToken` variable)\n4. All protected endpoints will use the token automatically",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "medremind"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Send OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": \"+919876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Auth/send-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Auth",
+								"send-otp"
+							]
+						},
+						"description": "Send OTP to the specified phone number for authentication. OTP will be sent via SMS to the provided phone number."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify OTP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.token).to.exist;",
+									"    ",
+									"    // Save token to environment variable",
+									"    pm.collectionVariables.set(\"authToken\", jsonData.token);",
+									"    console.log(\"Token saved:\", jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": \"+919876543210\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Auth/verify-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Auth",
+								"verify-otp"
+							]
+						},
+						"description": "Verify the OTP and receive a JWT authentication token. The token will be automatically saved to the `authToken` variable for use in subsequent requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Token is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valid).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{authToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Auth/validate-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Auth",
+								"validate-token"
+							]
+						},
+						"description": "Validate if a JWT token is still valid and not expired."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for phone-based OTP authentication and JWT token management."
+		},
+		{
+			"name": "Medications",
+			"item": [
+				{
+					"name": "Get All Medications",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Medications?userId=1&isActive=true",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Medications"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "Filter by user ID"
+								},
+								{
+									"key": "isActive",
+									"value": "true",
+									"description": "Filter by active status"
+								}
+							]
+						},
+						"description": "Get all medications for a user. Supports filtering by userId and isActive status."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Medication by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has medication data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.exist;",
+									"    pm.expect(jsonData.name).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Medications/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Medications",
+								"1"
+							]
+						},
+						"description": "Get a specific medication by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Medication",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Medication created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.exist;",
+									"    ",
+									"    // Save medication ID for other requests",
+									"    pm.collectionVariables.set(\"medicationId\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Aspirin\",\n  \"dosage\": \"500mg\",\n  \"frequency\": \"Twice daily\",\n  \"instructions\": \"Take with food\",\n  \"startDate\": \"2025-01-01T00:00:00\",\n  \"endDate\": \"2025-01-31T23:59:59\",\n  \"userId\": 1,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Medications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Medications"
+							]
+						},
+						"description": "Create a new medication record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Medication",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"name\": \"Aspirin\",\n  \"dosage\": \"500mg\",\n  \"frequency\": \"Once daily\",\n  \"instructions\": \"Take after dinner\",\n  \"startDate\": \"2025-01-01T00:00:00\",\n  \"endDate\": \"2025-02-28T23:59:59\",\n  \"userId\": 1,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Medications/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Medications",
+								"1"
+							]
+						},
+						"description": "Update an existing medication record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Medication",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 204\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Medications/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Medications",
+								"1"
+							]
+						},
+						"description": "Delete a medication by ID."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing medications - CRUD operations and medication tracking.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{authToken}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Prescriptions",
+			"item": [
+				{
+					"name": "Get All Prescriptions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Prescriptions?userId=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Prescriptions"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "Filter by user ID"
+								}
+							]
+						},
+						"description": "Get all prescriptions for a user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Prescription by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Prescriptions/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Prescriptions",
+								"1"
+							]
+						},
+						"description": "Get a specific prescription by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Prescription",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Prescription uploaded\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.exist;",
+									"    pm.collectionVariables.set(\"prescriptionId\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "Prescription image file (JPG, PNG, or PDF)"
+								},
+								{
+									"key": "userId",
+									"value": "1",
+									"type": "text",
+									"description": "User ID"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Prescriptions/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Prescriptions",
+								"upload"
+							]
+						},
+						"description": "Upload a prescription image. The API will process it using OCR and AI to extract medication information.\n\nSupported formats: JPG, PNG, PDF"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Prescription",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 204\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Prescriptions/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Prescriptions",
+								"1"
+							]
+						},
+						"description": "Delete a prescription by ID."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing prescriptions - upload, process with AI/OCR, and manage prescription records.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{authToken}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Reminders",
+			"item": [
+				{
+					"name": "Get All Reminders",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Reminders?userId=1&isEnabled=true",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Reminders"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "Filter by user ID"
+								},
+								{
+									"key": "isEnabled",
+									"value": "true",
+									"description": "Filter by enabled status"
+								}
+							]
+						},
+						"description": "Get all reminders for a user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Reminder by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Reminders/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Reminders",
+								"1"
+							]
+						},
+						"description": "Get a specific reminder by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Reminder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Reminder created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.exist;",
+									"    pm.collectionVariables.set(\"reminderId\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"medicationId\": 1,\n  \"userId\": 1,\n  \"time\": \"09:00:00\",\n  \"days\": [\"Monday\", \"Wednesday\", \"Friday\"],\n  \"enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Reminders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Reminders"
+							]
+						},
+						"description": "Create a new medication reminder."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Reminder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"medicationId\": 1,\n  \"userId\": 1,\n  \"time\": \"08:00:00\",\n  \"days\": [\"Monday\", \"Tuesday\", \"Wednesday\", \"Thursday\", \"Friday\"],\n  \"enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Reminders/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Reminders",
+								"1"
+							]
+						},
+						"description": "Update an existing reminder."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Reminder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 204\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Reminders/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Reminders",
+								"1"
+							]
+						},
+						"description": "Delete a reminder by ID."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing medication reminders - schedule and manage reminder notifications.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{authToken}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Adherence",
+			"item": [
+				{
+					"name": "Get Adherence Statistics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has stats\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.totalDoses).to.exist;",
+									"    pm.expect(jsonData.adherenceRate).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Adherence/stats?userId=1&startDate=2025-01-01&endDate=2025-01-31",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adherence",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "User ID (required)"
+								},
+								{
+									"key": "startDate",
+									"value": "2025-01-01",
+									"description": "Start date (optional)"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-01-31",
+									"description": "End date (optional)"
+								}
+							]
+						},
+						"description": "Get medication adherence statistics for a user within a date range."
+					},
+					"response": []
+				},
+				{
+					"name": "Log Medication Taken",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"medicationId\": 1,\n  \"takenAt\": \"2025-01-29T09:15:00\",\n  \"status\": \"taken\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/Adherence/log",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adherence",
+								"log"
+							]
+						},
+						"description": "Log that a medication was taken. Status can be: 'taken', 'missed', or 'skipped'."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Adherence History",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/Adherence/history?userId=1&startDate=2025-01-01&endDate=2025-01-31",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"Adherence",
+								"history"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "User ID (required)"
+								},
+								{
+									"key": "startDate",
+									"value": "2025-01-01",
+									"description": "Start date (optional)"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-01-31",
+									"description": "End date (optional)"
+								}
+							]
+						},
+						"description": "Get detailed adherence history for a user within a date range."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for tracking medication adherence - log doses taken and view adherence statistics.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{authToken}}",
+						"type": "string"
+					}
+				]
+			}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5124",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "medicationId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "prescriptionId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "reminderId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

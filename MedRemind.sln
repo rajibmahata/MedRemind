@@ -1,7 +1,6 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.12.0
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11408.102 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Backend", "Backend", "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 EndProject
@@ -9,14 +8,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mobile", "Mobile", "{3AC096
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{2150E333-8FDC-42A3-9474-1A3956D46DE8}"
 	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
-		STATUS.md = STATUS.md
 		docs\00-project-overview.md = docs\00-project-overview.md
 		docs\01-executive-summary.md = docs\01-executive-summary.md
 		docs\02-technical-architecture.md = docs\02-technical-architecture.md
 		docs\06-detailed-timeline.md = docs\06-detailed-timeline.md
 		docs\14-FINAL-PROJECT-STATUS.md = docs\14-FINAL-PROJECT-STATUS.md
 		docs\15-MOBILE-APP-VALIDATION-COMPLETE.md = docs\15-MOBILE-APP-VALIDATION-COMPLETE.md
+		README.md = README.md
+		STATUS.md = STATUS.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedRemind.Core", "backend\MedRemind.Core\MedRemind.Core.csproj", "{3299EF0F-B7ED-41C1-AF25-39621BBC22DD}"
@@ -28,6 +27,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedRemind.API", "backend\MedRemind.API\MedRemind.API.csproj", "{CC9F9D02-CB40-487C-8B26-2169E0522565}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedRemind.Mobile", "mobile\MedRemind.Mobile\MedRemind.Mobile.csproj", "{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PWA", "PWA", "{29DA478A-EF6B-40BA-8C58-3C43DA0E3E7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

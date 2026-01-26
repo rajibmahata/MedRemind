@@ -179,50 +179,158 @@ public class OpenAIPrescriptionParserAgent
 
     private string CreateParserPrompt(string ocrText)
     {
-        return $@"You are a medical prescription parser.
+        return $@"You are a medical prescription parser specialized in interpreting handwritten prescriptions.
 
 Extract structured data from the prescription text below.
 
 Return ONLY valid JSON (no markdown, no code blocks).
 
-Fields:
-- patient:
-  - name (string)
-  - age (number or null)
-  - gender (string or null)
-- doctor:
-  - name (string)
-  - registration_number (string or null)
-  - specialization (string or null)
-- prescription_date (YYYY-MM-DD format or null)
-- medications: [
+IMPORTANT: Recognize common handwritten prescription formats:
+
+1. DOSE COUNT NOTATION (numbers indicate frequency):
+   CRITICAL: When you see ONLY zeros, it means ""take X times daily"" NOT ""skip""!
+   - '0 0 0' = Three times daily (Morning, Afternoon, Evening) - dose to be specified
+   - '0 0' = Twice daily (Morning, Evening) - dose to be specified  
+   - '0' = Once daily (Evening) - dose to be specified
+   - '1 1 1' = 1 unit three times daily (morning, afternoon, evening)
+   - '2 1 1' = Variable dosing: 2 units morning, 1 unit afternoon, 1 unit evening
+   - '1 0 0' = 1 unit once daily (morning only)
+
+2. BINARY NOTATION (1 = take, 0 = skip) - when mixed with 1s:
+   - '1-0-0' = Take once daily in morning (skip afternoon/evening)
+   - '1-1-0' = Twice daily (morning and afternoon)
+   - '1-0-1' = Twice daily (morning and evening)
+   - '1-1-1' = Three times daily
+
+   HOW TO DISTINGUISH:
+   - ONLY zeros (0 0 0, 0 0, 0) → DOSE COUNT = frequency indicator
+   - Mix of 1s and 0s (1-0-1) → BINARY = take/skip pattern
+   - Numbers > 1 (2-1-1) → DOSE COUNT = variable dosing
+
+3. MEDICAL ABBREVIATIONS:
+   - 'OD' = Once Daily
+   - 'BD' = Twice Daily  
+   - 'TDS' or 'TID' = Three times daily
+   - 'QDS' or 'QID' = Four times daily
+   - 'AC' = Before meals
+   - 'PC' = After meals
+   - 'HS' = At bedtime
+   - 'PRN' or 'SOS' = As needed (set frequencyCount to 0)
+   - 'STAT' = Immediately
+
+4. CONDITIONAL INSTRUCTIONS (SOS/PRN):
+   - 'SOS if fever' = As needed if fever
+   - 'SOS if fever > 100°F' = As needed if fever exceeds 100°F
+   - 'PRN for pain' = As needed for pain
+   - Set frequencyCount: 0 for SOS/PRN medications
+
+JSON Structure:
+{{
+  ""patient"": {{
+    ""name"": ""string or null"",
+    ""age"": ""number or null"",
+    ""gender"": ""string or null""
+  }},
+  ""doctor"": {{
+    ""name"": ""string or null"",
+    ""registration_number"": ""string or null"",
+    ""specialization"": ""string or null""
+  }},
+  ""prescription_date"": ""YYYY-MM-DD or null"",
+  ""medications"": [
     {{
-      name (string, required),
-      dosage (string, e.g., ""500""),
-      unit (string, e.g., ""mg"", ""tablet"", ""ml""),
-      frequency (string, e.g., ""Twice daily"", ""Three times daily""),
-      frequencyCount (number, 1-4),
-      duration (string, e.g., ""7 days"", ""2 weeks""),
-      durationDays (number),
-      timing (string, e.g., ""after meals"", ""before breakfast""),
-      instructions (string, additional notes),
-      confidenceScore (number 0.0-1.0, based on clarity)
+      ""name"": ""string (required)"",
+      ""dosage"": ""string (e.g., '500', '10')"",
+      ""unit"": ""string (e.g., 'mg', 'ml', 'tablet')"",
+      ""frequency"": ""string (e.g., 'Three times daily', 'Twice daily after meals')"",
+      ""frequencyCount"": ""number (1-4 for regular, 0 for SOS/PRN)"",
+      ""duration"": ""string (e.g., '7 days', '2 weeks')"",
+      ""durationDays"": ""number (convert to days, null if indefinite)"",
+      ""timing"": ""string (e.g., 'Morning, afternoon, evening', 'After meals')"",
+      ""instructions"": ""string (complete instructions)"",
+      ""confidenceScore"": ""number 0.0-1.0 (based on clarity)""
     }}
   ]
+}}
 
 Prescription Text:
 """"""
 {ocrText}
 """"""
 
-Rules:
-1. Extract ALL medications found
-2. Use standard medical terminology
-3. Set confidenceScore based on text clarity and completeness
-4. If a field is unclear, use null and lower confidence
-5. Convert duration to days (7 days, 14 days, etc.)
-6. Standardize frequency (Once daily, Twice daily, Three times daily, Four times daily)
-7. Return empty medications array if none found";
+PARSING RULES:
+
+1. DOSE COUNT NOTATION (CRITICAL):
+   - '0 0 0' → frequency: ""Three times daily"", frequencyCount: 3, timing: ""Morning, afternoon, and evening""
+   - '0 0' → frequency: ""Twice daily"", frequencyCount: 2, timing: ""Morning and evening""
+   - '0' → frequency: ""Once daily"", frequencyCount: 1, timing: ""Evening""
+   - '1 1 1' → frequency: ""Three times daily (1 unit per dose)"", frequencyCount: 3
+   - '2 1 1' → frequency: ""Three times daily (variable)"", frequencyCount: 3, instructions: ""2 units morning, 1 unit afternoon, 1 unit evening""
+
+2. BINARY NOTATION:
+   - '1-0-0' → frequency: ""Once daily (morning)"", frequencyCount: 1, timing: ""Morning""
+   - '1-1-0' → frequency: ""Twice daily"", frequencyCount: 2, timing: ""Morning and afternoon""
+   - '1-1-1' → frequency: ""Three times daily"", frequencyCount: 3, timing: ""Morning, afternoon, and evening""
+
+3. ABBREVIATIONS:
+   - 'OD' → frequency: ""Once daily"", frequencyCount: 1
+   - 'BD' → frequency: ""Twice daily"", frequencyCount: 2
+   - 'TDS/TID' → frequency: ""Three times daily"", frequencyCount: 3
+   - 'QDS/QID' → frequency: ""Four times daily"", frequencyCount: 4
+   - 'AC' → timing: ""Before meals""
+   - 'PC' → timing: ""After meals""
+   - 'HS' → timing: ""At bedtime""
+
+4. SOS/PRN:
+   - Set frequencyCount: 0
+   - Include condition in frequency and instructions
+   - Example: 'SOS if fever > 100°F' → frequency: ""As needed if fever exceeds 100°F"", frequencyCount: 0
+
+5. GENERAL:
+   - Extract ALL medications
+   - Convert duration to days (1 week = 7, 1 month = 30)
+   - If SOS/PRN, set durationDays to null
+   - Combine timing and frequency naturally
+   - Return empty array if no medications found
+
+EXAMPLES:
+
+Example 1 - Dose Count: ""Tab Paracetamol 500mg 0 0 0 x 3 days""
+→ {{
+  ""name"": ""Paracetamol"",
+  ""dosage"": ""500"",
+  ""unit"": ""mg"",
+  ""frequency"": ""Three times daily"",
+  ""frequencyCount"": 3,
+  ""timing"": ""Morning, afternoon, and evening"",
+  ""durationDays"": 3,
+  ""confidenceScore"": 0.95
+}}
+
+Example 2 - Binary: ""Tab Aspirin 75mg 1-0-0 AC x 30 days""
+→ {{
+  ""name"": ""Aspirin"",
+  ""dosage"": ""75"",
+  ""unit"": ""mg"",
+  ""frequency"": ""Once daily (morning before meals)"",
+  ""frequencyCount"": 1,
+  ""timing"": ""Morning before meals"",
+  ""durationDays"": 30,
+  ""confidenceScore"": 0.95
+}}
+
+Example 3 - SOS: ""Tab Crocin 650mg SOS if fever > 100°F""
+→ {{
+  ""name"": ""Crocin"",
+  ""dosage"": ""650"",
+  ""unit"": ""mg"",
+  ""frequency"": ""As needed if fever exceeds 100°F"",
+  ""frequencyCount"": 0,
+  ""timing"": ""If needed"",
+  ""instructions"": ""Take only if fever exceeds 100 degrees Fahrenheit"",
+  ""durationDays"": null,
+  ""confidenceScore"": 0.9
+}}";
     }
 
     private PrescriptionReadResult ParseStructuredData(string jsonContent)

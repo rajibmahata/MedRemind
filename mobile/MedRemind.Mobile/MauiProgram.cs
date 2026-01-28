@@ -241,12 +241,42 @@ public static class MauiProgram
             var deepSeekAgent = new DeepSeekPrescriptionParserAgent(httpClient, deepSeekKey, deepSeekApiUrl, deepSeekMaxTokens);
             System.Diagnostics.Debug.WriteLine($"✅ DeepSeek Parser Agent initialized");
             
-            var claudeAgent = new ClaudePrescriptionParserAgent(claudeKey, claudeModel, claudeMaxTokens);
+            var claudeAgent = new ClaudePrescriptionParserAgent(httpClient, claudeKey, claudeModel, claudeMaxTokens);
             System.Diagnostics.Debug.WriteLine($"✅ Claude Parser Agent initialized");
             
-            // Create MultiLlmAPIOrchestrator (simple version for mobile)
-            var agentOrchestrator = new MedRemind.Services.AI.Agents.MultiLlmAPIOrchestrator(openAIAgent, deepSeekAgent, claudeAgent);
+            // Create LLM Orchestrator Configuration
+            var llmConfig = new MedRemind.Core.Configuration.LlmOrchestratorConfiguration
+            {
+                OpenAI = new MedRemind.Core.Configuration.LlmProviderConfiguration
+                {
+                    Enabled = config.OpenAI.Enabled,
+                    Priority = config.OpenAI.Priority
+                },
+                DeepSeek = new MedRemind.Core.Configuration.LlmProviderConfiguration
+                {
+                    Enabled = config.DeepSeek.Enabled,
+                    Priority = config.DeepSeek.Priority
+                },
+                Claude = new MedRemind.Core.Configuration.LlmProviderConfiguration
+                {
+                    Enabled = config.Claude.Enabled,
+                    Priority = config.Claude.Priority
+                }
+            };
+            
+            // Create MultiLlmAPIOrchestrator with configuration
+            var fileStorage = sp.GetRequiredService<IFileStorageService>();
+            var agentOrchestrator = new MedRemind.Services.AI.Agents.MultiLlmAPIOrchestrator(
+                openAIAgent, 
+                deepSeekAgent, 
+                claudeAgent,
+                llmConfig,
+                fileStorage);
+            
             System.Diagnostics.Debug.WriteLine($"✅ MultiLlmAPIOrchestrator configured with all parsers");
+            System.Diagnostics.Debug.WriteLine($"   OpenAI: {(llmConfig.OpenAI.Enabled ? "Enabled" : "Disabled")} (Priority: {llmConfig.OpenAI.Priority})");
+            System.Diagnostics.Debug.WriteLine($"   DeepSeek: {(llmConfig.DeepSeek.Enabled ? "Enabled" : "Disabled")} (Priority: {llmConfig.DeepSeek.Priority})");
+            System.Diagnostics.Debug.WriteLine($"   Claude: {(llmConfig.Claude.Enabled ? "Enabled" : "Disabled")} (Priority: {llmConfig.Claude.Priority})");
             
             return new PrescriptionReaderService(
                 httpClient, 
@@ -266,6 +296,7 @@ public static class MauiProgram
             
             System.Diagnostics.Debug.WriteLine($"✅ Registering standalone Azure Document Intelligence Service");
             var prescriptionOcrTextPreprocessor = sp.GetRequiredService<PrescriptionOcrTextPreprocessor>();
+   
             var fileStorageService = sp.GetRequiredService<IFileStorageService>();
             return new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey, prescriptionOcrTextPreprocessor, fileStorageService);
         });
@@ -350,10 +381,12 @@ public static class MauiProgram
             
             if (claude != null && claude.Enabled && !string.IsNullOrEmpty(claude.ApiKey) && !claude.ApiKey.Contains("_KEY_HERE"))
             {
+                var httpClient = sp.GetRequiredService<HttpClient>();
                 System.Diagnostics.Debug.WriteLine($"✅ Claude Parser: Enabled (Priority {claude.Priority})");
                 System.Diagnostics.Debug.WriteLine($"   Model: {claude.Model}");
                 System.Diagnostics.Debug.WriteLine($"   Max Tokens: {claude.MaxTokens}");
                 return new MedRemind.Services.AI.ClaudePrescriptionParserAgent(
+                    httpClient,
                     claude.ApiKey,
                     claude.Model,
                     claude.MaxTokens);

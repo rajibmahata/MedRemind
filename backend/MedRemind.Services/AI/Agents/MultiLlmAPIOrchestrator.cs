@@ -1,3 +1,4 @@
+using MedRemind.Core.Configuration;
 using MedRemind.Core.DTOs;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
@@ -18,6 +19,9 @@ public class MultiLlmAPIOrchestrator
     private readonly DeepSeekPrescriptionParserAgent _deepSeekAgent;
     private readonly ClaudePrescriptionParserAgent _claudeAgent;
     private readonly ExecutionMode _executionMode;
+    private readonly LlmOrchestratorConfiguration _config;
+    private readonly IFileStorageService? _fileStorageService;
+    private readonly PrescriptionValidationAgent? _validationAgent;
     
     // Optional services for advanced features
     private readonly PrescriptionResultMergerService? _mergerService;
@@ -26,13 +30,19 @@ public class MultiLlmAPIOrchestrator
     private readonly IUnitOfWork? _unitOfWork;
     private readonly ILogger<MultiLlmAPIOrchestrator>? _logger;
 
+    // For saving LLM responses
+    private string? _currentPrescriptionFileName;
+
     public MultiLlmAPIOrchestrator(
         OpenAIPrescriptionParserAgent openAIAgent,
         DeepSeekPrescriptionParserAgent deepSeekAgent,
         ClaudePrescriptionParserAgent claudeAgent,
+        LlmOrchestratorConfiguration config,
+        IFileStorageService? fileStorageService = null,
         ExecutionMode executionMode = ExecutionMode.Parallel,
         PrescriptionResultMergerService? mergerService = null,
         PrescriptionValidationService? validationService = null,
+        PrescriptionValidationAgent? multiAgentValidationAgent = null,
         PrescriptionCacheService? cacheService = null,
         IUnitOfWork? unitOfWork = null,
         ILogger<MultiLlmAPIOrchestrator>? logger = null)
@@ -40,6 +50,9 @@ public class MultiLlmAPIOrchestrator
         _openAIAgent = openAIAgent ?? throw new ArgumentNullException(nameof(openAIAgent));
         _deepSeekAgent = deepSeekAgent ?? throw new ArgumentNullException(nameof(deepSeekAgent));
         _claudeAgent = claudeAgent ?? throw new ArgumentNullException(nameof(claudeAgent));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _fileStorageService = fileStorageService;
+        _validationAgent = multiAgentValidationAgent;
         _executionMode = executionMode;
         _mergerService = mergerService;
         _validationService = validationService;
@@ -49,8 +62,12 @@ public class MultiLlmAPIOrchestrator
         
         var mode = executionMode == ExecutionMode.Parallel ? "Parallel" : "Sequential";
         _logger?.LogInformation($"? MultiLlmAPIOrchestrator initialized - Mode: {mode}");
-        _logger?.LogInformation("   Parsers: OpenAI, DeepSeek, Claude");
+        _logger?.LogInformation($"   OpenAI: {(config.OpenAI.Enabled ? "Enabled" : "Disabled")} (Priority: {config.OpenAI.Priority})");
+        _logger?.LogInformation($"   DeepSeek: {(config.DeepSeek.Enabled ? "Enabled" : "Disabled")} (Priority: {config.DeepSeek.Priority})");
+        _logger?.LogInformation($"   Claude: {(config.Claude.Enabled ? "Enabled" : "Disabled")} (Priority: {config.Claude.Priority})");
         _logger?.LogInformation($"   Advanced Features: {(HasAdvancedFeatures() ? "Enabled" : "Disabled")}");
+        _logger?.LogInformation($"   LLM Response Saving: {(_fileStorageService != null ? "Enabled" : "Disabled")}");
+        _logger?.LogInformation($"   Multi-Agent Validation: {(_validationAgent != null ? "Enabled" : "Disabled")}");
     }
 
     private bool HasAdvancedFeatures() => _mergerService != null && _validationService != null;
@@ -74,6 +91,9 @@ public class MultiLlmAPIOrchestrator
 
         try
         {
+            // Store prescription file name for LLM response saving
+            _currentPrescriptionFileName = prescriptionFileName;
+
             _logger?.LogInformation("?? Starting prescription processing...");
             _logger?.LogInformation($"   File: {prescriptionFileName}");
             _logger?.LogInformation($"   Prescription ID: {prescriptionId}");
@@ -110,6 +130,43 @@ public class MultiLlmAPIOrchestrator
             foreach (var (provider, parseResult) in parserResults)
             {
                 _logger?.LogInformation($"   {provider}: {parseResult.Medications.Count} medications, Confidence: {parseResult.ConfidenceScore:P0}");
+            }
+
+            // STEP 3.5: Run multi-agent validation and analysis (if validation agent available)
+            if (_validationAgent != null && _fileStorageService != null)
+            {
+                _logger?.LogInformation("?? Running multi-agent validation and analysis...");
+                try
+                {
+                    var analysisReport = await _validationAgent.ValidateAndAnalyzeAsync(
+                        ocrText,
+                        parserResults,
+                        prescriptionFileName,
+                        cancellationToken);
+
+                    // Save analysis report
+                    var reportJson = System.Text.Json.JsonSerializer.Serialize(analysisReport, new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                    });
+
+                    await _fileStorageService.SaveAnalysisReportAsync(reportJson, prescriptionFileName);
+
+                    _logger?.LogInformation($"   Analysis Status: {analysisReport.FinalRecommendation.Status}");
+                    _logger?.LogInformation($"   Recommended Parser: {analysisReport.FinalRecommendation.RecommendedParser}");
+                    _logger?.LogInformation($"   Overall Quality: {analysisReport.QualityMetrics.OverallQuality:P0}");
+                    _logger?.LogInformation($"   Validation Issues: {analysisReport.Issues.Count}");
+                    
+                    if (analysisReport.FinalRecommendation.RequiresManualReview)
+                    {
+                        _logger?.LogWarning($"   ?? Manual review recommended: {analysisReport.FinalRecommendation.Reason}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "?? Validation agent failed, continuing with processing...");
+                }
             }
 
             // STEP 4: Merge results (if merger service available)
@@ -218,12 +275,44 @@ public class MultiLlmAPIOrchestrator
     {
         _logger?.LogInformation("? Executing parsers in PARALLEL...");
         
-        var tasks = new List<Task<(string Provider, PrescriptionReadResult? Result, Exception? Error)>>
+        var tasks = new List<Task<(string Provider, PrescriptionReadResult? Result, Exception? Error)>>();
+        
+        // Check Enabled flag before adding to tasks
+        if (_config.OpenAI.Enabled)
         {
-            ExecuteParserAsync("OpenAI", () => _openAIAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)),
-            ExecuteParserAsync("DeepSeek", () => _deepSeekAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)),
-            ExecuteParserAsync("Claude", () => _claudeAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken))
-        };
+            _logger?.LogInformation("   ? OpenAI enabled - adding to execution");
+            tasks.Add(ExecuteParserAsync("OpenAI", () => _openAIAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)));
+        }
+        else
+        {
+            _logger?.LogInformation("   ?? OpenAI disabled - skipping");
+        }
+        
+        if (_config.DeepSeek.Enabled)
+        {
+            _logger?.LogInformation("   ? DeepSeek enabled - adding to execution");
+            tasks.Add(ExecuteParserAsync("DeepSeek", () => _deepSeekAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)));
+        }
+        else
+        {
+            _logger?.LogInformation("   ?? DeepSeek disabled - skipping");
+        }
+        
+        if (_config.Claude.Enabled)
+        {
+            _logger?.LogInformation("   ? Claude enabled - adding to execution");
+            tasks.Add(ExecuteParserAsync("Claude", () => _claudeAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)));
+        }
+        else
+        {
+            _logger?.LogInformation("   ?? Claude disabled - skipping");
+        }
+
+        if (!tasks.Any())
+        {
+            _logger?.LogWarning("?? No parsers are enabled! Returning empty results.");
+            return new Dictionary<string, PrescriptionReadResult>();
+        }
 
         var results = await Task.WhenAll(tasks);
 
@@ -231,6 +320,7 @@ public class MultiLlmAPIOrchestrator
             .Where(r => r.Result != null && r.Result.Success && r.Result.Medications.Any())
             .ToDictionary(r => r.Provider, r => r.Result!);
     }
+
 
     /// <summary>
     /// Execute parsers sequentially with early termination on success
@@ -242,14 +332,41 @@ public class MultiLlmAPIOrchestrator
         _logger?.LogInformation("?? Executing parsers SEQUENTIALLY...");
         
         var results = new Dictionary<string, PrescriptionReadResult>();
-        var parsers = new[]
+        
+        // Build list of enabled parsers only, sorted by priority
+        var parsers = new List<(string Name, int Priority, Func<Task<PrescriptionReadResult>> Parser)>();
+        
+        if (_config.OpenAI.Enabled)
         {
-            ("OpenAI", new Func<Task<PrescriptionReadResult>>(() => _openAIAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken))),
-            ("DeepSeek", new Func<Task<PrescriptionReadResult>>(() => _deepSeekAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken))),
-            ("Claude", new Func<Task<PrescriptionReadResult>>(() => _claudeAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)))
-        };
+            parsers.Add(("OpenAI", _config.OpenAI.Priority, () => _openAIAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)));
+        }
+        
+        if (_config.DeepSeek.Enabled)
+        {
+            parsers.Add(("DeepSeek", _config.DeepSeek.Priority, () => _deepSeekAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)));
+        }
+        
+        if (_config.Claude.Enabled)
+        {
+            parsers.Add(("Claude", _config.Claude.Priority, () => _claudeAgent.ParsePrescriptionTextAsync(ocrText, cancellationToken)));
+        }
 
-        foreach (var (provider, parseFunc) in parsers)
+        if (!parsers.Any())
+        {
+            _logger?.LogWarning("?? No parsers are enabled! Returning empty results.");
+            return results;
+        }
+
+        // Sort by priority (lower number = higher priority)
+        var sortedParsers = parsers.OrderBy(p => p.Priority).ToList();
+        
+        _logger?.LogInformation($"   Execution order (by priority):");
+        foreach (var parser in sortedParsers)
+        {
+            _logger?.LogInformation($"   {parser.Priority}. {parser.Name}");
+        }
+
+        foreach (var (provider, priority, parseFunc) in sortedParsers)
         {
             var (_, result, error) = await ExecuteParserAsync(provider, parseFunc);
             
@@ -290,6 +407,26 @@ public class MultiLlmAPIOrchestrator
             if (result.Success && result.Medications.Any())
             {
                 _logger?.LogInformation($"      Medications: {result.Medications.Count}, Confidence: {result.ConfidenceScore:P0}");
+            }
+
+            // Save LLM response to file
+            if (_fileStorageService != null && !string.IsNullOrEmpty(_currentPrescriptionFileName))
+            {
+                try
+                {
+                    var jsonResponse = JsonSerializer.Serialize(result, new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                    });
+                    
+                    await _fileStorageService.SaveLlmResponseAsync(provider, jsonResponse, _currentPrescriptionFileName);
+                    _logger?.LogInformation($"      ?? Saved {provider} response to file");
+                }
+                catch (Exception saveEx)
+                {
+                    _logger?.LogWarning($"      ?? Failed to save {provider} response: {saveEx.Message}");
+                }
             }
             
             return (provider, result, null);

@@ -175,10 +175,49 @@ builder.Services.AddScoped<DeepSeekPrescriptionParserAgent>(sp =>
 
 builder.Services.AddScoped<ClaudePrescriptionParserAgent>(sp =>
 {
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
     var claudeKey = environmentConfig["Claude:ApiKey"] ?? "";
     var claudeModel = environmentConfig["Claude:Model"] ?? "claude-3-5-sonnet-20241022";
-    var claudeMaxTokens = int.Parse(environmentConfig["Claude:MaxTokens"] ?? "5000");
-    return new ClaudePrescriptionParserAgent(claudeKey, claudeModel, claudeMaxTokens);
+    var claudeMaxTokens = int.Parse(environmentConfig["Claude:MaxTokens"] ?? "1500");
+    return new ClaudePrescriptionParserAgent(httpClient, claudeKey, claudeModel, claudeMaxTokens);
+});
+
+// Register LLM Orchestrator Configuration
+builder.Services.AddSingleton<MedRemind.Core.Configuration.LlmOrchestratorConfiguration>(sp =>
+{
+    var config = new MedRemind.Core.Configuration.LlmOrchestratorConfiguration
+    {
+        OpenAI = new MedRemind.Core.Configuration.LlmProviderConfiguration
+        {
+            Enabled = bool.Parse(environmentConfig["OpenAI:Enabled"] ?? "true"),
+            Priority = int.Parse(environmentConfig["OpenAI:Priority"] ?? "1")
+        },
+        DeepSeek = new MedRemind.Core.Configuration.LlmProviderConfiguration
+        {
+            Enabled = bool.Parse(environmentConfig["DeepSeek:Enabled"] ?? "false"),
+            Priority = int.Parse(environmentConfig["DeepSeek:Priority"] ?? "2")
+        },
+        Claude = new MedRemind.Core.Configuration.LlmProviderConfiguration
+        {
+            Enabled = bool.Parse(environmentConfig["Claude:Enabled"] ?? "false"),
+            Priority = int.Parse(environmentConfig["Claude:Priority"] ?? "3")
+        }
+    };
+    
+    Console.WriteLine("✅ LLM Orchestrator Configuration loaded:");
+    Console.WriteLine($"   OpenAI: {(config.OpenAI.Enabled ? "Enabled" : "Disabled")} (Priority: {config.OpenAI.Priority})");
+    Console.WriteLine($"   DeepSeek: {(config.DeepSeek.Enabled ? "Enabled" : "Disabled")} (Priority: {config.DeepSeek.Priority})");
+    Console.WriteLine($"   Claude: {(config.Claude.Enabled ? "Enabled" : "Disabled")} (Priority: {config.Claude.Priority})");
+    
+    return config;
+});
+
+// Register Prescription Validation Agent (Multi-Agent Validation System)
+builder.Services.AddScoped<MedRemind.Services.AI.Agents.PrescriptionValidationAgent>(sp =>
+{
+    var logger = sp.GetService<ILogger<MedRemind.Services.AI.Agents.PrescriptionValidationAgent>>();
+    Console.WriteLine("✅ PrescriptionValidationAgent registered (Multi-Agent Validation)");
+    return new MedRemind.Services.AI.Agents.PrescriptionValidationAgent(logger);
 });
 
 // Register MultiLlmAPIOrchestrator
@@ -187,10 +226,23 @@ builder.Services.AddScoped<MultiLlmAPIOrchestrator>(sp =>
     var openAIAgent = sp.GetRequiredService<OpenAIPrescriptionParserAgent>();
     var deepSeekAgent = sp.GetRequiredService<DeepSeekPrescriptionParserAgent>();
     var claudeAgent = sp.GetRequiredService<ClaudePrescriptionParserAgent>();
+    var config = sp.GetRequiredService<MedRemind.Core.Configuration.LlmOrchestratorConfiguration>();
+    var fileStorageService = sp.GetRequiredService<IFileStorageService>();
+    var validationAgent = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionValidationAgent>();
+    var logger = sp.GetService<ILogger<MultiLlmAPIOrchestrator>>();
     
     Console.WriteLine("✅ MultiLlmAPIOrchestrator configured with OpenAI, DeepSeek, and Claude");
+    Console.WriteLine("   Configuration and FileStorageService injected");
+    Console.WriteLine("   Multi-Agent Validation enabled");
     
-    return new MultiLlmAPIOrchestrator(openAIAgent, deepSeekAgent, claudeAgent);
+    return new MultiLlmAPIOrchestrator(
+        openAIAgent, 
+        deepSeekAgent, 
+        claudeAgent, 
+        config,
+        fileStorageService,
+        multiAgentValidationAgent: validationAgent,
+        logger: logger);
 });
 
 builder.Services.AddScoped<IPrescriptionReaderService>(sp =>

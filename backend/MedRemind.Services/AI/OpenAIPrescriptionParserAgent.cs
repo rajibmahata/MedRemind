@@ -286,8 +286,24 @@ PARSING RULES:
    - Include condition in frequency and instructions
    - Example: 'SOS if fever > 100°F' → frequency: ""As needed if fever exceeds 100°F"", frequencyCount: 0
 
-5. GENERAL:
+5. DATE PARSING (CRITICAL):
+- Look for date patterns in the OCR text near words: ""Date:"", ""Dated:"", or at the top of prescription
+- Common formats to recognize (PRIORITIZE THESE):
+   * D/M/YY (e.g., ""28/1/26"" → ""2026-01-28"") ← SINGLE DIGIT MONTH!
+   * DD/MM/YYYY (e.g., ""28/01/2025"" → ""2025-01-28"")
+   * DD-MM-YYYY (e.g., ""28-01-2025"" → ""2025-01-28"")
+   * DD.MM.YYYY (e.g., ""28.01.2025"" → ""2025-01-28"")
+   * DD/MM/YY (e.g., ""28/01/25"" → ""2025-01-28"")
+   * D/M/YYYY (e.g., ""8/1/2026"" → ""2026-01-08"")
+   * Month DD, YYYY (e.g., ""January 28, 2025"" → ""2025-01-28"")
+- ALWAYS convert to YYYY-MM-DD format
+- If year is 2 digits (25, 26), assume 20XX (2025, 2026)
+- CRITICAL: DO NOT ignore dates with single-digit months (e.g., ""28/1/26"")
+- If no date found after checking all patterns, set to null
+
+6. GENERAL:
    - Extract ALL medications
+   - Extract prescription date if present
    - Convert duration to days (1 week = 7, 1 month = 30)
    - If SOS/PRN, set durationDays to null
    - Combine timing and frequency naturally
@@ -330,7 +346,30 @@ Example 3 - SOS: ""Tab Crocin 650mg SOS if fever > 100°F""
   ""instructions"": ""Take only if fever exceeds 100 degrees Fahrenheit"",
   ""durationDays"": null,
   ""confidenceScore"": 0.9
-}}";
+}}
+
+Example 4 - With Date: ""Date: 28/1/26\nDr. Smith\nTab Metformin 500mg 0 0 0 x 30 days""
+→ {{
+  ""patient"": {{""name"": null}},
+  ""doctor"": {{""name"": ""Dr. Smith""}},
+  ""prescription_date"": ""2026-01-28"",
+  ""medications"": [
+    {{
+      ""name"": ""Metformin"",
+      ""dosage"": ""500"",
+      ""unit"": ""mg"",
+      ""frequency"": ""Three times daily"",
+      ""frequencyCount"": 3,
+      ""durationDays"": 30
+    }}
+  ]
+}}
+
+CRITICAL INSTRUCTION: The prescription_date field is MANDATORY!
+- ALWAYS look for ""Date:"" followed by numbers
+- Extract ""28/1/26"" format (single digit month is valid!)
+- Convert to ""2026-01-28"" format
+- DO NOT return null if date pattern exists!";
     }
 
     private PrescriptionReadResult ParseStructuredData(string jsonContent)

@@ -1,10 +1,10 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
+using MedRemind.Core.Interfaces;
+using MedRemind.Services.AI.Extensions;
+using SkiaSharp;
 using System.Text;
 using System.Text.Json;
-using SkiaSharp;
-using MedRemind.Services.AI.Extensions;
-using MedRemind.Core.Interfaces;
 
 namespace MedRemind.Services.AI;
 
@@ -19,6 +19,7 @@ public class AzureDocumentIntelligenceService
     private readonly PrescriptionOcrTextPreprocessor _prescriptionOcrTextPreprocessor;
     private readonly IFileStorageService _fileStorageService;
     private readonly string _endpoint;
+   
 
     // Azure Document Intelligence size limits (4MB for Read API)
     private const int MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024; // 4MB
@@ -43,6 +44,7 @@ public class AzureDocumentIntelligenceService
         System.Diagnostics.Debug.WriteLine($"📄 Azure DI: Client initialized");
         System.Diagnostics.Debug.WriteLine($"   Endpoint: {_endpoint}");
         System.Diagnostics.Debug.WriteLine($"   File Storage: {(_fileStorageService.IsFileLoggingEnabled() ? "Enabled" : "Disabled")}");
+       
     }
 
     /// <summary>
@@ -99,6 +101,7 @@ public class AzureDocumentIntelligenceService
 
             // Extract text from result
             var extractedText = ExtractTextFromResult(result);
+
 
             // Preprocess and normalize OCR text for better AI parsing
             var normalize_extractedText = _prescriptionOcrTextPreprocessor.Preprocess(extractedText, PrescriptionOcrTextPreprocessor.ProcessingMode.Minimal);

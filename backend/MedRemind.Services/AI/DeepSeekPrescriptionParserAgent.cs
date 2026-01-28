@@ -181,34 +181,75 @@ public class DeepSeekPrescriptionParserAgent
 
     private string CreateParserPrompt(string ocrText)
     {
-        // Optimized: Reduced from 500+ tokens to ~80 tokens for faster processing
-        return $@"Extract prescription data as JSON.
+        return $@"You are a medical prescription parser specialized in handwritten prescriptions.
 
-Format:
+Extract structured data and return ONLY valid JSON.
+
+IMPORTANT: Recognize handwritten prescription formats:
+
+1. DOSE COUNT NOTATION (frequency indicator):
+   CRITICAL: '0 0 0' means THREE TIMES DAILY, NOT skip!
+   - '0 0 0' = Three times daily (Morning, Afternoon, Evening)
+   - '0 0' = Twice daily (Morning, Evening)
+   - '0' = Once daily (Evening)
+   - '1 1 1' = 1 unit three times daily
+   - '2 1 1' = 2 units morning, 1 afternoon, 1 evening
+
+2. BINARY NOTATION (1=take, 0=skip when mixed):
+   - '1-0-0' = Once daily morning
+   - '1-1-0' = Twice daily
+   - '1-1-1' = Three times daily
+
+3. MEDICAL ABBREVIATIONS:
+   - OD = Once Daily, BD = Twice Daily
+   - TDS/TID = Three times daily, QDS/QID = Four times daily
+   - AC = Before meals, PC = After meals, HS = At bedtime
+   - SOS/PRN = As needed (frequencyCount: 0)
+
+JSON Format:
 {{
   ""patient"": {{""name"": ""string"", ""age"": number, ""gender"": ""string""}},
   ""doctor"": {{""name"": ""string"", ""registration_number"": ""string"", ""specialization"": ""string""}},
   ""prescription_date"": ""YYYY-MM-DD"",
-  ""medications"": [
-        {{
-          ""name"": ""string"",
-          ""dosage"": ""string"",
-          ""unit"": ""string"",
-          ""frequency"": ""string"",
-          ""frequencyCount"": number,
-          ""duration"": ""string"",
-          ""durationDays"": number,
-          ""timing"": ""string"",
-          ""instructions"": ""string"",
-          ""confidenceScore"": number
-        }}
-        ]
+  ""medications"": [{{
+      ""name"": ""string (required)"",
+      ""dosage"": ""string"",
+      ""unit"": ""string"",
+      ""frequency"": ""string (e.g., 'Three times daily')"",
+      ""frequencyCount"": number (1-4, or 0 for SOS),
+      ""duration"": ""string"",
+      ""durationDays"": number,
+      ""timing"": ""string"",
+      ""instructions"": ""string"",
+      ""confidenceScore"": number (0.0-1.0)
+    }}]
 }}
 
-Prescription:
+Prescription Text:
 {ocrText}
 
-Return valid JSON. Use null for missing fields.";
+CRITICAL RULES:
+
+1. DATE EXTRACTION (HIGHEST PRIORITY):
+   - Look for ""Date:"", ""Dated:"", or date patterns
+   - Found: ""28/1/26"" → Return: ""2026-01-28""
+   - Found: ""28-01-2025"" → Return: ""2025-01-28""
+   - Found: ""28.01.2025"" → Return: ""2025-01-28""
+   - ALWAYS convert to YYYY-MM-DD format
+   - If year is 2 digits (26), assume 20XX (2026)
+
+2. MEDICATION EXTRACTION:
+2. MEDICATION EXTRACTION:
+   - Extract ALL medications
+   - '0 0 0' = Three times daily (NOT skip!)
+   - Convert duration to days (1 week = 7, 1 month = 30)
+   - SOS/PRN medications: set frequencyCount to 0, durationDays to null
+
+3. OUTPUT FORMAT:
+   - Use null for missing fields
+   - Return valid JSON only (no markdown, no code blocks)
+
+REMEMBER: prescription_date field is MANDATORY - extract it from the text!";
     }
 
     private string SimplifyOcrText(string ocrText)
@@ -307,9 +348,37 @@ Return valid JSON. Use null for missing fields.";
         if (string.IsNullOrWhiteSpace(dateString))
             return null;
 
+        // Try standard parsing first (handles YYYY-MM-DD, etc.)
         if (DateTime.TryParse(dateString, out var date))
             return date;
 
+        // Try parsing with specific formats (DD/MM/YYYY, DD-MM-YYYY, etc.)
+        var formats = new[]
+        {
+            "yyyy-MM-dd",      // Standard format: 2026-01-28
+            "dd/MM/yyyy",      // 28/01/2026
+            "dd-MM-yyyy",      // 28-01-2026
+            "dd.MM.yyyy",      // 28.01.2026
+            "dd/MM/yy",        // 28/01/26
+            "dd-MM-yy",        // 28-01-26
+            "dd.MM.yy",        // 28.01.26
+            "d/M/yyyy",        // 8/1/2026 (single digit day/month)
+            "d-M-yyyy",        // 8-1-2026
+            "d/M/yy",          // 8/1/26
+            "d-M-yy",          // 8-1-26
+            "MM/dd/yyyy",      // US format: 01/28/2026
+            "yyyy/MM/dd"       // Alternative: 2026/01/28
+        };
+
+        if (DateTime.TryParseExact(dateString, formats, 
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out date))
+        {
+            System.Diagnostics.Debug.WriteLine($"✅ Parsed date: {dateString} → {date:yyyy-MM-dd}");
+            return date;
+        }
+
+        System.Diagnostics.Debug.WriteLine($"⚠️ Could not parse date: {dateString}");
         return null;
     }
 

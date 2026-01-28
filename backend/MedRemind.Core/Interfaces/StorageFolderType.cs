@@ -13,5 +13,11 @@ public enum StorageFolderType
     /// <summary>
     /// Prescriptions directory (files/prescriptions/)
     /// </summary>
-    Prescriptions
+    Prescriptions,
+
+    /// <summary>
+    /// LLM API responses directory (files/LLMResponses/)
+    /// </summary>
+    LLMResponses
 }
+

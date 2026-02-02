@@ -1,70 +1,168 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+# .NET and Visual Studio .gitignore
+# Ignores bin, obj, .vs folders and other common files
 ################################################################################
 
-/mobile/MedRemind.Mobile/appsettings.json
-/mobile/MedRemind.Mobile/appsettings.json
-/backend/MedRemind.Services/obj/Debug/net10.0/MedRemind.Services.AssemblyInfoInputs.cache
-/backend/MedRemind.Services/obj/Debug/net10.0/MedRemind.Services.AssemblyInfo.cs
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.API.dll
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.API.exe
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.API.pdb
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.Services.dll
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.Services.pdb
-/backend/MedRemind.API/obj/Debug/net10.0/ref/MedRemind.API.dll
-/backend/MedRemind.API/obj/Debug/net10.0/refint/MedRemind.API.dll
-/backend/MedRemind.API/obj/Debug/net10.0/apphost.exe
-/backend/MedRemind.API/obj/Debug/net10.0/MedRemind.API.AssemblyInfo.cs
-/backend/MedRemind.API/obj/Debug/net10.0/MedRemind.API.AssemblyInfoInputs.cache
-/backend/MedRemind.API/obj/Debug/net10.0/MedRemind.API.csproj.AssemblyReference.cache
-/backend/MedRemind.API/obj/Debug/net10.0/MedRemind.API.dll
-/backend/MedRemind.API/obj/Debug/net10.0/MedRemind.API.pdb
-/backend/MedRemind.API/obj/Debug/net10.0/MedRemind.API.sourcelink.json
-/backend/MedRemind.API/obj/Debug/net10.0/rjsmcshtml.dswa.cache.json
-/backend/MedRemind.API/obj/Debug/net10.0/rjsmrazor.dswa.cache.json
-/backend/MedRemind.Services/bin/Debug/net10.0/MedRemind.Services.dll
-/backend/MedRemind.Services/bin/Debug/net10.0/MedRemind.Services.pdb
-/backend/MedRemind.Services/obj/Debug/net10.0/ref/MedRemind.Services.dll
-/backend/MedRemind.Services/obj/Debug/net10.0/refint/MedRemind.Services.dll
-/backend/MedRemind.Services/obj/Debug/net10.0/MedRemind.Services.csproj.CoreCompileInputs.cache
-/backend/MedRemind.Services/obj/Debug/net10.0/MedRemind.Services.dll
-/backend/MedRemind.Services/obj/Debug/net10.0/MedRemind.Services.pdb
-/backend/MedRemind.Services/obj/Debug/net10.0/MedRemind.Services.sourcelink.json
-/backend/MedRemind.Tests/bin/Debug/net10.0/MedRemind.Services.dll
-/backend/MedRemind.Tests/bin/Debug/net10.0/MedRemind.Services.pdb
-/backend/MedRemind.Tests/bin/Debug/net10.0/MedRemind.Tests.dll
-/backend/MedRemind.Tests/bin/Debug/net10.0/MedRemind.Tests.pdb
-/backend/MedRemind.Tests/obj/Debug/net10.0/ref/MedRemind.Tests.dll
-/backend/MedRemind.Tests/obj/Debug/net10.0/refint/MedRemind.Tests.dll
-/backend/MedRemind.Tests/obj/Debug/net10.0/MedRemind.Tests.AssemblyInfo.cs
-/backend/MedRemind.Tests/obj/Debug/net10.0/MedRemind.Tests.AssemblyInfoInputs.cache
-/backend/MedRemind.Tests/obj/Debug/net10.0/MedRemind.Tests.csproj.AssemblyReference.cache
-/backend/MedRemind.Tests/obj/Debug/net10.0/MedRemind.Tests.dll
-/backend/MedRemind.Tests/obj/Debug/net10.0/MedRemind.Tests.pdb
-/backend/MedRemind.Tests/obj/Debug/net10.0/MedRemind.Tests.sourcelink.json
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Mobile.dll
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Mobile.pdb
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Services.dll
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Services.pdb
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/android/assets/arm64-v8a/MedRemind.Mobile.dll
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/android/assets/arm64-v8a/MedRemind.Mobile.pdb
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/android/assets/arm64-v8a/MedRemind.Mobile.typemap.xml
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/android/assets/arm64-v8a/MedRemind.Services.dll
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/android/assets/arm64-v8a/MedRemind.Services.pdb
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/android-arm64/MedRemind.Mobile.csproj.AssemblyReference.cache
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/devices.cache
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/MedRemind.Mobile.AssemblyInfo.cs
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/MedRemind.Mobile.AssemblyInfoInputs.cache
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/MedRemind.Mobile.csproj.AssemblyReference.cache
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/MedRemind.Mobile.dll
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/MedRemind.Mobile.pdb
-/mobile/MedRemind.Mobile/obj/Debug/net10.0-android/MedRemind.Mobile.sourcelink.json
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.Core.dll
-/backend/MedRemind.API/bin/Debug/net10.0/MedRemind.Core.pdb
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/com.medremind.app-Signed.apk
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/com.medremind.app-Signed.apk.idsig
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/com.medremind.app.apk
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Core.dll
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Core.pdb
-/mobile/MedRemind.Mobile/bin/Debug/net10.0-android/MedRemind.Mobile.runtimeconfig.json
-/mobile/MedRemind.Mobile/obj/.cache/com.medremind.app.flag
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options directory
+.vs/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Files built by Visual Studio
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Visual Studio code coverage results
+*.coverage
+*.coveragexml
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Visual Studio cache files
+*.[Cc]ache
+!?*.[Cc]ache/
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Node.js
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+python-microservice/.venv/
+python-microservice/venv/
+python-microservice/.pytest_cache/
+python-microservice/storage/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# JetBrains Rider
+*.sln.iml
+.idea/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# appsettings files (keep base template, ignore environment-specific)
+appsettings.Development.json
+appsettings.Staging.json
+appsettings.Production.json
+appsettings.*.json
+!appsettings.json
+!appsettings.*.example.json
+
+# Mobile appsettings (contains sensitive data)
+mobile/MedRemind.Mobile/appsettings.json
+
+# Python environment files
+python-microservice/.env
+python-microservice/.env.local
+!python-microservice/.env.example
+
+# Application-specific storage folders
+**/Files/**
+**/OCRs/**
+**/Prescriptions/**
+**/LLMResponses/**
+**/Analysis/**
+**/Logs/**

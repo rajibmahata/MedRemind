@@ -3,18 +3,19 @@ using MedRemind.Core.Interfaces;
 using MedRemind.Core.Repositories;
 using MedRemind.Services.AI;
 using MedRemind.Services.AI.Agents;
+using MedRemind.Services.AI.Python;
 using MedRemind.Services.Authentication;
-using MedRemind.Services.Medications;
 using MedRemind.Services.Media;
+using MedRemind.Services.Medications;
 using MedRemind.Services.Notifications;
 using MedRemind.Services.Prescriptions;
 using MedRemind.Services.Reminders;
 using MedRemind.Services.Storage;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -228,21 +229,55 @@ builder.Services.AddScoped<MultiLlmAPIOrchestrator>(sp =>
     var claudeAgent = sp.GetRequiredService<ClaudePrescriptionParserAgent>();
     var config = sp.GetRequiredService<MedRemind.Core.Configuration.LlmOrchestratorConfiguration>();
     var fileStorageService = sp.GetRequiredService<IFileStorageService>();
+    var pythonMiddlewareClient = sp.GetRequiredService<MedRemind.Services.AI.Python.PythonMiddlewareClient>();
+    var pythonConfig = sp.GetRequiredService<MedRemind.Core.Configuration.PythonMiddlewareConfiguration>();
     var validationAgent = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionValidationAgent>();
     var logger = sp.GetService<ILogger<MultiLlmAPIOrchestrator>>();
     
     Console.WriteLine("✅ MultiLlmAPIOrchestrator configured with OpenAI, DeepSeek, and Claude");
     Console.WriteLine("   Configuration and FileStorageService injected");
     Console.WriteLine("   Multi-Agent Validation enabled");
+    Console.WriteLine($"   Python Middleware: {(pythonConfig.Enabled ? "Enabled" : "Disabled")}");
     
     return new MultiLlmAPIOrchestrator(
         openAIAgent, 
         deepSeekAgent, 
         claudeAgent, 
-        config,
+        config, pythonMiddlewareClient,
         fileStorageService,
         multiAgentValidationAgent: validationAgent,
+        pythonConfig: pythonConfig,
         logger: logger);
+});
+
+// Register Python Middleware Client Configuration
+builder.Services.AddSingleton(sp =>
+{
+    var pythonConfig = new MedRemind.Core.Configuration.PythonMiddlewareConfiguration
+    {
+        BaseApiUrl = environmentConfig["PythonMiddlewareClient:BaseApiUrl"] ?? "http://localhost:8000",
+        Enabled = bool.Parse(environmentConfig["PythonMiddlewareClient:Enabled"] ?? "false"),
+        TimeoutSeconds = int.Parse(environmentConfig["PythonMiddlewareClient:TimeoutSeconds"] ?? "300")
+    };
+    
+    Console.WriteLine($"✅ Python Middleware Configuration loaded:");
+    Console.WriteLine($"   Base API URL: {pythonConfig.BaseApiUrl}");
+    Console.WriteLine($"   Enabled: {pythonConfig.Enabled}");
+    Console.WriteLine($"   Timeout: {pythonConfig.TimeoutSeconds}s");
+    
+    return pythonConfig;
+});
+
+// Register Python Middleware Client
+builder.Services.AddHttpClient<MedRemind.Services.AI.Python.PythonMiddlewareClient>((sp, client) =>
+{
+    var config = sp.GetRequiredService<MedRemind.Core.Configuration.PythonMiddlewareConfiguration>();
+    var logger = sp.GetService<ILogger<MedRemind.Services.AI.Python.PythonMiddlewareClient>>();
+    
+    client.BaseAddress = new Uri(config.BaseApiUrl);
+    client.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
+    
+    Console.WriteLine($"✅ Python Middleware Client registered");
 });
 
 builder.Services.AddScoped<IPrescriptionReaderService>(sp =>

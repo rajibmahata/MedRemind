@@ -2,6 +2,7 @@ using MedRemind.Core.Configuration;
 using MedRemind.Core.DTOs;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
+using MedRemind.Services.AI.Python;
 using MedRemind.Services.Prescriptions;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -30,6 +31,9 @@ public class MultiLlmAPIOrchestrator
     private readonly IUnitOfWork? _unitOfWork;
     private readonly ILogger<MultiLlmAPIOrchestrator>? _logger;
 
+    private readonly PythonMiddlewareClient _pythonClient;
+    private readonly MedRemind.Core.Configuration.PythonMiddlewareConfiguration? _pythonConfig;
+
     // For saving LLM responses
     private string? _currentPrescriptionFileName;
 
@@ -38,11 +42,13 @@ public class MultiLlmAPIOrchestrator
         DeepSeekPrescriptionParserAgent deepSeekAgent,
         ClaudePrescriptionParserAgent claudeAgent,
         LlmOrchestratorConfiguration config,
+        PythonMiddlewareClient pythonMiddlewareClient,
         IFileStorageService? fileStorageService = null,
         ExecutionMode executionMode = ExecutionMode.Parallel,
         PrescriptionResultMergerService? mergerService = null,
         PrescriptionValidationService? validationService = null,
         PrescriptionValidationAgent? multiAgentValidationAgent = null,
+        MedRemind.Core.Configuration.PythonMiddlewareConfiguration? pythonConfig = null,
         PrescriptionCacheService? cacheService = null,
         IUnitOfWork? unitOfWork = null,
         ILogger<MultiLlmAPIOrchestrator>? logger = null)
@@ -59,18 +65,29 @@ public class MultiLlmAPIOrchestrator
         _cacheService = cacheService;
         _unitOfWork = unitOfWork;
         _logger = logger;
-        
+        _pythonClient = pythonMiddlewareClient ?? throw new ArgumentNullException(nameof(pythonMiddlewareClient));
+        _pythonConfig = pythonConfig;
+
         var mode = executionMode == ExecutionMode.Parallel ? "Parallel" : "Sequential";
-        _logger?.LogInformation($"? MultiLlmAPIOrchestrator initialized - Mode: {mode}");
+        _logger?.LogInformation($"?? MultiLlmAPIOrchestrator initialized - Mode: {mode}");
         _logger?.LogInformation($"   OpenAI: {(config.OpenAI.Enabled ? "Enabled" : "Disabled")} (Priority: {config.OpenAI.Priority})");
         _logger?.LogInformation($"   DeepSeek: {(config.DeepSeek.Enabled ? "Enabled" : "Disabled")} (Priority: {config.DeepSeek.Priority})");
         _logger?.LogInformation($"   Claude: {(config.Claude.Enabled ? "Enabled" : "Disabled")} (Priority: {config.Claude.Priority})");
+        _logger?.LogInformation($"   Python Middleware: {(pythonConfig?.Enabled == true ? "Enabled" : "Disabled")}");
         _logger?.LogInformation($"   Advanced Features: {(HasAdvancedFeatures() ? "Enabled" : "Disabled")}");
         _logger?.LogInformation($"   LLM Response Saving: {(_fileStorageService != null ? "Enabled" : "Disabled")}");
         _logger?.LogInformation($"   Multi-Agent Validation: {(_validationAgent != null ? "Enabled" : "Disabled")}");
     }
 
     private bool HasAdvancedFeatures() => _mergerService != null && _validationService != null;
+
+    /// <summary>
+    /// Get Python Middleware configuration (if available)
+    /// </summary>
+    private MedRemind.Core.Configuration.PythonMiddlewareConfiguration? GetPythonMiddlewareConfig()
+    {
+        return _pythonConfig;
+    }
 
     /// <summary>
     /// Process prescription with multiple parsers, cross-validation, result merging, and caching
@@ -116,132 +133,64 @@ public class MultiLlmAPIOrchestrator
                 return FailFast("OCR text is empty or null", result);
             }
 
-            // STEP 3: Execute parsers (parallel or sequential)
-            var parserResults = _executionMode == ExecutionMode.Parallel
-                ? await ExecuteParsersParallelAsync(ocrText, cancellationToken)
-                : await ExecuteParsersSequentialAsync(ocrText, cancellationToken);
+            // STEP 3: Try Python Middleware (CrewAI) - Primary processing method
+            PrescriptionReadResult? crewAiResult = null;
+            var pythonConfig = GetPythonMiddlewareConfig();
             
-            if (!parserResults.Any())
+            if (pythonConfig != null && pythonConfig.Enabled)
             {
-                return FailFast("All parsers failed or returned no results", result);
-            }
-            
-            _logger?.LogInformation($"?? Parser Results: {parserResults.Count} successful");
-            foreach (var (provider, parseResult) in parserResults)
-            {
-                _logger?.LogInformation($"   {provider}: {parseResult.Medications.Count} medications, Confidence: {parseResult.ConfidenceScore:P0}");
-            }
-
-            // STEP 3.5: Run multi-agent validation and analysis (if validation agent available)
-            if (_validationAgent != null && _fileStorageService != null)
-            {
-                _logger?.LogInformation("?? Running multi-agent validation and analysis...");
+                _logger?.LogInformation("?? Processing with Python Middleware (CrewAI)...");
                 try
                 {
-                    var analysisReport = await _validationAgent.ValidateAndAnalyzeAsync(
-                        ocrText,
-                        parserResults,
-                        prescriptionFileName,
-                        cancellationToken);
-
-                    // Save analysis report
-                    var reportJson = System.Text.Json.JsonSerializer.Serialize(analysisReport, new System.Text.Json.JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                    });
-
-                    await _fileStorageService.SaveAnalysisReportAsync(reportJson, prescriptionFileName);
-
-                    _logger?.LogInformation($"   Analysis Status: {analysisReport.FinalRecommendation.Status}");
-                    _logger?.LogInformation($"   Recommended Parser: {analysisReport.FinalRecommendation.RecommendedParser}");
-                    _logger?.LogInformation($"   Overall Quality: {analysisReport.QualityMetrics.OverallQuality:P0}");
-                    _logger?.LogInformation($"   Validation Issues: {analysisReport.Issues.Count}");
+                    crewAiResult = await _pythonClient.ParsePrescriptionAsync(ocrText, prescriptionFileName, true, cancellationToken);
                     
-                    if (analysisReport.FinalRecommendation.RequiresManualReview)
+                    if (crewAiResult != null && crewAiResult.Success && crewAiResult.Medications.Any())
                     {
-                        _logger?.LogWarning($"   ?? Manual review recommended: {analysisReport.FinalRecommendation.Reason}");
+                        _logger?.LogInformation("? Python Middleware returned successful result");
+                        _logger?.LogInformation($"   Medications: {crewAiResult.Medications.Count}");
+                        _logger?.LogInformation($"   Confidence: {crewAiResult.ConfidenceScore:P0}");
+                        _logger?.LogInformation($"   Patient: {crewAiResult.Patient?.Name ?? "N/A"}");
+                        _logger?.LogInformation($"   Doctor: {crewAiResult.Doctor?.Name ?? "N/A"}");
+                        _logger?.LogInformation($"   Date: {crewAiResult.PrescriptionDate?.ToString("yyyy-MM-dd") ?? "N/A"}");
+                        
+                        // Use CrewAI result (all validation and multi-agent processing done in Python)
+                        result.ParseResult = crewAiResult;
+                        result.PrescriptionResult = crewAiResult;
+                        result.Success = true;
+                        result.MatchScore = crewAiResult.ConfidenceScore;
+                        result.TotalAttempts = 1;
+                        result.ProcessingAttempts = 1;
+                        result.SelectedProvider = "Python Middleware (CrewAI)";
+                    }
+                    else
+                    {
+                        _logger?.LogError("? Python Middleware did not return successful result");
+                        return FailFast("Python Middleware processing failed: No medications found or processing unsuccessful", result);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, "?? Validation agent failed, continuing with processing...");
+                    _logger?.LogError(ex, "? Python Middleware processing failed");
+                    return FailFast($"Python Middleware error: {ex.Message}", result);
                 }
-            }
-
-            // STEP 4: Merge results (if merger service available)
-            PrescriptionReadResult mergedResult;
-            if (_mergerService != null && parserResults.Count > 1)
-            {
-                _logger?.LogInformation("?? Merging results from multiple parsers...");
-                
-                // Get the two best results to merge
-                var sortedResults = parserResults.Values
-                    .OrderByDescending(r => r.Medications.Count)
-                    .ThenByDescending(r => r.ConfidenceScore)
-                    .ToList();
-                
-                var primary = sortedResults[0];
-                var secondary = sortedResults.Count > 1 ? sortedResults[1] : primary;
-                var primaryProvider = parserResults.First(kvp => kvp.Value == primary).Key;
-                var secondaryProvider = parserResults.Count > 1 ? parserResults.First(kvp => kvp.Value == secondary).Key : primaryProvider;
-                
-                mergedResult = _mergerService.MergeResults(primary, secondary, primaryProvider, secondaryProvider);
-                _logger?.LogInformation($"   Merged: {mergedResult.Medications.Count} medications");
             }
             else
             {
-                // Use best single result
-                mergedResult = parserResults.Values
-                    .OrderByDescending(r => r.Medications.Count)
-                    .ThenByDescending(r => r.ConfidenceScore)
-                    .First();
-                _logger?.LogInformation("   Using single best result (no merger available)");
+                _logger?.LogError("? Python Middleware is disabled - no processing method available");
+                return FailFast("Python Middleware is disabled. Please enable it in configuration to process prescriptions.", result);
             }
-            
-            if (mergedResult == null || !mergedResult.Medications.Any())
+
+            // STEP 4: Store in database (if unit of work available)
+            if (_unitOfWork != null && result.ParseResult != null)
             {
-                return FailFast("No medications found after merging", result);
+                await StoreResultAsync(prescriptionId, ocrText, result.ParseResult, result);
             }
             
-            // STEP 5: Validate completeness (if validation service available)
-            double averageConfidence = mergedResult.ConfidenceScore;
-            bool isComplete = true;
-            
-            if (_validationService != null)
-            {
-                var validation = _validationService.ValidateCompleteness(mergedResult);
-                averageConfidence = validation.AverageConfidence;
-                isComplete = validation.IsComplete;
-                
-                _logger?.LogInformation($"?? Validation: {(validation.IsComplete ? "? Complete" : "?? Incomplete")}");
-                _logger?.LogInformation($"   Confidence: {validation.AverageConfidence:P0}");
-            }
-            
-            // STEP 6: Store in database (if unit of work available)
-            if (_unitOfWork != null)
-            {
-                await StoreResultAsync(prescriptionId, ocrText, parserResults, mergedResult, averageConfidence, result);
-            }
-            
-            // STEP 7: Finalize result
-            result.ParseResult = mergedResult;
-            result.PrescriptionResult = mergedResult; // Alternative property
-            result.Success = true;
-            result.MatchScore = averageConfidence;
-            result.TotalAttempts = parserResults.Count;
-            result.ProcessingAttempts = parserResults.Count;
-            result.SelectedProvider = string.Join(" + ", parserResults.Keys);
+            // STEP 5: Finalize result
             result.EndTime = DateTime.UtcNow;
             result.ProcessingTime = result.EndTime.Value - result.StartTime;
             
-            // Add warning if incomplete
-            if (!isComplete)
-            {
-                result.WarningMessage = "Some medication fields are incomplete. Please review the results.";
-            }
-            
-            // STEP 8: Cache result (if cache service available)
+            // STEP 6: Cache result (if cache service available)
             if (_cacheService != null)
             {
                 _cacheService.Set(ocrText, result);
@@ -249,8 +198,8 @@ public class MultiLlmAPIOrchestrator
             }
             
             _logger?.LogInformation($"? Processing complete in {result.ProcessingTime.TotalSeconds:F2}s");
-            _logger?.LogInformation($"   Providers: {result.SelectedProvider}");
-            _logger?.LogInformation($"   Medications: {result.ParseResult.Medications.Count}");
+            _logger?.LogInformation($"   Provider: {result.SelectedProvider}");
+            _logger?.LogInformation($"   Medications: {result.ParseResult?.Medications.Count ?? 0}");
             _logger?.LogInformation($"   Confidence: {result.MatchScore:P0}");
             
             return result;
@@ -266,8 +215,12 @@ public class MultiLlmAPIOrchestrator
         }
     }
 
+    // ===================================================================================================
+    // LEGACY METHODS - Kept for backward compatibility but not used when Python Middleware is enabled
+    // ===================================================================================================
+
     /// <summary>
-    /// Execute all parsers in parallel
+    /// Execute all parsers in parallel (LEGACY - Not used with Python Middleware)
     /// </summary>
     private async Task<Dictionary<string, PrescriptionReadResult>> ExecuteParsersParallelAsync(
         string ocrText,
@@ -323,7 +276,7 @@ public class MultiLlmAPIOrchestrator
 
 
     /// <summary>
-    /// Execute parsers sequentially with early termination on success
+    /// Execute parsers sequentially with early termination on success (LEGACY - Not used with Python Middleware)
     /// </summary>
     private async Task<Dictionary<string, PrescriptionReadResult>> ExecuteParsersSequentialAsync(
         string ocrText,
@@ -387,7 +340,7 @@ public class MultiLlmAPIOrchestrator
     }
 
     /// <summary>
-    /// Execute a single parser with error handling
+    /// Execute a single parser with error handling (LEGACY - Not used with Python Middleware)
     /// </summary>
     private async Task<(string Provider, PrescriptionReadResult? Result, Exception? Error)> ExecuteParserAsync(
         string provider,
@@ -444,9 +397,7 @@ public class MultiLlmAPIOrchestrator
     private async Task StoreResultAsync(
         int prescriptionId,
         string ocrText,
-        Dictionary<string, PrescriptionReadResult> parserResults,
-        PrescriptionReadResult mergedResult,
-        double confidence,
+        PrescriptionReadResult parseResult,
         PrescriptionProcessingResult result)
     {
         try
@@ -464,27 +415,18 @@ public class MultiLlmAPIOrchestrator
                 PrescriptionId = prescriptionId,
                 OCRText = ocrText,
                 OCRTextHash = ComputeHash(ocrText),
-                SelectedProvider = string.Join(" + ", parserResults.Keys),
-                SelectedResponse = JsonSerializer.Serialize(mergedResult),
-                ComparisonScore = confidence,
-                MedicationCount = mergedResult.Medications.Count,
-                DoctorName = mergedResult.Doctor?.Name,
-                PatientName = mergedResult.Patient?.Name,
-                PrescriptionDate = mergedResult.PrescriptionDate,
+                SelectedProvider = result.SelectedProvider,
+                SelectedResponse = JsonSerializer.Serialize(parseResult),
+                ComparisonScore = parseResult.ConfidenceScore,
+                MedicationCount = parseResult.Medications.Count,
+                DoctorName = parseResult.Doctor?.Name,
+                PatientName = parseResult.Patient?.Name,
+                PrescriptionDate = parseResult.PrescriptionDate,
                 ProcessedAt = DateTime.UtcNow,
                 ProcessingTime = result.ProcessingTime,
-                ProcessingAttempts = parserResults.Count
+                ProcessingAttempts = 1,
+                OpenAIResponse = JsonSerializer.Serialize(parseResult) // Store as primary response
             };
-
-            // Store individual parser responses
-            if (parserResults.ContainsKey("OpenAI"))
-            {
-                ocrResult.OpenAIResponse = JsonSerializer.Serialize(parserResults["OpenAI"]);
-            }
-            if (parserResults.ContainsKey("Claude"))
-            {
-                ocrResult.ClaudeResponse = JsonSerializer.Serialize(parserResults["Claude"]);
-            }
 
             var repo = _unitOfWork.Repository<PrescriptionOCRResult>();
             await repo.AddAsync(ocrResult);

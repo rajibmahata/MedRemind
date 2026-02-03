@@ -426,14 +426,14 @@ public class MultiLlmAPIOrchestrator
                     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
                 }),
                 
-                // Store in OpenAIResponse for backward compatibility (since we're using Python as primary)
+                // Store in OpenAIResponse (Python uses OpenAI LLM internally)
                 OpenAIResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
                 { 
                     WriteIndented = true,
                     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
                 }),
                 
-                // Store medicine validation as JSON in ClaudeResponse field (repurposed)
+                // Store medicine validation as JSON in ClaudeResponse field (Python uses Claude for validation)
                 ClaudeResponse = parseResult.MedicineValidation != null 
                     ? JsonSerializer.Serialize(parseResult.MedicineValidation, new JsonSerializerOptions 
                     { 
@@ -441,6 +441,11 @@ public class MultiLlmAPIOrchestrator
                         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
                     })
                     : null,
+                
+                // Python Middleware Metadata
+                PythonMiddlewareVersion = "1.0.0",
+                LlmModelsUsed = "gpt-4o-mini,deepseek-chat,claude-3.5-sonnet", // Python uses multiple LLMs
+                CrewAISummary = parseResult.CrewSummary,
                 
                 // Comparison metrics
                 ComparisonScore = parseResult.ConfidenceScore,
@@ -451,6 +456,12 @@ public class MultiLlmAPIOrchestrator
                 DoctorName = parseResult.Doctor?.Name,
                 PatientName = parseResult.Patient?.Name,
                 PrescriptionDate = parseResult.PrescriptionDate,
+                
+                // Medicine validation metadata
+                OverallSafetyScore = parseResult.MedicineValidation?.OverallSafetyScore,
+                RequiresPharmacistReview = parseResult.MedicineValidation?.RequiresPharmacistReview,
+                SafetyWarningsCount = parseResult.MedicineValidation?.SafetyWarnings?.Count,
+                DrugInteractionsCount = parseResult.MedicineValidation?.DrugInteractions?.Count,
                 
                 // Processing metadata
                 ProcessedAt = DateTime.UtcNow,
@@ -468,7 +479,9 @@ public class MultiLlmAPIOrchestrator
             _logger?.LogInformation($"   Medications: {ocrResult.MedicationCount}");
             _logger?.LogInformation($"   Patient: {ocrResult.PatientName ?? "N/A"}");
             _logger?.LogInformation($"   Doctor: {ocrResult.DoctorName ?? "N/A"}");
-            _logger?.LogInformation($"   Has Medicine Validation: {(parseResult.MedicineValidation != null ? "Yes" : "No")}");
+            _logger?.LogInformation($"   LLMs Used: {ocrResult.LlmModelsUsed}");
+            _logger?.LogInformation($"   Safety Score: {ocrResult.OverallSafetyScore:P0}");
+            _logger?.LogInformation($"   Safety Warnings: {ocrResult.SafetyWarningsCount ?? 0}");
         }
         catch (Exception ex)
         {

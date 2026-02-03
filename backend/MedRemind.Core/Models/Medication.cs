@@ -14,6 +14,11 @@ public class Medication
     public int? FrequencyCount { get; set; } // Number of times per day
     public int? DurationDays { get; set; }
     public string? Instructions { get; set; }
+    
+    // Medicine Information (from Python middleware LLM processing)
+    public string? MedicineDetails { get; set; } // Purpose/indication - what this medicine is used for
+    public string? SideEffects { get; set; } // Common side effects and warnings
+    
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public bool IsActive { get; set; } = true;

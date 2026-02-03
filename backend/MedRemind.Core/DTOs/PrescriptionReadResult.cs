@@ -57,6 +57,10 @@ public class MedicationData
     public string? Timing { get; set; }
     public string? Instructions { get; set; }
     public double? ConfidenceScore { get; set; }  // ✅ Made nullable for consistency
+    
+    // Medicine information from Python middleware LLM processing
+    public string? MedicineDetails { get; set; }  // Maps to Python 'purpose'
+    public string? SideEffects { get; set; }      // Maps to Python 'side_effects' (comma-separated)
 }
 
 /// <summary>

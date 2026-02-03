@@ -32,6 +32,8 @@ class Medication(BaseModel):
     duration_days: Optional[int] = None
     timing: Optional[str] = None
     instructions: Optional[str] = None
+    purpose: Optional[str] = Field(default=None, description="Medical condition or purpose for this medication")
+    side_effects: Optional[List[str]] = Field(default=None, description="Common side effects of this medication")
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
 
 

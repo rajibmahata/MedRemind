@@ -186,7 +186,13 @@ public class PythonMiddlewareClient
                     DurationDays = pythonMed.DurationDays ?? 0,
                     Timing = pythonMed.Timing,
                     Instructions = pythonMed.Instructions,
-                    ConfidenceScore = pythonMed.ConfidenceScore
+                    ConfidenceScore = pythonMed.ConfidenceScore,
+                    
+                    // Map Python medicine information to C# properties
+                    MedicineDetails = pythonMed.Purpose,  // Python 'purpose' ? C# 'MedicineDetails'
+                    SideEffects = pythonMed.SideEffects != null && pythonMed.SideEffects.Any()
+                        ? string.Join(", ", pythonMed.SideEffects)  // Convert list to comma-separated string
+                        : null
                 };
 
                 result.Medications.Add(medication);
@@ -346,6 +352,13 @@ public class PythonMedication
     
     [JsonPropertyName("confidence_score")]
     public double ConfidenceScore { get; set; }
+    
+    // Medicine information from Python LLM processing
+    [JsonPropertyName("purpose")]
+    public string? Purpose { get; set; }
+    
+    [JsonPropertyName("side_effects")]
+    public List<string>? SideEffects { get; set; }
 }
 
 public class PythonMedicineValidation

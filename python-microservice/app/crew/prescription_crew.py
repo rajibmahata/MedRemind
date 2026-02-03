@@ -4,6 +4,7 @@ Orchestrates sequential execution of agents
 """
 
 import json
+import os
 import time
 from datetime import datetime
 from crewai import Crew, Task
@@ -19,6 +20,22 @@ from app.models import (
     ParseResponse, PatientInfo, DoctorInfo, Medication,
     DrugInteraction, SafetyWarning, DuplicateTherapy, MedicineValidation
 )
+
+
+def setup_tracing():
+    """Setup LangSmith tracing if enabled"""
+    if settings.langchain_tracing_v2 and settings.langchain_api_key:
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        os.environ["LANGCHAIN_ENDPOINT"] = settings.langchain_endpoint
+        os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
+        os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project
+        print(f"✅ LangSmith tracing enabled - Project: {settings.langchain_project}")
+    else:
+        os.environ["LANGCHAIN_TRACING_V2"] = "false"
+        if settings.langchain_tracing_v2:
+            print("⚠️  LangSmith tracing enabled but LANGCHAIN_API_KEY not set")
+        else:
+            print("ℹ️  LangSmith tracing disabled")
 
 
 def get_llm():
@@ -48,6 +65,9 @@ class PrescriptionCrew:
     """CrewAI crew for prescription processing"""
     
     def __init__(self):
+        # Setup tracing
+        setup_tracing()
+        
         self.llm = get_llm()
         self.normalizer = create_normalizer_agent(self.llm)
         self.extractor = create_extractor_agent(self.llm)
@@ -303,22 +323,37 @@ class PrescriptionCrew:
             registration_number=doctor_data.get('registration_number')
         ) if doctor_data else None
         
-        # Parse medications
-        medications = [
-            Medication(
-                name=med.get('name', 'Unknown'),
-                dosage=med.get('dosage'),
-                unit=med.get('unit'),
-                frequency=med.get('frequency'),
-                frequency_count=med.get('frequency_count'),
-                duration=med.get('duration'),
-                duration_days=med.get('duration_days'),
-                timing=med.get('timing'),
-                instructions=med.get('instructions'),
-                confidence_score=med.get('confidence_score', 0.0)
+        # Create a mapping of medicine names to their validation data
+        validated_meds_map = {}
+        if medicine_validation and medicine_validation.get('validated_medications'):
+            for val_med in medicine_validation.get('validated_medications', []):
+                original_name = val_med.get('original_name', '').lower()
+                validated_meds_map[original_name] = val_med
+        
+        # Parse medications with enriched data from validation
+        medications = []
+        for med in extracted_data.get('medications', []):
+            med_name = med.get('name', 'Unknown')
+            
+            # Get validation data for this medicine
+            val_data = validated_meds_map.get(med_name.lower(), {})
+            
+            medications.append(
+                Medication(
+                    name=med.get('name', 'Unknown'),
+                    dosage=med.get('dosage'),
+                    unit=med.get('unit'),
+                    frequency=med.get('frequency'),
+                    frequency_count=med.get('frequency_count'),
+                    duration=med.get('duration'),
+                    duration_days=med.get('duration_days'),
+                    timing=med.get('timing'),
+                    instructions=med.get('instructions'),
+                    purpose=val_data.get('purpose'),
+                    side_effects=val_data.get('side_effects'),
+                    confidence_score=med.get('confidence_score', 0.0)
+                )
             )
-            for med in extracted_data.get('medications', [])
-        ]
         
         # Build medicine validation object
         med_validation = None

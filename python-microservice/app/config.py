@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     preferred_parser: str = "openai"
     max_retries: int = 2
     
+    # Tracing Configuration (LangSmith)
+    langchain_tracing_v2: bool = True
+    langchain_endpoint: str = "https://api.smith.langchain.com"
+    langchain_api_key: str | None = None
+    langchain_project: str = "medremind-prescription-parser"
+    
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins into list"""

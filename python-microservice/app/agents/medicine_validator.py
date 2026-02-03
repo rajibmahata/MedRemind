@@ -73,7 +73,9 @@ Return ONLY valid JSON in this exact format:
       "dosage_warning": "string or null",
       "generic_name": "string",
       "brand_names": ["list of brand names"],
-      "therapeutic_class": "string"
+      "therapeutic_class": "string",
+      "purpose": "string - what this medicine is used for/indication",
+      "side_effects": ["list of common side effects"]
     }}
   ],
   "drug_interactions": [

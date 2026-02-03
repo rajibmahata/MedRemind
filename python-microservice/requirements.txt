@@ -3,6 +3,7 @@ crewai-tools==0.12.1
 langchain-openai==0.3.7
 langchain-anthropic==0.3.8
 langchain-core==0.3.29
+langsmith>=0.2.0
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 pydantic==2.10.3

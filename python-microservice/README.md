@@ -8,8 +8,7 @@ FastAPI microservice using CrewAI for prescription data extraction.
 - **FastAPI REST API** - Easy integration with .NET
 - **Configuration Sync** - Uses .NET project's LLM configs
 - **File Storage** - Saves parsed prescriptions for validation
-- **Health Checks** - Monitoring endpoints
-
+- **Health Checks** - Monitoring endpoints- **Agent Tracing** - LangSmith integration for tracking agent execution
 ## ?? Requirements
 
 - Python 3.11+
@@ -72,6 +71,13 @@ CLAUDE_ENABLED=false
 # Server config
 HOST=0.0.0.0
 PORT=8000
+
+# Tracing (Optional - for monitoring agent execution)
+# Sign up at https://smith.langchain.com/ to get an API key
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+LANGCHAIN_API_KEY=your_langsmith_api_key_here
+LANGCHAIN_PROJECT=medremind-prescription-parser
 ```
 
 ### 5. Run the Server
@@ -209,6 +215,8 @@ var result = await response.Content.ReadFromJsonAsync<PrescriptionResult>();
       "frequency_count": 1,
       "duration_days": 21,
       "instructions": "For 3 weeks",
+      "purpose": "Treatment of urinary tract conditions",
+      "side_effects": ["Nausea", "Headache", "Dizziness"],
       "confidence_score": 0.9
     }
   ],
@@ -240,6 +248,45 @@ var result = await response.Content.ReadFromJsonAsync<PrescriptionResult>();
 }
 ```
 
+## 🔍 Agent Tracing & Monitoring
+
+This service supports **LangSmith tracing** to monitor agent execution, track LLM calls, and debug issues.
+
+### Setup LangSmith Tracing
+
+1. **Sign up for LangSmith** at [smith.langchain.com](https://smith.langchain.com/)
+2. **Get your API key** from the settings page
+3. **Update `.env` file**:
+   ```env
+   LANGCHAIN_TRACING_V2=true
+   LANGCHAIN_API_KEY=your_langsmith_api_key_here
+   LANGCHAIN_PROJECT=medremind-prescription-parser
+   ```
+
+### What Gets Tracked
+
+- **Agent Execution** - Each agent's input/output
+- **LLM Calls** - Prompts and responses
+- **Task Performance** - Execution time for each step
+- **Errors & Warnings** - Failed operations and retries
+- **Token Usage** - Cost tracking per request
+
+### Viewing Traces
+
+1. Visit [smith.langchain.com](https://smith.langchain.com/)
+2. Navigate to your project
+3. View detailed traces for each prescription parsing request
+4. Analyze agent performance and identify bottlenecks
+
+### Disable Tracing
+
+Set in `.env`:
+```env
+LANGCHAIN_TRACING_V2=false
+```
+
+**📘 For detailed tracing setup and usage, see [TRACING_GUIDE.md](TRACING_GUIDE.md)**
+
 ## ?? Testing
 
 ```bash
@@ -263,6 +310,9 @@ curl -X POST http://localhost:8000/api/prescription/parse \
 | HOST | Server host | 0.0.0.0 |
 | PORT | Server port | 8000 |
 | LOG_LEVEL | Logging level | INFO |
+| LANGCHAIN_TRACING_V2 | Enable LangSmith tracing | false |
+| LANGCHAIN_API_KEY | LangSmith API key | Optional |
+| LANGCHAIN_PROJECT | LangSmith project name | medremind-prescription-parser |
 
 ## ?? Security
 
@@ -331,3 +381,13 @@ uvicorn app.main:app --port 8001
 - Check API keys in `.env`
 - Verify model names match provider specs
 - Check logs in `storage/logs/`
+
+### run the application 
+``` bash
+
+uv run uvicorn app.main:app --reload --port 8000
+
+```
+### Swagger Doc
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health

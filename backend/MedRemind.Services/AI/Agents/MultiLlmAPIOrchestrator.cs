@@ -1,5 +1,6 @@
 using MedRemind.Core.Configuration;
 using MedRemind.Core.DTOs;
+using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.AI.Python;
@@ -410,78 +411,137 @@ public class MultiLlmAPIOrchestrator
 
             _logger?.LogInformation("?? Storing results in database...");
 
-            var ocrResult = new PrescriptionOCRResult
+            // Check if OCR result entry already exists (created during OCR extraction)
+            var repo = _unitOfWork.Repository<PrescriptionOCRResult>();
+            var existingResult = (await repo.FindAsync(r => r.PrescriptionId == prescriptionId)).FirstOrDefault();
+
+            if (existingResult != null)
             {
-                PrescriptionId = prescriptionId,
-                OCRText = ocrText,
-                OCRTextHash = ComputeHash(ocrText),
+                _logger?.LogInformation($"?? Updating existing OCR result entry - ID: {existingResult.Id}");
                 
-                // Provider information
-                SelectedProvider = "Python Middleware (CrewAI)",
-                
-                // Store complete Python middleware response
-                SelectedResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
+                // Update existing entry with AI processing results
+                existingResult.Status = OcrProcessingStatus.Processed; // Mark as complete
+                existingResult.SelectedResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
                 { 
                     WriteIndented = true,
                     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                }),
-                
-                // Store in OpenAIResponse (Python uses OpenAI LLM internally)
-                OpenAIResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
+                });
+                existingResult.OpenAIResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
                 { 
                     WriteIndented = true,
                     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                }),
-                
-                // Store medicine validation as JSON in ClaudeResponse field (Python uses Claude for validation)
-                ClaudeResponse = parseResult.MedicineValidation != null 
+                });
+                existingResult.ClaudeResponse = parseResult.MedicineValidation != null 
                     ? JsonSerializer.Serialize(parseResult.MedicineValidation, new JsonSerializerOptions 
                     { 
                         WriteIndented = true,
                         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
                     })
-                    : null,
+                    : null;
+                existingResult.SelectedProvider = "Python Middleware (CrewAI)";
+                existingResult.PythonMiddlewareVersion = "1.0.0";
+                existingResult.LlmModelsUsed = "gpt-4o-mini,deepseek-chat,claude-3.5-sonnet";
+                existingResult.CrewAISummary = parseResult.CrewSummary;
+                existingResult.ComparisonScore = parseResult.ConfidenceScore;
+                existingResult.ComparisonReason = parseResult.CrewSummary;
+                existingResult.MedicationCount = parseResult.Medications.Count;
+                existingResult.DoctorName = parseResult.Doctor?.Name;
+                existingResult.PatientName = parseResult.Patient?.Name;
+                existingResult.PrescriptionDate = parseResult.PrescriptionDate;
+                existingResult.OverallSafetyScore = parseResult.MedicineValidation?.OverallSafetyScore;
+                existingResult.RequiresPharmacistReview = parseResult.MedicineValidation?.RequiresPharmacistReview;
+                existingResult.SafetyWarningsCount = parseResult.MedicineValidation?.SafetyWarnings?.Count;
+                existingResult.DrugInteractionsCount = parseResult.MedicineValidation?.DrugInteractions?.Count;
+                existingResult.ProcessedAt = DateTime.UtcNow;
+                existingResult.ProcessingTime = result.ProcessingTime;
                 
-                // Python Middleware Metadata
-                PythonMiddlewareVersion = "1.0.0",
-                LlmModelsUsed = "gpt-4o-mini,deepseek-chat,claude-3.5-sonnet", // Python uses multiple LLMs
-                CrewAISummary = parseResult.CrewSummary,
+                await repo.UpdateAsync(existingResult);
+                await _unitOfWork.SaveChangesAsync();
                 
-                // Comparison metrics
-                ComparisonScore = parseResult.ConfidenceScore,
-                ComparisonReason = parseResult.CrewSummary,
+                result.DatabaseId = existingResult.Id;
                 
-                // Extracted summary
-                MedicationCount = parseResult.Medications.Count,
-                DoctorName = parseResult.Doctor?.Name,
-                PatientName = parseResult.Patient?.Name,
-                PrescriptionDate = parseResult.PrescriptionDate,
+                _logger?.LogInformation($"? Updated existing OCR result - ID: {existingResult.Id}");
+            }
+            else
+            {
+                _logger?.LogInformation($"?? Creating new OCR result entry");
                 
-                // Medicine validation metadata
-                OverallSafetyScore = parseResult.MedicineValidation?.OverallSafetyScore,
-                RequiresPharmacistReview = parseResult.MedicineValidation?.RequiresPharmacistReview,
-                SafetyWarningsCount = parseResult.MedicineValidation?.SafetyWarnings?.Count,
-                DrugInteractionsCount = parseResult.MedicineValidation?.DrugInteractions?.Count,
-                
-                // Processing metadata
-                ProcessedAt = DateTime.UtcNow,
-                ProcessingTime = result.ProcessingTime,
-                ProcessingAttempts = 1 // Python middleware is single attempt
-            };
+                // Create new entry (fallback if early entry wasn't created)
+                var ocrResult = new PrescriptionOCRResult
+                {
+                    PrescriptionId = prescriptionId,
+                    OCRText = ocrText,
+                    OCRTextHash = ComputeHash(ocrText),
+                    Status = OcrProcessingStatus.Processed, // Directly mark as processed
+                    
+                    // Provider information
+                    SelectedProvider = "Python Middleware (CrewAI)",
+                    
+                    // Store complete Python middleware response
+                    SelectedResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                    }),
+                    
+                    // Store in OpenAIResponse (Python uses OpenAI LLM internally)
+                    OpenAIResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                    }),
+                    
+                    // Store medicine validation as JSON in ClaudeResponse field (Python uses Claude for validation)
+                    ClaudeResponse = parseResult.MedicineValidation != null 
+                        ? JsonSerializer.Serialize(parseResult.MedicineValidation, new JsonSerializerOptions 
+                        { 
+                            WriteIndented = true,
+                            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                        })
+                        : null,
+                    
+                    // Python Middleware Metadata
+                    PythonMiddlewareVersion = "1.0.0",
+                    LlmModelsUsed = "gpt-4o-mini,deepseek-chat,claude-3.5-sonnet", // Python uses multiple LLMs
+                    CrewAISummary = parseResult.CrewSummary,
+                    
+                    // Comparison metrics
+                    ComparisonScore = parseResult.ConfidenceScore,
+                    ComparisonReason = parseResult.CrewSummary,
+                    
+                    // Extracted summary
+                    MedicationCount = parseResult.Medications.Count,
+                    DoctorName = parseResult.Doctor?.Name,
+                    PatientName = parseResult.Patient?.Name,
+                    PrescriptionDate = parseResult.PrescriptionDate,
+                    
+                    // Medicine validation metadata
+                    OverallSafetyScore = parseResult.MedicineValidation?.OverallSafetyScore,
+                    RequiresPharmacistReview = parseResult.MedicineValidation?.RequiresPharmacistReview,
+                    SafetyWarningsCount = parseResult.MedicineValidation?.SafetyWarnings?.Count,
+                    DrugInteractionsCount = parseResult.MedicineValidation?.DrugInteractions?.Count,
+                    
+                    // Processing metadata
+                    ProcessedAt = DateTime.UtcNow,
+                    ProcessingTime = result.ProcessingTime,
+                    ProcessingAttempts = 1 // Python middleware is single attempt
+                };
 
-            var repo = _unitOfWork.Repository<PrescriptionOCRResult>();
-            await repo.AddAsync(ocrResult);
-            await _unitOfWork.SaveChangesAsync();
+                await repo.AddAsync(ocrResult);
+                await _unitOfWork.SaveChangesAsync();
 
-            result.DatabaseId = ocrResult.Id;
+                result.DatabaseId = ocrResult.Id;
+                
+                _logger?.LogInformation($"? Created new OCR result - ID: {ocrResult.Id}");
+            }
             
-            _logger?.LogInformation($"? Stored in database - ID: {ocrResult.Id}");
-            _logger?.LogInformation($"   Medications: {ocrResult.MedicationCount}");
-            _logger?.LogInformation($"   Patient: {ocrResult.PatientName ?? "N/A"}");
-            _logger?.LogInformation($"   Doctor: {ocrResult.DoctorName ?? "N/A"}");
-            _logger?.LogInformation($"   LLMs Used: {ocrResult.LlmModelsUsed}");
-            _logger?.LogInformation($"   Safety Score: {ocrResult.OverallSafetyScore:P0}");
-            _logger?.LogInformation($"   Safety Warnings: {ocrResult.SafetyWarningsCount ?? 0}");
+            _logger?.LogInformation($"   Medications: {parseResult.Medications.Count}");
+            _logger?.LogInformation($"   Patient: {parseResult.Patient?.Name ?? "N/A"}");
+            _logger?.LogInformation($"   Doctor: {parseResult.Doctor?.Name ?? "N/A"}");
+            _logger?.LogInformation($"   LLMs Used: gpt-4o-mini,deepseek-chat,claude-3.5-sonnet");
+            _logger?.LogInformation($"   Safety Score: {parseResult.MedicineValidation?.OverallSafetyScore:P0}");
+            _logger?.LogInformation($"   Safety Warnings: {parseResult.MedicineValidation?.SafetyWarnings?.Count ?? 0}");
+            _logger?.LogInformation($"   Status: Processed ?");
         }
         catch (Exception ex)
         {

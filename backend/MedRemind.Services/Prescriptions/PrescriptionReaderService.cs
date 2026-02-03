@@ -85,7 +85,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
 
             try
             {
-                extractedText = await _azureDocService.ExtractTextFromImageAsync(base64Image,null, cancellationToken);
+                extractedText = await _azureDocService.ExtractTextFromImageAsync(base64Image, null, null, cancellationToken);
                 System.Diagnostics.Debug.WriteLine($"? Text extracted: {extractedText.Length} characters");
                 System.Diagnostics.Debug.WriteLine($"   Preview: {extractedText.Substring(0, Math.Min(200, extractedText.Length))}...");
             }
@@ -256,19 +256,27 @@ public class PrescriptionReaderService : IPrescriptionReaderService
             {
                 UserId = userId,
                 ImagePath = imagePath ?? uniqueFileName,
+                FileName = originalFileName ?? uniqueFileName, // Store original file name
+                FileSize = imageBase64.Length * 3 / 4, // Approximate bytes from base64 (base64 is ~33% larger)
                 PrescriptionDate = DateTime.UtcNow,
                 Status = "Processing",
                 CreatedAt = DateTime.UtcNow
             };
 
             System.Diagnostics.Debug.WriteLine($"💾 Saving prescription for user {userId}");
+            System.Diagnostics.Debug.WriteLine($"   File name: {prescription.FileName}");
+            System.Diagnostics.Debug.WriteLine($"   File size: {prescription.FileSize / 1024.0:F2} KB");
             prescription = await _prescriptionService.AddPrescriptionAsync(prescription);
             result.PrescriptionId = prescription.Id;
             System.Diagnostics.Debug.WriteLine($"✅ Prescription saved with ID: {prescription.Id}");
 
             // Step 2: Extract OCR text using Azure Document Intelligence
             System.Diagnostics.Debug.WriteLine("📄 Extracting OCR text...");
-            var ocrText = await _azureDocService.ExtractTextFromImageAsync(imageBase64, uniqueFileName, cancellationToken);
+            var ocrText = await _azureDocService.ExtractTextFromImageAsync(
+                imageBase64, 
+                uniqueFileName, 
+                prescription.Id,  // Pass prescription ID for early OCR result entry
+                cancellationToken);
             System.Diagnostics.Debug.WriteLine($"✅ OCR text extracted: {ocrText?.Length ?? 0} characters");
 
             if (string.IsNullOrWhiteSpace(ocrText))
@@ -276,7 +284,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                 result.Success = false;
                 result.ErrorMessage = "Failed to extract text from image. Please ensure the image is clear and contains text.";
                 await _prescriptionService.UpdatePrescriptionStatusAsync(
-                    prescription.Id, "Failed", result.ErrorMessage);
+                    prescription.Id, "Failed");
                 return result;
             }
 
@@ -319,9 +327,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
 
                     await _prescriptionService.UpdatePrescriptionStatusAsync(
                         prescription.Id,
-                        "Processed",
-                        "Using existing duplicate result",
-                        duplicateCheck.ExistingResult.ComparisonScore);
+                        "Processed");
 
                     System.Diagnostics.Debug.WriteLine("✅ Returning existing result (duplicate detected)");
                     return result;
@@ -388,9 +394,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                     // Update prescription status
                     await _prescriptionService.UpdatePrescriptionStatusAsync(
                         prescription.Id,
-                        "Processed",
-                        null,
-                        orchestratorResult.MatchScore);
+                        "Processed");
 
                     System.Diagnostics.Debug.WriteLine($"✅ Prescription status updated to Processed");
                 }
@@ -398,7 +402,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                 {
                     result.WarningMessage = "No medications found in the prescription.";
                     await _prescriptionService.UpdatePrescriptionStatusAsync(
-                        prescription.Id, "Processed", "No medications found");
+                        prescription.Id, "Processed");
                 }
             }
             else
@@ -409,8 +413,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
 
                 await _prescriptionService.UpdatePrescriptionStatusAsync(
                     prescription.Id,
-                    "Failed",
-                    orchestratorResult.ErrorMessage);
+                    "Failed");
 
                 System.Diagnostics.Debug.WriteLine($"❌ AI processing failed: {orchestratorResult.ErrorMessage}");
             }

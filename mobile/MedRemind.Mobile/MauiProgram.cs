@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using MedRemind.Services.AI.Python;
 
 namespace MedRemind.Mobile;
 
@@ -264,6 +265,9 @@ public static class MauiProgram
                 }
             };
             
+            // Create PythonMiddlewareClient
+            var pythonClient = sp.GetRequiredService<PythonMiddlewareClient>();
+            
             // Create MultiLlmAPIOrchestrator with configuration
             var fileStorage = sp.GetRequiredService<IFileStorageService>();
             var agentOrchestrator = new MedRemind.Services.AI.Agents.MultiLlmAPIOrchestrator(
@@ -271,6 +275,7 @@ public static class MauiProgram
                 deepSeekAgent, 
                 claudeAgent,
                 llmConfig,
+                pythonClient,
                 fileStorage);
             
             System.Diagnostics.Debug.WriteLine($"✅ MultiLlmAPIOrchestrator configured with all parsers");

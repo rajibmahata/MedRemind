@@ -1,3 +1,5 @@
+using MedRemind.Core.Enums;
+
 namespace MedRemind.Core.Models;
 
 /// <summary>
@@ -9,6 +11,9 @@ public class PrescriptionOCRResult
 {
     public int Id { get; set; }
     public int PrescriptionId { get; set; }
+    
+    // Processing Status
+    public OcrProcessingStatus Status { get; set; } = OcrProcessingStatus.Processing;
     
     // OCR Text (for duplicate detection)
     public string OCRText { get; set; } = string.Empty;

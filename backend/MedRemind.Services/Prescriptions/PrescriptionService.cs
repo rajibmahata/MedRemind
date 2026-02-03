@@ -36,8 +36,7 @@ public class PrescriptionService
     public async Task UpdatePrescriptionStatusAsync(
         int prescriptionId,
         string status,
-        string? aiResponse = null,
-        double? confidenceScore = null)
+        string? statusMessage = null)
     {
         var prescriptionRepo = _unitOfWork.Repository<Prescription>();
         var prescription = await prescriptionRepo.GetByIdAsync(prescriptionId);
@@ -45,8 +44,6 @@ public class PrescriptionService
         if (prescription != null)
         {
             prescription.Status = status;
-            prescription.AiResponse = aiResponse;
-            prescription.ConfidenceScore = confidenceScore;
             prescription.ProcessedAt = DateTime.UtcNow;
 
             await prescriptionRepo.UpdateAsync(prescription);

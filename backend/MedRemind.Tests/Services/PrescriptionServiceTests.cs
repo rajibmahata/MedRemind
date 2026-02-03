@@ -100,16 +100,12 @@ public class PrescriptionServiceTests : IDisposable
         // Act
         await _prescriptionService.UpdatePrescriptionStatusAsync(
             prescription.Id, 
-            "Processed", 
-            "{\"medications\": []}", 
-            0.95);
+            "Processed");
 
         // Assert
         var updated = await _prescriptionService.GetPrescriptionByIdAsync(prescription.Id);
         Assert.NotNull(updated);
         Assert.Equal("Processed", updated.Status);
-        Assert.Equal(0.95, updated.ConfidenceScore);
-        Assert.NotNull(updated.AiResponse);
         Assert.NotNull(updated.ProcessedAt);
     }
 

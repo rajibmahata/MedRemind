@@ -149,10 +149,11 @@ public class PrescriptionsController : ControllerBase
                 {
                     UserId = targetUserId,
                     ImagePath = fileResult.RelativePath,
+                    FileName = fileResult.FileName,
+                    FileSize = fileResult.FileSize,
                     PrescriptionDate = result.PrescriptionDate ?? DateTime.UtcNow,
                     DoctorName = result?.Doctor?.Name,
                     Status = "Processed",
-                    ConfidenceScore = result?.ConfidenceScore,
                     ProcessedAt = DateTime.UtcNow
                 };
 
@@ -166,6 +167,7 @@ public class PrescriptionsController : ControllerBase
                     prescriptionId = prescription.Id,
                     filePath = fileResult.RelativePath,
                     fileName = fileResult.FileName,
+                    fileSize = fileResult.FileSize,
                     medications = result.Medications,
                     doctorName = result?.Doctor.Name,
                     prescriptionDate = result.PrescriptionDate,

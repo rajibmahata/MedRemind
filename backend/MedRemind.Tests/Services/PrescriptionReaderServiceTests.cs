@@ -104,7 +104,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -166,7 +167,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Azure OCR failed"));
 
@@ -189,7 +191,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -227,7 +230,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -289,7 +293,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -380,7 +385,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -399,9 +405,7 @@ public class PrescriptionReaderServiceTests
         _mockPrescriptionService
             .Setup(s => s.UpdatePrescriptionStatusAsync(
                 prescription.Id,
-                "Processed",
-                It.IsAny<string>(),
-                It.IsAny<double>()))
+                "Processed"))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -474,7 +478,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -485,9 +490,7 @@ public class PrescriptionReaderServiceTests
         _mockPrescriptionService
             .Setup(s => s.UpdatePrescriptionStatusAsync(
                 prescription.Id,
-                "Processed",
-                "Using existing duplicate result",
-                0.95))
+                "Processed"))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -542,7 +545,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
 
@@ -600,7 +604,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -674,7 +679,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -781,7 +787,8 @@ public class PrescriptionReaderServiceTests
         _mockAzureDocService
             .Setup(s => s.ExtractTextFromImageAsync(
                 It.IsAny<string>(), 
-                It.IsAny<string>(), 
+                It.IsAny<string>(),
+                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 

@@ -408,6 +408,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                             HasResult = true;
                             ExtractedMedications = new ObservableCollection<MedicationData>(result.Medications);
                             
+                            
                             // Update current prescription to reference existing result
                             prescription.DoctorName = result?.Doctor?.Name;
                             if (result.PrescriptionDate.HasValue)
@@ -415,9 +416,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                         
                             await _prescriptionService.UpdatePrescriptionStatusAsync(
                                 prescription.Id,
-                                "Processed",
-                                "Using existing duplicate result",
-                                duplicateCheck.ExistingResult.ComparisonScore);
+                                "Processed");
                         
                             ResultMessage = $"✅ Using existing prescription data!\n\n" +
                                           $"📊 Original processed: {duplicateCheck.ExistingResult.ProcessedAt:yyyy-MM-dd}\n" +
@@ -528,9 +527,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                         // Update prescription status
                         await _prescriptionService.UpdatePrescriptionStatusAsync(
                             prescription.Id,
-                            "Processed",
-                            null,
-                            orchestratorResult.MatchScore);
+                            "Processed");
 
                         System.Diagnostics.Debug.WriteLine($"✅ Prescription status updated to Processed");
 

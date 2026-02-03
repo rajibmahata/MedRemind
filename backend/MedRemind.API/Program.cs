@@ -296,9 +296,18 @@ builder.Services.AddScoped<IPrescriptionReaderService>(sp =>
     // Create required dependencies for Azure Document Intelligence service
     var preprocessor = new PrescriptionOcrTextPreprocessor();
     var fileStorageService = sp.GetRequiredService<IFileStorageService>();
+    var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
     
-    // Create Azure Document Intelligence service
-    var azureDocService = new AzureDocumentIntelligenceService(httpClient, azureEndpoint, azureKey, preprocessor, fileStorageService);
+    // Create Azure Document Intelligence service with UnitOfWork for early OCR result entry
+    var azureDocService = new AzureDocumentIntelligenceService(
+        httpClient, 
+        azureEndpoint, 
+        azureKey, 
+        preprocessor, 
+        fileStorageService,
+        unitOfWork);
+    
+    Console.WriteLine("✅ AzureDocumentIntelligenceService configured with UnitOfWork for early OCR tracking");
     
     // Get MultiLlmAPIOrchestrator
     var agentOrchestrator = sp.GetRequiredService<MultiLlmAPIOrchestrator>();

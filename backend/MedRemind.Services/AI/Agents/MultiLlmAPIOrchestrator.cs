@@ -415,17 +415,47 @@ public class MultiLlmAPIOrchestrator
                 PrescriptionId = prescriptionId,
                 OCRText = ocrText,
                 OCRTextHash = ComputeHash(ocrText),
-                SelectedProvider = result.SelectedProvider,
-                SelectedResponse = JsonSerializer.Serialize(parseResult),
+                
+                // Provider information
+                SelectedProvider = "Python Middleware (CrewAI)",
+                
+                // Store complete Python middleware response
+                SelectedResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                }),
+                
+                // Store in OpenAIResponse for backward compatibility (since we're using Python as primary)
+                OpenAIResponse = JsonSerializer.Serialize(parseResult, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                }),
+                
+                // Store medicine validation as JSON in ClaudeResponse field (repurposed)
+                ClaudeResponse = parseResult.MedicineValidation != null 
+                    ? JsonSerializer.Serialize(parseResult.MedicineValidation, new JsonSerializerOptions 
+                    { 
+                        WriteIndented = true,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                    })
+                    : null,
+                
+                // Comparison metrics
                 ComparisonScore = parseResult.ConfidenceScore,
+                ComparisonReason = parseResult.CrewSummary,
+                
+                // Extracted summary
                 MedicationCount = parseResult.Medications.Count,
                 DoctorName = parseResult.Doctor?.Name,
                 PatientName = parseResult.Patient?.Name,
                 PrescriptionDate = parseResult.PrescriptionDate,
+                
+                // Processing metadata
                 ProcessedAt = DateTime.UtcNow,
                 ProcessingTime = result.ProcessingTime,
-                ProcessingAttempts = 1,
-                OpenAIResponse = JsonSerializer.Serialize(parseResult) // Store as primary response
+                ProcessingAttempts = 1 // Python middleware is single attempt
             };
 
             var repo = _unitOfWork.Repository<PrescriptionOCRResult>();
@@ -435,6 +465,10 @@ public class MultiLlmAPIOrchestrator
             result.DatabaseId = ocrResult.Id;
             
             _logger?.LogInformation($"? Stored in database - ID: {ocrResult.Id}");
+            _logger?.LogInformation($"   Medications: {ocrResult.MedicationCount}");
+            _logger?.LogInformation($"   Patient: {ocrResult.PatientName ?? "N/A"}");
+            _logger?.LogInformation($"   Doctor: {ocrResult.DoctorName ?? "N/A"}");
+            _logger?.LogInformation($"   Has Medicine Validation: {(parseResult.MedicineValidation != null ? "Yes" : "No")}");
         }
         catch (Exception ex)
         {

@@ -2,6 +2,7 @@ using MedRemind.Core.DTOs;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MedRemind.Services.AI.Python;
 
@@ -97,9 +98,13 @@ public class PythonMiddlewareClient
         {
             Success = pythonResponse.Success,
             ErrorMessage = pythonResponse.ErrorMessage,
+            PrescriptionId = pythonResponse.PrescriptionId,
             PrescriptionDate = !string.IsNullOrEmpty(pythonResponse.PrescriptionDate) 
                 ? DateTime.Parse(pythonResponse.PrescriptionDate) 
                 : null,
+            ProcessingTime = pythonResponse.ProcessingTime,
+            CrewSummary = pythonResponse.CrewSummary,
+            Warnings = pythonResponse.Warnings ?? new List<string>(),
             Medications = new List<MedicationData>()
         };
 
@@ -123,6 +128,46 @@ public class PythonMiddlewareClient
                 Specialization = pythonResponse.Doctor.Specialization,
                 RegistrationNumber = pythonResponse.Doctor.RegistrationNumber
             };
+        }
+
+        // Convert medicine validation
+        if (pythonResponse.MedicineValidation != null)
+        {
+            result.MedicineValidation = new MedicineValidationData
+            {
+                OverallSafetyScore = pythonResponse.MedicineValidation.OverallSafetyScore,
+                RequiresPharmacistReview = pythonResponse.MedicineValidation.RequiresPharmacistReview,
+                DuplicateTherapies = pythonResponse.MedicineValidation.DuplicateTherapies ?? new List<string>()
+            };
+
+            // Convert drug interactions
+            if (pythonResponse.MedicineValidation.DrugInteractions != null)
+            {
+                result.MedicineValidation.DrugInteractions = pythonResponse.MedicineValidation.DrugInteractions
+                    .Select(di => new DrugInteraction
+                    {
+                        Medicines = di.Medicines ?? new List<string>(),
+                        Severity = di.Severity ?? string.Empty,
+                        Description = di.Description ?? string.Empty,
+                        Recommendation = di.Recommendation
+                    })
+                    .ToList();
+            }
+
+            // Convert safety warnings
+            if (pythonResponse.MedicineValidation.SafetyWarnings != null)
+            {
+                result.MedicineValidation.SafetyWarnings = pythonResponse.MedicineValidation.SafetyWarnings
+                    .Select(sw => new SafetyWarning
+                    {
+                        Medicine = sw.Medicine ?? string.Empty,
+                        Type = sw.Type ?? string.Empty,
+                        Severity = sw.Severity ?? string.Empty,
+                        Message = sw.Message ?? string.Empty,
+                        Recommendation = sw.Recommendation
+                    })
+                    .ToList();
+            }
         }
 
         // Convert medications
@@ -205,4 +250,151 @@ public class PythonMiddlewareClient
             return false;
         }
     }
+}
+
+/// <summary>
+/// Response from Python CrewAI service
+/// </summary>
+public class PythonPrescriptionResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("prescription_id")]
+    public string PrescriptionId { get; set; } = string.Empty;
+    
+    [JsonPropertyName("patient")]
+    public PythonPatient? Patient { get; set; }
+    
+    [JsonPropertyName("doctor")]
+    public PythonDoctor? Doctor { get; set; }
+    
+    [JsonPropertyName("prescription_date")]
+    public string? PrescriptionDate { get; set; }
+    
+    [JsonPropertyName("medications")]
+    public List<PythonMedication> Medications { get; set; } = new();
+    
+    [JsonPropertyName("medicine_validation")]
+    public PythonMedicineValidation? MedicineValidation { get; set; }
+    
+    [JsonPropertyName("warnings")]
+    public List<string> Warnings { get; set; } = new();
+    
+    [JsonPropertyName("processing_time")]
+    public double ProcessingTime { get; set; }
+    
+    [JsonPropertyName("crew_summary")]
+    public string? CrewSummary { get; set; }
+    
+    [JsonPropertyName("error_message")]
+    public string? ErrorMessage { get; set; }
+}
+
+public class PythonPatient
+{
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+    
+    [JsonPropertyName("age")]
+    public int? Age { get; set; }
+    
+    [JsonPropertyName("gender")]
+    public string? Gender { get; set; }
+}
+
+public class PythonDoctor
+{
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+    
+    [JsonPropertyName("specialization")]
+    public string? Specialization { get; set; }
+    
+    [JsonPropertyName("registration_number")]
+    public string? RegistrationNumber { get; set; }
+}
+
+public class PythonMedication
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+    
+    [JsonPropertyName("dosage")]
+    public string? Dosage { get; set; }
+    
+    [JsonPropertyName("unit")]
+    public string? Unit { get; set; }
+    
+    [JsonPropertyName("frequency")]
+    public string? Frequency { get; set; }
+    
+    [JsonPropertyName("frequency_count")]
+    public int? FrequencyCount { get; set; }
+    
+    [JsonPropertyName("duration")]
+    public string? Duration { get; set; }
+    
+    [JsonPropertyName("duration_days")]
+    public int? DurationDays { get; set; }
+    
+    [JsonPropertyName("timing")]
+    public string? Timing { get; set; }
+    
+    [JsonPropertyName("instructions")]
+    public string? Instructions { get; set; }
+    
+    [JsonPropertyName("confidence_score")]
+    public double ConfidenceScore { get; set; }
+}
+
+public class PythonMedicineValidation
+{
+    [JsonPropertyName("drug_interactions")]
+    public List<PythonDrugInteraction> DrugInteractions { get; set; } = new();
+    
+    [JsonPropertyName("safety_warnings")]
+    public List<PythonSafetyWarning> SafetyWarnings { get; set; } = new();
+    
+    [JsonPropertyName("duplicate_therapies")]
+    public List<string> DuplicateTherapies { get; set; } = new();
+    
+    [JsonPropertyName("overall_safety_score")]
+    public double OverallSafetyScore { get; set; }
+    
+    [JsonPropertyName("requires_pharmacist_review")]
+    public bool RequiresPharmacistReview { get; set; }
+}
+
+public class PythonDrugInteraction
+{
+    [JsonPropertyName("medicines")]
+    public List<string>? Medicines { get; set; }
+    
+    [JsonPropertyName("severity")]
+    public string? Severity { get; set; }
+    
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+    
+    [JsonPropertyName("recommendation")]
+    public string? Recommendation { get; set; }
+}
+
+public class PythonSafetyWarning
+{
+    [JsonPropertyName("medicine")]
+    public string? Medicine { get; set; }
+    
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+    
+    [JsonPropertyName("severity")]
+    public string? Severity { get; set; }
+    
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
+    
+    [JsonPropertyName("recommendation")]
+    public string? Recommendation { get; set; }
 }

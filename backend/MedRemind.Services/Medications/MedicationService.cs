@@ -37,6 +37,10 @@ public class MedicationService
             FrequencyCount = medicationData.FrequencyCount,
             DurationDays = medicationData.DurationDays,
             Instructions = medicationData.Instructions,
+            MedicineDetails = medicationData.MedicineDetails,  // Save medicine details from LLM
+            SideEffects = medicationData.SideEffects,  // Save side effects from LLM
+            AgeAppropriate = medicationData.AgeAppropriate,  // Save age appropriateness from LLM
+            AgeSpecificWarning = medicationData.AgeSpecificWarning,  // Save age-specific warnings from LLM
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(medicationData?.DurationDays ?? 0),
             IsActive = true

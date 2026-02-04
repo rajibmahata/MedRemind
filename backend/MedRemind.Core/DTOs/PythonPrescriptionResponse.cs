@@ -43,6 +43,10 @@ namespace MedRemind.Core.DTOs
         public int? DurationDays { get; set; }
         public string? Timing { get; set; }
         public string? Instructions { get; set; }
+        public string? Purpose { get; set; } // Medicine details/indication
+        public List<string>? SideEffects { get; set; } // List of side effects
+        public bool? AgeAppropriate { get; set; } // Whether dosage is appropriate for patient age
+        public string? AgeSpecificWarning { get; set; } // Age-specific warnings or precautions
         public double ConfidenceScore { get; set; }
     }
 }

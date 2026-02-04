@@ -351,6 +351,8 @@ class PrescriptionCrew:
                     instructions=med.get('instructions'),
                     purpose=val_data.get('purpose'),
                     side_effects=val_data.get('side_effects'),
+                    age_appropriate=val_data.get('age_appropriate'),
+                    age_specific_warning=val_data.get('age_specific_warning'),
                     confidence_score=med.get('confidence_score', 0.0)
                 )
             )

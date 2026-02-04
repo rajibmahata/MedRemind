@@ -192,7 +192,11 @@ public class PythonMiddlewareClient
                     MedicineDetails = pythonMed.Purpose,  // Python 'purpose' ? C# 'MedicineDetails'
                     SideEffects = pythonMed.SideEffects != null && pythonMed.SideEffects.Any()
                         ? string.Join(", ", pythonMed.SideEffects)  // Convert list to comma-separated string
-                        : null
+                        : null,
+                    
+                    // Map Python age validation to C# properties
+                    AgeAppropriate = pythonMed.AgeAppropriate,  // Python 'age_appropriate' ? C# 'AgeAppropriate'
+                    AgeSpecificWarning = pythonMed.AgeSpecificWarning  // Python 'age_specific_warning' ? C# 'AgeSpecificWarning'
                 };
 
                 result.Medications.Add(medication);
@@ -359,6 +363,13 @@ public class PythonMedication
     
     [JsonPropertyName("side_effects")]
     public List<string>? SideEffects { get; set; }
+    
+    // Age-related safety information from Python LLM validation
+    [JsonPropertyName("age_appropriate")]
+    public bool? AgeAppropriate { get; set; }
+    
+    [JsonPropertyName("age_specific_warning")]
+    public string? AgeSpecificWarning { get; set; }
 }
 
 public class PythonMedicineValidation

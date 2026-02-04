@@ -132,14 +132,17 @@ GET http://localhost:8000/api/prescription/{prescription_id}
 - **Output:** Validated prescription with warnings
 ### Agent 4: Medicine Validator
 - **Role:** Clinical Pharmacist & Medicine Validator
-- **Goal:** Validate medicine names, dosages, and drug interactions
-- **Output:** Drug interactions, safety warnings, duplicate therapy detection
+- **Goal:** Validate medicine names, dosages, and drug interactions with age-specific considerations
+- **Output:** Drug interactions, safety warnings, duplicate therapy detection, age-appropriate dosing validation
 - **Features:**
   - Verifies medicine names and corrects OCR errors
-  - Validates dosages within therapeutic ranges
+  - **Age-based dosage validation** (pediatric, adult, geriatric)
+  - **Pediatric dose calculations** and safety checks
+  - **Geriatric dose adjustments** and Beers Criteria checks
   - Identifies potential drug-drug interactions
   - Flags duplicate therapies (same drug class)
-  - Provides safety warnings with severity levels
+  - Provides age-specific safety warnings with severity levels
+  - Detects age-inappropriate medications
 ## ?? File Structure
 
 ```
@@ -217,6 +220,8 @@ var result = await response.Content.ReadFromJsonAsync<PrescriptionResult>();
       "instructions": "For 3 weeks",
       "purpose": "Treatment of urinary tract conditions",
       "side_effects": ["Nausea", "Headache", "Dizziness"],
+      "age_appropriate": true,
+      "age_specific_warning": null,
       "confidence_score": 0.9
     }
   ],

@@ -61,6 +61,10 @@ public class MedicationData
     // Medicine information from Python middleware LLM processing
     public string? MedicineDetails { get; set; }  // Maps to Python 'purpose'
     public string? SideEffects { get; set; }      // Maps to Python 'side_effects' (comma-separated)
+    
+    // Age-related safety information from Python middleware LLM validation
+    public bool? AgeAppropriate { get; set; }     // Maps to Python 'age_appropriate'
+    public string? AgeSpecificWarning { get; set; } // Maps to Python 'age_specific_warning'
 }
 
 /// <summary>

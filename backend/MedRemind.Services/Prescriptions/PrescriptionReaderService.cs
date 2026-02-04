@@ -1,6 +1,9 @@
 ﻿using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using MedRemind.Core.DTOs;
+using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.AI;
@@ -17,6 +20,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
     private readonly MultiLlmAPIOrchestrator _multiLlmAPIOrchestrator;
     private readonly PrescriptionDeduplicationService? _deduplicationService;
     private readonly PrescriptionService? _prescriptionService;
+    private readonly IUnitOfWork? _unitOfWork;
 
     public PrescriptionReaderService(
         HttpClient httpClient,
@@ -25,7 +29,8 @@ public class PrescriptionReaderService : IPrescriptionReaderService
         AzureDocumentIntelligenceService azureDocService,
         MultiLlmAPIOrchestrator multiLlmAPIOrchestrator,
         PrescriptionDeduplicationService? deduplicationService = null,
-        PrescriptionService? prescriptionService = null)
+        PrescriptionService? prescriptionService = null,
+        IUnitOfWork? unitOfWork = null)
     {
         _httpClient = httpClient;
         _apiKey = apiKey;
@@ -34,8 +39,10 @@ public class PrescriptionReaderService : IPrescriptionReaderService
         _multiLlmAPIOrchestrator = multiLlmAPIOrchestrator ?? throw new ArgumentNullException(nameof(multiLlmAPIOrchestrator));
         _deduplicationService = deduplicationService;
         _prescriptionService = prescriptionService;
+        _unitOfWork = unitOfWork;
         
         System.Diagnostics.Debug.WriteLine($"✅ PrescriptionReaderService initialized with MultiLlmAPIOrchestrator");
+        System.Diagnostics.Debug.WriteLine($"   UnitOfWork: {(_unitOfWork != null ? "Available" : "Not Available")}");
     }
 
     public async Task<PrescriptionReadResult> ReadPrescriptionAsync(
@@ -85,7 +92,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
 
             try
             {
-                extractedText = await _azureDocService.ExtractTextFromImageAsync(base64Image, null, null, cancellationToken);
+                extractedText = await _azureDocService.ExtractTextFromImageAsync(base64Image, null, cancellationToken);
                 System.Diagnostics.Debug.WriteLine($"? Text extracted: {extractedText.Length} characters");
                 System.Diagnostics.Debug.WriteLine($"   Preview: {extractedText.Substring(0, Math.Min(200, extractedText.Length))}...");
             }
@@ -275,7 +282,6 @@ public class PrescriptionReaderService : IPrescriptionReaderService
             var ocrText = await _azureDocService.ExtractTextFromImageAsync(
                 imageBase64, 
                 uniqueFileName, 
-                prescription.Id,  // Pass prescription ID for early OCR result entry
                 cancellationToken);
             System.Diagnostics.Debug.WriteLine($"✅ OCR text extracted: {ocrText?.Length ?? 0} characters");
 
@@ -287,6 +293,11 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                     prescription.Id, "Failed");
                 return result;
             }
+
+            // Step 2.5: Create early OCR result entry with "OcrComplete" status
+            System.Diagnostics.Debug.WriteLine("💾 Creating early OCR result entry...");
+            await CreateEarlyOcrResultEntryAsync(prescription.Id, ocrText);
+            System.Diagnostics.Debug.WriteLine("✅ Early OCR result entry created (Status: OcrComplete)");
 
             // Step 3: Check for duplicate prescription
             System.Diagnostics.Debug.WriteLine("\n🔍 Checking for duplicate prescription...");
@@ -430,5 +441,61 @@ public class PrescriptionReaderService : IPrescriptionReaderService
             result.ErrorMessage = $"Error: {ex.Message}";
             return result;
         }
+    }
+
+    /// <summary>
+    /// Create early OCR result entry with "OcrComplete" status
+    /// This allows tracking of OCR processing before AI analysis completes
+    /// </summary>
+    private async Task CreateEarlyOcrResultEntryAsync(int prescriptionId, string ocrText)
+    {
+        try
+        {
+            if (_unitOfWork == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ UnitOfWork not available - skipping early OCR entry creation");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"💾 Creating early OCR result entry for prescription {prescriptionId}...");
+
+            // Calculate hash for duplicate detection
+            var hash = ComputeHash(ocrText);
+
+            var ocrResult = new PrescriptionOCRResult
+            {
+                PrescriptionId = prescriptionId,
+                OCRText = ocrText,
+                OCRTextHash = hash,
+                Status = OcrProcessingStatus.OcrComplete, // OCR complete, AI processing next
+                ProcessedAt = DateTime.UtcNow,
+                ProcessingTime = TimeSpan.Zero, // Will be updated later
+                ProcessingAttempts = 1
+            };
+
+            var repository = _unitOfWork.Repository<PrescriptionOCRResult>();
+            await repository.AddAsync(ocrResult);
+            await _unitOfWork.SaveChangesAsync();
+
+            System.Diagnostics.Debug.WriteLine($"✅ Early OCR result entry created - ID: {ocrResult.Id}");
+            System.Diagnostics.Debug.WriteLine($"   Status: {ocrResult.Status}");
+            System.Diagnostics.Debug.WriteLine($"   OCR Text Length: {ocrText.Length} characters");
+            System.Diagnostics.Debug.WriteLine($"   Hash: {hash.Substring(0, 16)}...");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"⚠️ Failed to create early OCR result entry: {ex.Message}");
+            // Don't fail the entire process if early entry creation fails
+        }
+    }
+
+    /// <summary>
+    /// Compute SHA256 hash of OCR text for duplicate detection
+    /// </summary>
+    private string ComputeHash(string text)
+    {
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(text));
+        return BitConverter.ToString(hashBytes).Replace("-", "");
     }
 }

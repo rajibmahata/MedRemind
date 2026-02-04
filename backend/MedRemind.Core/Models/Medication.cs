@@ -19,6 +19,10 @@ public class Medication
     public string? MedicineDetails { get; set; } // Purpose/indication - what this medicine is used for
     public string? SideEffects { get; set; } // Common side effects and warnings
     
+    // Age-related safety information (from Python middleware LLM validation)
+    public bool? AgeAppropriate { get; set; } // Whether dosage is appropriate for patient age
+    public string? AgeSpecificWarning { get; set; } // Age-specific warnings or precautions
+    
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public bool IsActive { get; set; } = true;

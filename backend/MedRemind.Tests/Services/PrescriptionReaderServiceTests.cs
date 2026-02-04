@@ -105,7 +105,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -168,7 +167,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Azure OCR failed"));
 
@@ -192,7 +190,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -231,7 +228,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -294,7 +290,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 base64Image, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -386,7 +381,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -479,7 +473,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -546,7 +539,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(string.Empty);
 
@@ -605,7 +597,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -680,7 +671,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 imageBase64, 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -788,7 +778,6 @@ public class PrescriptionReaderServiceTests
             .Setup(s => s.ExtractTextFromImageAsync(
                 It.IsAny<string>(), 
                 It.IsAny<string>(),
-                It.IsAny<int?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(extractedText);
 
@@ -849,3 +838,4 @@ public class PrescriptionReaderServiceTests
 
     #endregion
 }
+

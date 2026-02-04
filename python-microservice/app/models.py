@@ -34,6 +34,8 @@ class Medication(BaseModel):
     instructions: Optional[str] = None
     purpose: Optional[str] = Field(default=None, description="Medical condition or purpose for this medication")
     side_effects: Optional[List[str]] = Field(default=None, description="Common side effects of this medication")
+    age_appropriate: Optional[bool] = Field(default=None, description="Whether dosage is appropriate for patient age")
+    age_specific_warning: Optional[str] = Field(default=None, description="Age-specific warnings or precautions")
     confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
 
 

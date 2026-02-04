@@ -1,11 +1,8 @@
 ﻿using Azure;
 using Azure.AI.DocumentIntelligence;
-using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
-using MedRemind.Core.Models;
 using MedRemind.Services.AI.Extensions;
 using SkiaSharp;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -21,7 +18,6 @@ public class AzureDocumentIntelligenceService
     private readonly DocumentIntelligenceClient _client;
     private readonly PrescriptionOcrTextPreprocessor _prescriptionOcrTextPreprocessor;
     private readonly IFileStorageService _fileStorageService;
-    private readonly IUnitOfWork? _unitOfWork;
     private readonly string _endpoint;
    
 
@@ -34,8 +30,7 @@ public class AzureDocumentIntelligenceService
         string endpoint,
         string apiKey,
         PrescriptionOcrTextPreprocessor prescriptionOcrTextPreprocessor,
-        IFileStorageService fileStorageService,
-        IUnitOfWork? unitOfWork = null)
+        IFileStorageService fileStorageService)
     {
         _endpoint = endpoint.TrimEnd('/');
 
@@ -45,31 +40,26 @@ public class AzureDocumentIntelligenceService
 
         _prescriptionOcrTextPreprocessor = prescriptionOcrTextPreprocessor;
         _fileStorageService = fileStorageService;
-        _unitOfWork = unitOfWork;
 
         System.Diagnostics.Debug.WriteLine($"📄 Azure DI: Client initialized");
         System.Diagnostics.Debug.WriteLine($"   Endpoint: {_endpoint}");
         System.Diagnostics.Debug.WriteLine($"   File Storage: {(_fileStorageService.IsFileLoggingEnabled() ? "Enabled" : "Disabled")}");
-        System.Diagnostics.Debug.WriteLine($"   UnitOfWork: {(_unitOfWork != null ? "Available" : "Not Available")}");
        
     }
 
     /// <summary>
     /// Extract text from prescription image using Azure Document Intelligence
     /// Automatically resizes images larger than 4MB while preserving document content quality
-    /// Creates early OCR result entry with "Processing" status if prescriptionId is provided
     /// </summary>
     public async Task<string> ExtractTextFromImageAsync(
         string base64Image, 
         string? uniqueFileName = null, 
-        int? prescriptionId = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             System.Diagnostics.Debug.WriteLine("📄 Azure DI: Starting text extraction...");
             System.Diagnostics.Debug.WriteLine($"   Base64 string length: {base64Image.Length} characters");
-            System.Diagnostics.Debug.WriteLine($"   Prescription ID: {prescriptionId?.ToString() ?? "N/A"}");
 
             // Convert base64 to bytes
             var imageBytes = Convert.FromBase64String(base64Image);
@@ -121,12 +111,6 @@ public class AzureDocumentIntelligenceService
 
             // Save OCR results using FileStorageService
             await SaveOcrResultsAsync(uniqueFileName, extractedText, normalize_extractedText, result);
-
-            // Create early OCR result entry with "Processing" status
-            if (prescriptionId.HasValue && _unitOfWork != null)
-            {
-                await CreateEarlyOcrResultEntryAsync(prescriptionId.Value, normalize_extractedText);
-            }
 
             System.Diagnostics.Debug.WriteLine($"✅ Azure DI: Text extraction complete");
             System.Diagnostics.Debug.WriteLine($"   Extracted text length: {extractedText.Length} characters");
@@ -436,55 +420,5 @@ public class AzureDocumentIntelligenceService
             System.Diagnostics.Debug.WriteLine($"❌ Azure DI: Error extracting text: {ex.Message}");
             throw;
         }
-    }
-
-    /// <summary>
-    /// Create early OCR result entry with "Processing" status
-    /// This allows tracking of OCR processing before AI analysis completes
-    /// </summary>
-    private async Task CreateEarlyOcrResultEntryAsync(int prescriptionId, string ocrText)
-    {
-        try
-        {
-            System.Diagnostics.Debug.WriteLine($"💾 Creating early OCR result entry for prescription {prescriptionId}...");
-
-            // Calculate hash for duplicate detection
-            var hash = ComputeHash(ocrText);
-
-            var ocrResult = new PrescriptionOCRResult
-            {
-                PrescriptionId = prescriptionId,
-                OCRText = ocrText,
-                OCRTextHash = hash,
-                Status = OcrProcessingStatus.OcrComplete, // OCR complete, AI processing next
-                ProcessedAt = DateTime.UtcNow,
-                ProcessingTime = TimeSpan.Zero, // Will be updated later
-                ProcessingAttempts = 1
-            };
-
-            var repository = _unitOfWork!.Repository<PrescriptionOCRResult>();
-            await repository.AddAsync(ocrResult);
-            await _unitOfWork.SaveChangesAsync();
-
-            System.Diagnostics.Debug.WriteLine($"✅ Early OCR result entry created - ID: {ocrResult.Id}");
-            System.Diagnostics.Debug.WriteLine($"   Status: {ocrResult.Status}");
-            System.Diagnostics.Debug.WriteLine($"   OCR Text Length: {ocrText.Length} characters");
-            System.Diagnostics.Debug.WriteLine($"   Hash: {hash.Substring(0, 16)}...");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"⚠️ Failed to create early OCR result entry: {ex.Message}");
-            // Don't fail the entire process if early entry creation fails
-        }
-    }
-
-    /// <summary>
-    /// Compute SHA256 hash of OCR text for duplicate detection
-    /// </summary>
-    private string ComputeHash(string text)
-    {
-        using var sha256 = SHA256.Create();
-        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(text));
-        return BitConverter.ToString(hashBytes).Replace("-", "");
     }
 }

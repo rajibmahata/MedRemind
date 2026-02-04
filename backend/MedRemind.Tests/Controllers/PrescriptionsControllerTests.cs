@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MedRemind.API.Controllers;
 using MedRemind.Core.DTOs;
+using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Prescriptions;
@@ -106,7 +107,7 @@ public class PrescriptionsControllerTests
             Id = 1,
             UserId = userId,
             ImagePath = fileResult.RelativePath,
-            Status = "Processed"
+            Status = PrescriptionStatus.Processed.ToString()
         };
 
         _mockPrescriptionRepo.Setup(r => r.AddAsync(It.IsAny<Prescription>()))

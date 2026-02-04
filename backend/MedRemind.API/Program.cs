@@ -233,7 +233,8 @@ builder.Services.AddScoped<MultiLlmAPIOrchestrator>(sp =>
     var pythonConfig = sp.GetRequiredService<MedRemind.Core.Configuration.PythonMiddlewareConfiguration>();
     var validationAgent = sp.GetRequiredService<MedRemind.Services.AI.Agents.PrescriptionValidationAgent>();
     var logger = sp.GetService<ILogger<MultiLlmAPIOrchestrator>>();
-    
+    var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
+
     Console.WriteLine("✅ MultiLlmAPIOrchestrator configured with OpenAI, DeepSeek, and Claude");
     Console.WriteLine("   Configuration and FileStorageService injected");
     Console.WriteLine("   Multi-Agent Validation enabled");
@@ -247,6 +248,7 @@ builder.Services.AddScoped<MultiLlmAPIOrchestrator>(sp =>
         fileStorageService,
         multiAgentValidationAgent: validationAgent,
         pythonConfig: pythonConfig,
+        unitOfWork: unitOfWork,
         logger: logger);
 });
 
@@ -349,8 +351,8 @@ builder.Services.AddSingleton<Microsoft.SemanticKernel.Kernel>(sp =>
 builder.Services.AddSingleton<string>(sp =>
 {
     var ocrStoragePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
-        "medremind_api", 
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "medremindDB", 
         "ocr_texts");
     
     if (!Directory.Exists(ocrStoragePath))

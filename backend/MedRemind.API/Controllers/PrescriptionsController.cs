@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Prescriptions;
@@ -153,7 +154,7 @@ public class PrescriptionsController : ControllerBase
                     FileSize = fileResult.FileSize,
                     PrescriptionDate = result.PrescriptionDate ?? DateTime.UtcNow,
                     DoctorName = result?.Doctor?.Name,
-                    Status = "Processed",
+                    Status = PrescriptionStatus.Processed.ToString(),
                     ProcessedAt = DateTime.UtcNow
                 };
 

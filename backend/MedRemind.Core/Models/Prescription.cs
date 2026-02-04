@@ -11,7 +11,7 @@ public class Prescription
     public long? FileSize { get; set; } // File size in bytes
     public string? DoctorName { get; set; }
     public DateTime PrescriptionDate { get; set; }
-    public string Status { get; set; } = "Pending"; // Pending, Processed, Failed
+    public string Status { get; set; } = "Processing"; // Stores PrescriptionStatus enum value as string
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ProcessedAt { get; set; }
     

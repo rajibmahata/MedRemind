@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MedRemind.Core.Data;
 using MedRemind.Core.Models;
+using MedRemind.Core.Enums;
 
 namespace MedRemind.Services.Prescriptions;
 
@@ -48,6 +49,18 @@ public class PrescriptionDeduplicationService
                 System.Diagnostics.Debug.WriteLine($"   Processed: {exactMatch.ProcessedAt:yyyy-MM-dd HH:mm}");
                 System.Diagnostics.Debug.WriteLine($"   Medications: {exactMatch.MedicationCount}");
 
+                // Mark as duplicate in OCR result
+                exactMatch.Status = OcrProcessingStatus.Duplicate;
+                await _context.SaveChangesAsync();
+
+                // Mark prescription as duplicate
+                var prescription = await _context.Prescriptions.FindAsync(exactMatch.PrescriptionId);
+                if (prescription != null)
+                {
+                    prescription.Status = PrescriptionStatus.Duplicate.ToString();
+                    await _context.SaveChangesAsync();
+                }
+
                 return new DuplicateCheckResult
                 {
                     IsDuplicate = true,
@@ -69,6 +82,18 @@ public class PrescriptionDeduplicationService
 
                 if (bestMatch.SimilarityScore >= 0.95) // 95% similar
                 {
+                    // Mark as duplicate in OCR result
+                    bestMatch.Result.Status = OcrProcessingStatus.Duplicate;
+                    await _context.SaveChangesAsync();
+
+                    // Mark prescription as duplicate
+                    var prescription = await _context.Prescriptions.FindAsync(bestMatch.Result.PrescriptionId);
+                    if (prescription != null)
+                    {
+                        prescription.Status = PrescriptionStatus.Duplicate.ToString();
+                        await _context.SaveChangesAsync();
+                    }
+
                     return new DuplicateCheckResult
                     {
                         IsDuplicate = true,
@@ -136,6 +161,7 @@ public class PrescriptionDeduplicationService
             var ocrResult = new PrescriptionOCRResult
             {
                 PrescriptionId = prescriptionId,
+                Status = OcrProcessingStatus.Processed,
                 OCRText = ocrText,
                 OCRTextHash = GenerateHash(ocrText),
                 OpenAIResponse = openAIResponse,
@@ -155,6 +181,15 @@ public class PrescriptionDeduplicationService
 
             _context.PrescriptionOCRResults.Add(ocrResult);
             await _context.SaveChangesAsync();
+
+            // Update prescription status to Processed
+            var prescription = await _context.Prescriptions.FindAsync(prescriptionId);
+            if (prescription != null)
+            {
+                prescription.Status = PrescriptionStatus.Processed.ToString();
+                prescription.ProcessedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
 
             System.Diagnostics.Debug.WriteLine($"? OCR result stored with ID: {ocrResult.Id}");
 
@@ -310,6 +345,41 @@ public class PrescriptionDeduplicationService
             TotalMedications = results.Sum(r => r.MedicationCount)
         };
     }
+
+    /// <summary>
+    /// Get medications from a duplicate prescription
+    /// </summary>
+    public async Task<List<Medication>> GetDuplicatePrescriptionMedicationsAsync(int prescriptionId)
+    {
+        return await _context.Medications
+            .Where(m => m.PrescriptionId == prescriptionId)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Get full duplicate prescription details including medications
+    /// </summary>
+    public async Task<DuplicatePrescriptionDetails?> GetDuplicatePrescriptionDetailsAsync(int prescriptionId)
+    {
+        var ocrResult = await _context.PrescriptionOCRResults
+            .Include(r => r.Prescription)
+            .FirstOrDefaultAsync(r => r.PrescriptionId == prescriptionId);
+
+        if (ocrResult == null)
+            return null;
+
+        var medications = await GetDuplicatePrescriptionMedicationsAsync(prescriptionId);
+
+        return new DuplicatePrescriptionDetails
+        {
+            PrescriptionId = prescriptionId,
+            OcrResult = ocrResult,
+            Medications = medications,
+            Status = Enum.TryParse<PrescriptionStatus>(ocrResult.Prescription?.Status, out var status) 
+                ? status 
+                : PrescriptionStatus.Processing
+        };
+    }
 }
 
 /// <summary>
@@ -342,4 +412,15 @@ public class OCRStatistics
     public int ClaudeSelected { get; set; }
     public TimeSpan AverageProcessingTime { get; set; }
     public int TotalMedications { get; set; }
+}
+
+/// <summary>
+/// Duplicate prescription details with medications
+/// </summary>
+public class DuplicatePrescriptionDetails
+{
+    public int PrescriptionId { get; set; }
+    public PrescriptionOCRResult OcrResult { get; set; } = null!;
+    public List<Medication> Medications { get; set; } = new();
+    public PrescriptionStatus Status { get; set; }
 }

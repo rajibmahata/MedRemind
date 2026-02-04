@@ -6,7 +6,8 @@ using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Medications;
 using MedRemind.Services.Prescriptions;
-using MedRemind.Services.AI; // For PrescriptionReadResult and AgentOrchestratorV2
+using MedRemind.Services.AI;
+using MedRemind.Core.Enums; // For PrescriptionReadResult and AgentOrchestratorV2
 
 namespace MedRemind.Mobile.ViewModels;
 
@@ -335,7 +336,7 @@ public partial class PrescriptionUploadViewModel : BaseViewModel
                     UserId = userId,
                     ImagePath = _imagePath ?? "base64_image",
                     PrescriptionDate = DateTime.UtcNow,
-                    Status = "Processing",
+                    Status = PrescriptionStatus.Processing.ToString(),
                     CreatedAt = DateTime.UtcNow
                 };
 

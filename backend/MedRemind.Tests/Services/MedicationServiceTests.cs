@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MedRemind.Core.Data;
 using MedRemind.Core.DTOs;
+using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Core.Repositories;
@@ -395,7 +396,7 @@ public class MedicationServiceTests : IDisposable
             UserId = userId,
             ImagePath = "/test/path/image.jpg",
             PrescriptionDate = DateTime.UtcNow,
-            Status = "Processed"
+            Status = PrescriptionStatus.Processed.ToString()
         };
 
         var prescriptionRepo = _unitOfWork.Repository<Prescription>();

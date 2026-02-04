@@ -266,7 +266,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                 FileName = originalFileName ?? uniqueFileName, // Store original file name
                 FileSize = imageBase64.Length * 3 / 4, // Approximate bytes from base64 (base64 is ~33% larger)
                 PrescriptionDate = DateTime.UtcNow,
-                Status = "Processing",
+                Status = PrescriptionStatus.Processing.ToString(),
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -293,11 +293,6 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                     prescription.Id, "Failed");
                 return result;
             }
-
-            // Step 2.5: Create early OCR result entry with "OcrComplete" status
-            System.Diagnostics.Debug.WriteLine("💾 Creating early OCR result entry...");
-            await CreateEarlyOcrResultEntryAsync(prescription.Id, ocrText);
-            System.Diagnostics.Debug.WriteLine("✅ Early OCR result entry created (Status: OcrComplete)");
 
             // Step 3: Check for duplicate prescription
             System.Diagnostics.Debug.WriteLine("\n🔍 Checking for duplicate prescription...");

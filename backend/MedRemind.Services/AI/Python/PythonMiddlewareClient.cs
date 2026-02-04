@@ -1,4 +1,4 @@
-using MedRemind.Core.DTOs;
+﻿using MedRemind.Core.DTOs;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -175,6 +175,14 @@ public class PythonMiddlewareClient
         {
             foreach (var pythonMed in pythonResponse.Medications)
             {
+                // Find safety warning specific to this medication
+                PythonSafetyWarning? medicationWarning = null;
+                if (pythonResponse.MedicineValidation?.SafetyWarnings != null)
+                {
+                    medicationWarning = pythonResponse.MedicineValidation.SafetyWarnings
+                        .FirstOrDefault(sw => sw.Medicine?.Equals(pythonMed.Name, StringComparison.OrdinalIgnoreCase) == true);
+                }
+                
                 var medication = new MedicationData
                 {
                     Name = pythonMed.Name,
@@ -189,14 +197,28 @@ public class PythonMiddlewareClient
                     ConfidenceScore = pythonMed.ConfidenceScore,
                     
                     // Map Python medicine information to C# properties
-                    MedicineDetails = pythonMed.Purpose,  // Python 'purpose' ? C# 'MedicineDetails'
+                    MedicineDetails = pythonMed.Purpose,  // Python 'purpose' → C# 'MedicineDetails'
                     SideEffects = pythonMed.SideEffects != null && pythonMed.SideEffects.Any()
                         ? string.Join(", ", pythonMed.SideEffects)  // Convert list to comma-separated string
                         : null,
                     
                     // Map Python age validation to C# properties
-                    AgeAppropriate = pythonMed.AgeAppropriate,  // Python 'age_appropriate' ? C# 'AgeAppropriate'
-                    AgeSpecificWarning = pythonMed.AgeSpecificWarning  // Python 'age_specific_warning' ? C# 'AgeSpecificWarning'
+                    AgeAppropriate = pythonMed.AgeAppropriate,  // Python 'age_appropriate' → C# 'AgeAppropriate'
+                    AgeSpecificWarning = pythonMed.AgeSpecificWarning,  // Python 'age_specific_warning' → C# 'AgeSpecificWarning'
+                    
+                    // Map safety warning from medicine validation to individual medication
+                    SafetyWarningType = medicationWarning?.Type,
+                    SafetyWarningSeverity = medicationWarning?.Severity,
+                    SafetyWarningMessage = medicationWarning?.Message,
+                    SafetyWarningRecommendation = medicationWarning?.Recommendation,
+                    
+                    // Individual medication safety score (use overall if not available per medication)
+                    SafetyScore = pythonResponse.MedicineValidation?.OverallSafetyScore,
+                    
+                    // Flag if this specific medication requires review
+                    RequiresPharmacistReview = medicationWarning != null && 
+                        (medicationWarning.Severity?.Equals("high", StringComparison.OrdinalIgnoreCase) == true ||
+                         medicationWarning.Severity?.Equals("critical", StringComparison.OrdinalIgnoreCase) == true)
                 };
 
                 result.Medications.Add(medication);

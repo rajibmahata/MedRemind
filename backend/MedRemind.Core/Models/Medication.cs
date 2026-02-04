@@ -22,6 +22,14 @@ public class Medication
     // Age-related safety information (from Python middleware LLM validation)
     public bool? AgeAppropriate { get; set; } // Whether dosage is appropriate for patient age
     public string? AgeSpecificWarning { get; set; } // Age-specific warnings or precautions
+
+    // Safety validation information (per-medication from CrewAI)
+    public string? SafetyWarningType { get; set; }
+    public string? SafetyWarningSeverity { get; set; }
+    public string? SafetyWarningMessage { get; set; }
+    public string? SafetyWarningRecommendation { get; set; }
+    public double? SafetyScore { get; set; }
+    public bool RequiresPharmacistReview { get; set; } = false;
     
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

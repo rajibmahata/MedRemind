@@ -65,6 +65,14 @@ public class MedicationData
     // Age-related safety information from Python middleware LLM validation
     public bool? AgeAppropriate { get; set; }     // Maps to Python 'age_appropriate'
     public string? AgeSpecificWarning { get; set; } // Maps to Python 'age_specific_warning'
+    
+    // Safety validation information from Python middleware CrewAI safety agent
+    public string? SafetyWarningType { get; set; } // Type: dosage, frequency, duration, monitoring, age
+    public string? SafetyWarningSeverity { get; set; } // Severity: low, medium, high, critical
+    public string? SafetyWarningMessage { get; set; } // Warning message for this medication
+    public string? SafetyWarningRecommendation { get; set; } // Recommended action
+    public double? SafetyScore { get; set; } // Individual medication safety score
+    public bool RequiresPharmacistReview { get; set; } = false; // Needs pharmacist review
 }
 
 /// <summary>

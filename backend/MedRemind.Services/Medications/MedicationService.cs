@@ -41,6 +41,12 @@ public class MedicationService
             SideEffects = medicationData.SideEffects,  // Save side effects from LLM
             AgeAppropriate = medicationData.AgeAppropriate,  // Save age appropriateness from LLM
             AgeSpecificWarning = medicationData.AgeSpecificWarning,  // Save age-specific warnings from LLM
+            SafetyWarningType = medicationData.SafetyWarningType,  // Save safety warning type
+            SafetyWarningSeverity = medicationData.SafetyWarningSeverity,  // Save warning severity
+            SafetyWarningMessage = medicationData.SafetyWarningMessage,  // Save warning message
+            SafetyWarningRecommendation = medicationData.SafetyWarningRecommendation,  // Save recommendation
+            SafetyScore = medicationData.SafetyScore,  // Save individual safety score
+            RequiresPharmacistReview = medicationData.RequiresPharmacistReview,  // Save pharmacist review flag
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddDays(medicationData?.DurationDays ?? 0),
             IsActive = true

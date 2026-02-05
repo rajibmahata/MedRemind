@@ -156,6 +156,13 @@ builder.Services.AddSingleton<IPrescriptionFileManager, PrescriptionFileManager>
 // Register PrescriptionService
 builder.Services.AddScoped<PrescriptionService>();
 
+// Register NEW specialized persistence services
+builder.Services.AddScoped<PrescriptionOCRResultService>();
+builder.Services.AddScoped<MedicationPersistenceService>();
+Console.WriteLine("✅ Specialized persistence services registered:");
+Console.WriteLine("   - PrescriptionOCRResultService");
+Console.WriteLine("   - MedicationPersistenceService");
+
 // Register AI Parser Agents
 builder.Services.AddScoped<OpenAIPrescriptionParserAgent>(sp =>
 {
@@ -240,15 +247,24 @@ builder.Services.AddScoped<MultiLlmAPIOrchestrator>(sp =>
     Console.WriteLine("   Multi-Agent Validation enabled");
     Console.WriteLine($"   Python Middleware: {(pythonConfig.Enabled ? "Enabled" : "Disabled")}");
     
+    // Get the new specialized services
+    var ocrResultService = sp.GetRequiredService<PrescriptionOCRResultService>();
+    var medicationPersistenceService = sp.GetRequiredService<MedicationPersistenceService>();
+    
+    Console.WriteLine("✅ Injecting specialized persistence services into orchestrator");
+    
     return new MultiLlmAPIOrchestrator(
         openAIAgent, 
         deepSeekAgent, 
         claudeAgent, 
-        config, pythonMiddlewareClient,
+        config, 
+        pythonMiddlewareClient,
         fileStorageService,
         multiAgentValidationAgent: validationAgent,
         pythonConfig: pythonConfig,
         unitOfWork: unitOfWork,
+        ocrResultService: ocrResultService,
+        medicationPersistenceService: medicationPersistenceService,
         logger: logger);
 });
 

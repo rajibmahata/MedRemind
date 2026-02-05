@@ -12,6 +12,7 @@ public class Prescription
     public string? DoctorName { get; set; }
     public DateTime PrescriptionDate { get; set; }
     public string Status { get; set; } = "Processing"; // Stores PrescriptionStatus enum value as string
+    public int? MappedPrescriptionId { get; set; } // References original prescription ID if this is a duplicate
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ProcessedAt { get; set; }
     

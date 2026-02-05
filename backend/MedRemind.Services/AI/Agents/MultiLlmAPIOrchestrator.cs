@@ -34,6 +34,10 @@ public class MultiLlmAPIOrchestrator
 
     private readonly PythonMiddlewareClient _pythonClient;
     private readonly MedRemind.Core.Configuration.PythonMiddlewareConfiguration? _pythonConfig;
+    
+    // New specialized services for data persistence
+    private readonly PrescriptionOCRResultService? _ocrResultService;
+    private readonly MedicationPersistenceService? _medicationPersistenceService;
 
     // For saving LLM responses
     private string? _currentPrescriptionFileName;
@@ -52,6 +56,8 @@ public class MultiLlmAPIOrchestrator
         MedRemind.Core.Configuration.PythonMiddlewareConfiguration? pythonConfig = null,
         PrescriptionCacheService? cacheService = null,
         IUnitOfWork? unitOfWork = null,
+        PrescriptionOCRResultService? ocrResultService = null,
+        MedicationPersistenceService? medicationPersistenceService = null,
         ILogger<MultiLlmAPIOrchestrator>? logger = null)
     {
         _openAIAgent = openAIAgent ?? throw new ArgumentNullException(nameof(openAIAgent));
@@ -65,12 +71,14 @@ public class MultiLlmAPIOrchestrator
         _validationService = validationService;
         _cacheService = cacheService;
         _unitOfWork = unitOfWork;
+        _ocrResultService = ocrResultService;
+        _medicationPersistenceService = medicationPersistenceService;
         _logger = logger;
         _pythonClient = pythonMiddlewareClient ?? throw new ArgumentNullException(nameof(pythonMiddlewareClient));
         _pythonConfig = pythonConfig;
 
         var mode = executionMode == ExecutionMode.Parallel ? "Parallel" : "Sequential";
-        _logger?.LogInformation($"?? MultiLlmAPIOrchestrator initialized - Mode: {mode}");
+        _logger?.LogInformation($"? MultiLlmAPIOrchestrator initialized - Mode: {mode}");
         _logger?.LogInformation($"   OpenAI: {(config.OpenAI.Enabled ? "Enabled" : "Disabled")} (Priority: {config.OpenAI.Priority})");
         _logger?.LogInformation($"   DeepSeek: {(config.DeepSeek.Enabled ? "Enabled" : "Disabled")} (Priority: {config.DeepSeek.Priority})");
         _logger?.LogInformation($"   Claude: {(config.Claude.Enabled ? "Enabled" : "Disabled")} (Priority: {config.Claude.Priority})");
@@ -78,6 +86,8 @@ public class MultiLlmAPIOrchestrator
         _logger?.LogInformation($"   Advanced Features: {(HasAdvancedFeatures() ? "Enabled" : "Disabled")}");
         _logger?.LogInformation($"   LLM Response Saving: {(_fileStorageService != null ? "Enabled" : "Disabled")}");
         _logger?.LogInformation($"   Multi-Agent Validation: {(_validationAgent != null ? "Enabled" : "Disabled")}");
+        _logger?.LogInformation($"   OCR Result Service: {(_ocrResultService != null ? "Enabled" : "Disabled")}");
+        _logger?.LogInformation($"   Medication Persistence Service: {(_medicationPersistenceService != null ? "Enabled" : "Disabled")}");
     }
 
     private bool HasAdvancedFeatures() => _mergerService != null && _validationService != null;
@@ -181,10 +191,11 @@ public class MultiLlmAPIOrchestrator
                 return FailFast("Python Middleware is disabled. Please enable it in configuration to process prescriptions.", result);
             }
 
-            // STEP 4: Store in database (if unit of work available)
-            if (_unitOfWork != null && result.ParseResult != null)
+
+            // STEP 4: Store in database using specialized services
+            if (result.ParseResult != null)
             {
-                await StoreResultAsync(prescriptionId, ocrText, result.ParseResult, result);
+                await StoreResultsUsingServicesAsync(prescriptionId, ocrText, result.ParseResult, result);
             }
             
             // STEP 5: Finalize result
@@ -213,6 +224,152 @@ public class MultiLlmAPIOrchestrator
             result.EndTime = DateTime.UtcNow;
             result.ProcessingTime = result.EndTime.Value - startTime;
             return result;
+        }
+    }
+
+    /// <summary>
+    /// Store results using specialized persistence services
+    /// </summary>
+    private async Task StoreResultsUsingServicesAsync(
+        int prescriptionId,
+        string ocrText,
+        PrescriptionReadResult parseResult,
+        PrescriptionProcessingResult processingResult)
+    {
+        try
+        {
+            _logger?.LogInformation("?? Storing results using specialized services...");
+
+            // Step 1: Save OCR Result
+            if (_ocrResultService != null)
+            {
+                var ocrResult = await _ocrResultService.SaveOrUpdateOCRResultAsync(
+                    prescriptionId,
+                    ocrText,
+                    parseResult,
+                    processingResult.ProcessingTime,
+                    processingResult.SelectedProvider ?? "Python Middleware (CrewAI)");
+                
+                processingResult.DatabaseId = ocrResult.Id;
+                _logger?.LogInformation("? OCR result saved - ID: {OcrResultId}", ocrResult.Id);
+            }
+            else if (_unitOfWork != null)
+            {
+                // Fallback to old method if service not available
+                _logger?.LogWarning("?? OCR Result Service not available, using legacy method");
+                await StoreLegacyOCRResultAsync(prescriptionId, ocrText, parseResult, processingResult);
+            }
+
+            // Step 2: Save Medications
+            if (_medicationPersistenceService != null && parseResult.Medications.Any())
+            {
+                // Get prescription to extract userId
+                var prescription = await GetPrescriptionAsync(prescriptionId);
+                if (prescription != null)
+                {
+                    var savedMedications = await _medicationPersistenceService.SaveMedicationsFromParseResultAsync(
+                        prescriptionId,
+                        prescription.UserId,
+                        parseResult);
+                    
+                    _logger?.LogInformation("? Saved {Count} medications", savedMedications.Count);
+                }
+                else
+                {
+                    _logger?.LogWarning("?? Prescription {PrescriptionId} not found, cannot save medications", prescriptionId);
+                }
+            }
+            else if (parseResult.Medications.Any())
+            {
+                _logger?.LogWarning("?? Medication Persistence Service not available, medications not saved");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "? Failed to store results using services");
+            // Don't fail the entire operation if storage fails
+        }
+    }
+
+    /// <summary>
+    /// Get prescription by ID
+    /// </summary>
+    private async Task<Prescription?> GetPrescriptionAsync(int prescriptionId)
+    {
+        if (_unitOfWork == null) return null;
+        
+        try
+        {
+            var repo = _unitOfWork.Repository<Prescription>();
+            return await repo.GetByIdAsync(prescriptionId);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "? Failed to get prescription {PrescriptionId}", prescriptionId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Legacy method for storing OCR result (fallback when service not available)
+    /// </summary>
+    private async Task StoreLegacyOCRResultAsync(
+        int prescriptionId,
+        string ocrText,
+        PrescriptionReadResult parseResult,
+        PrescriptionProcessingResult result)
+    {
+        if (_unitOfWork == null) return;
+
+        try
+        {
+            var jsonOptions = new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var repo = _unitOfWork.Repository<PrescriptionOCRResult>();
+            var existingResult = (await repo.FindAsync(r => r.PrescriptionId == prescriptionId)).FirstOrDefault();
+
+            if (existingResult != null)
+            {
+                existingResult.Status = OcrProcessingStatus.Processed;
+                existingResult.SelectedResponse = JsonSerializer.Serialize(parseResult, jsonOptions);
+                existingResult.OpenAIResponse = JsonSerializer.Serialize(parseResult, jsonOptions);
+                existingResult.ClaudeResponse = parseResult.MedicineValidation != null 
+                    ? JsonSerializer.Serialize(parseResult.MedicineValidation, jsonOptions)
+                    : null;
+                existingResult.SelectedProvider = "Python Middleware (CrewAI)";
+                existingResult.MedicationCount = parseResult.Medications.Count;
+                existingResult.ProcessedAt = DateTime.UtcNow;
+                existingResult.ProcessingTime = result.ProcessingTime;
+                
+                await repo.UpdateAsync(existingResult);
+            }
+            else
+            {
+                var ocrResult = new PrescriptionOCRResult
+                {
+                    PrescriptionId = prescriptionId,
+                    OCRText = ocrText,
+                    OCRTextHash = ComputeHash(ocrText),
+                    Status = OcrProcessingStatus.Processed,
+                    SelectedProvider = "Python Middleware (CrewAI)",
+                    SelectedResponse = JsonSerializer.Serialize(parseResult, jsonOptions),
+                    MedicationCount = parseResult.Medications.Count,
+                    ProcessedAt = DateTime.UtcNow,
+                    ProcessingTime = result.ProcessingTime
+                };
+                
+                await repo.AddAsync(ocrResult);
+            }
+            
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "? Legacy OCR result storage failed");
         }
     }
 
@@ -393,8 +550,10 @@ public class MultiLlmAPIOrchestrator
     }
 
     /// <summary>
-    /// Store processing results in database
+    /// Store processing results in database (DEPRECATED - Use StoreResultsUsingServicesAsync instead)
+    /// Kept for backward compatibility
     /// </summary>
+    [Obsolete("Use StoreResultsUsingServicesAsync with specialized services instead")]
     private async Task StoreResultAsync(
         int prescriptionId,
         string ocrText,

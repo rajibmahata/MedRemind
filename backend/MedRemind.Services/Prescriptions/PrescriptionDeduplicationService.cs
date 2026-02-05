@@ -23,12 +23,16 @@ public class PrescriptionDeduplicationService
     /// <summary>
     /// Check if prescription with similar OCR text already exists
     /// </summary>
-    public async Task<DuplicateCheckResult> CheckForDuplicateAsync(string ocrText, int userId)
+    /// <param name="ocrText">OCR extracted text</param>
+    /// <param name="userId">User ID</param>
+    /// <param name="newPrescriptionId">The newly created prescription ID to update if duplicate found</param>
+    public async Task<DuplicateCheckResult> CheckForDuplicateAsync(string ocrText, int userId, int? newPrescriptionId = null)
     {
         try
         {
             System.Diagnostics.Debug.WriteLine("?? Deduplication: Checking for duplicate prescription...");
             System.Diagnostics.Debug.WriteLine($"   User ID: {userId}");
+            System.Diagnostics.Debug.WriteLine($"   New Prescription ID: {newPrescriptionId?.ToString() ?? "N/A"}");
             System.Diagnostics.Debug.WriteLine($"   OCR text length: {ocrText.Length} chars");
 
             // Generate hash for quick comparison
@@ -45,20 +49,28 @@ public class PrescriptionDeduplicationService
             if (exactMatch != null)
             {
                 System.Diagnostics.Debug.WriteLine($"? Found exact duplicate!");
-                System.Diagnostics.Debug.WriteLine($"   Prescription ID: {exactMatch.PrescriptionId}");
+                System.Diagnostics.Debug.WriteLine($"   Original Prescription ID: {exactMatch.PrescriptionId}");
                 System.Diagnostics.Debug.WriteLine($"   Processed: {exactMatch.ProcessedAt:yyyy-MM-dd HH:mm}");
                 System.Diagnostics.Debug.WriteLine($"   Medications: {exactMatch.MedicationCount}");
 
-                // Mark as duplicate in OCR result
+                // Mark the existing OCR result as duplicate reference
                 exactMatch.Status = OcrProcessingStatus.Duplicate;
                 await _context.SaveChangesAsync();
 
-                // Mark prescription as duplicate
-                var prescription = await _context.Prescriptions.FindAsync(exactMatch.PrescriptionId);
-                if (prescription != null)
+                // Update the NEW prescription as duplicate and map it to the original
+                if (newPrescriptionId.HasValue)
                 {
-                    prescription.Status = PrescriptionStatus.Duplicate.ToString();
-                    await _context.SaveChangesAsync();
+                    var newPrescription = await _context.Prescriptions.FindAsync(newPrescriptionId.Value);
+                    if (newPrescription != null)
+                    {
+                        newPrescription.Status = PrescriptionStatus.Duplicate.ToString();
+                        newPrescription.MappedPrescriptionId = exactMatch.PrescriptionId; // Map to original prescription
+                        newPrescription.ProcessedAt = DateTime.UtcNow;
+                        await _context.SaveChangesAsync();
+                        
+                        System.Diagnostics.Debug.WriteLine($"? New prescription {newPrescriptionId} marked as duplicate");
+                        System.Diagnostics.Debug.WriteLine($"   Mapped to original prescription: {exactMatch.PrescriptionId}");
+                    }
                 }
 
                 return new DuplicateCheckResult
@@ -82,16 +94,25 @@ public class PrescriptionDeduplicationService
 
                 if (bestMatch.SimilarityScore >= 0.95) // 95% similar
                 {
-                    // Mark as duplicate in OCR result
+                    // Mark the existing OCR result as duplicate reference
                     bestMatch.Result.Status = OcrProcessingStatus.Duplicate;
                     await _context.SaveChangesAsync();
 
-                    // Mark prescription as duplicate
-                    var prescription = await _context.Prescriptions.FindAsync(bestMatch.Result.PrescriptionId);
-                    if (prescription != null)
+                    // Update the NEW prescription as duplicate and map it to the original
+                    if (newPrescriptionId.HasValue)
                     {
-                        prescription.Status = PrescriptionStatus.Duplicate.ToString();
-                        await _context.SaveChangesAsync();
+                        var newPrescription = await _context.Prescriptions.FindAsync(newPrescriptionId.Value);
+                        if (newPrescription != null)
+                        {
+                            newPrescription.Status = PrescriptionStatus.Duplicate.ToString();
+                            newPrescription.MappedPrescriptionId = bestMatch.Result.PrescriptionId; // Map to original prescription
+                            newPrescription.ProcessedAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync();
+                            
+                            System.Diagnostics.Debug.WriteLine($"? New prescription {newPrescriptionId} marked as duplicate");
+                            System.Diagnostics.Debug.WriteLine($"   Mapped to original prescription: {bestMatch.Result.PrescriptionId}");
+                            System.Diagnostics.Debug.WriteLine($"   Similarity Score: {bestMatch.SimilarityScore:P0}");
+                        }
                     }
 
                     return new DuplicateCheckResult

@@ -258,6 +258,32 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                 return result;
             }
 
+            // Validate UserId exists
+            if (_unitOfWork != null)
+            {
+                try
+                {
+                    var userRepo = _unitOfWork.Repository<User>();
+                    var userExists = await userRepo.GetByIdAsync(userId);
+                    if (userExists == null)
+                    {
+                        result.Success = false;
+                        result.ErrorMessage = $"User with ID {userId} does not exist. Please ensure the user is registered.";
+                        System.Diagnostics.Debug.WriteLine($"❌ User validation failed: User {userId} not found in database");
+                        System.Diagnostics.Debug.WriteLine($"❌ Foreign Key constraint will fail - cannot create prescription");
+                        return result;
+                    }
+                    System.Diagnostics.Debug.WriteLine($"✅ User {userId} validated - Name: {userExists.Name}, Phone: {userExists.PhoneNumber}");
+                }
+                catch (Exception ex)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = $"Failed to validate user: {ex.Message}";
+                    System.Diagnostics.Debug.WriteLine($"❌ User validation error: {ex.Message}");
+                    return result;
+                }
+            }
+
             // Step 1: Create prescription record
             var prescription = new Prescription
             {
@@ -273,9 +299,39 @@ public class PrescriptionReaderService : IPrescriptionReaderService
             System.Diagnostics.Debug.WriteLine($"💾 Saving prescription for user {userId}");
             System.Diagnostics.Debug.WriteLine($"   File name: {prescription.FileName}");
             System.Diagnostics.Debug.WriteLine($"   File size: {prescription.FileSize / 1024.0:F2} KB");
-            prescription = await _prescriptionService.AddPrescriptionAsync(prescription);
-            result.PrescriptionId = prescription.Id;
-            System.Diagnostics.Debug.WriteLine($"✅ Prescription saved with ID: {prescription.Id}");
+            
+            try
+            {
+                prescription = await _prescriptionService.AddPrescriptionAsync(prescription);
+                result.PrescriptionId = prescription.Id;
+                System.Diagnostics.Debug.WriteLine($"✅ Prescription saved with ID: {prescription.Id}");
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+            {
+                result.Success = false;
+                
+                if (dbEx.InnerException?.Message.Contains("FOREIGN KEY constraint failed") == true)
+                {
+                    result.ErrorMessage = $"Database constraint error: User ID {userId} does not exist or is invalid. Please ensure the user is registered.";
+                    System.Diagnostics.Debug.WriteLine($"❌ Foreign Key constraint failed when saving prescription");
+                    System.Diagnostics.Debug.WriteLine($"   UserId: {userId}");
+                    System.Diagnostics.Debug.WriteLine($"   Error: {dbEx.InnerException?.Message}");
+                }
+                else
+                {
+                    result.ErrorMessage = $"Database error: {dbEx.Message}";
+                    System.Diagnostics.Debug.WriteLine($"❌ Database error: {dbEx.Message}");
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.ErrorMessage = $"Failed to save prescription: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"❌ Error saving prescription: {ex.Message}");
+                return result;
+            }
 
             // Step 2: Extract OCR text using Azure Document Intelligence
             System.Diagnostics.Debug.WriteLine("📄 Extracting OCR text...");
@@ -296,7 +352,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
 
             // Step 3: Check for duplicate prescription
             System.Diagnostics.Debug.WriteLine("\n🔍 Checking for duplicate prescription...");
-            var duplicateCheck = await _deduplicationService.CheckForDuplicateAsync(ocrText, userId);
+            var duplicateCheck = await _deduplicationService.CheckForDuplicateAsync(ocrText, userId, prescription.Id);
 
             if (duplicateCheck.IsDuplicate && duplicateCheck.ExistingResult != null)
             {
@@ -326,16 +382,17 @@ public class PrescriptionReaderService : IPrescriptionReaderService
                         ConfidenceScore = duplicateCheck.ExistingResult.ComparisonScore
                     };
 
-                    // Update current prescription to reference existing result
+
+                    // Update current prescription with doctor info and date
+                    // Status and MappedPrescriptionId are already set by CheckForDuplicateAsync
                     prescription.DoctorName = result.PrescriptionResult.Doctor?.Name;
                     if (result.PrescriptionResult.PrescriptionDate.HasValue)
                         prescription.PrescriptionDate = result.PrescriptionResult.PrescriptionDate.Value;
-
-                    await _prescriptionService.UpdatePrescriptionStatusAsync(
-                        prescription.Id,
-                        "Processed");
+                    
+                    await _unitOfWork!.SaveChangesAsync();
 
                     System.Diagnostics.Debug.WriteLine("✅ Returning existing result (duplicate detected)");
+                    System.Diagnostics.Debug.WriteLine($"   New prescription {prescription.Id} mapped to {prescription.MappedPrescriptionId}");
                     return result;
                 }
             }

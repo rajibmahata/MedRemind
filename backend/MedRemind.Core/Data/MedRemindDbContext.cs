@@ -34,6 +34,8 @@ public class MedRemindDbContext : DbContext
             entity.HasIndex(e => e.IsPhoneVerified);
             entity.HasIndex(e => e.AuthenticationMethod);
             entity.HasIndex(e => e.PasswordResetToken);
+            entity.HasIndex(e => e.IsEmailOtpSent);
+            entity.HasIndex(e => e.IsSmsOtpSent);
             entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -42,6 +44,8 @@ public class MedRemindDbContext : DbContext
             entity.Property(e => e.PasswordResetToken).HasMaxLength(200);
             entity.Property(e => e.IsEmailVerified).IsRequired();
             entity.Property(e => e.IsPhoneVerified).IsRequired();
+            entity.Property(e => e.IsEmailOtpSent).IsRequired();
+            entity.Property(e => e.IsSmsOtpSent).IsRequired();
             entity.Property(e => e.AuthenticationMethod).IsRequired();
             entity.Property(e => e.LastAuthenticationMethod).IsRequired();
         });

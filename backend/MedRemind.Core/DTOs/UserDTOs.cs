@@ -58,6 +58,12 @@ public class UserProfileData
     public DateTime? EmailVerifiedAt { get; set; }
     public DateTime? PhoneVerifiedAt { get; set; }
     
+    // OTP Delivery Tracking
+    public bool IsEmailOtpSent { get; set; }
+    public bool IsSmsOtpSent { get; set; }
+    public DateTime? LastEmailOtpSentAt { get; set; }
+    public DateTime? LastSmsOtpSentAt { get; set; }
+    
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
 }

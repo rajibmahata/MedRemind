@@ -619,6 +619,10 @@ public class AuthenticationService : IAuthenticationService
             LastAuthenticationMethod = user.LastAuthenticationMethod.ToString(),
             EmailVerifiedAt = user.EmailVerifiedAt,
             PhoneVerifiedAt = user.PhoneVerifiedAt,
+            IsEmailOtpSent = user.IsEmailOtpSent,
+            IsSmsOtpSent = user.IsSmsOtpSent,
+            LastEmailOtpSentAt = user.LastEmailOtpSentAt,
+            LastSmsOtpSentAt = user.LastSmsOtpSentAt,
             CreatedAt = user.CreatedAt,
             LastLoginAt = user.LastLoginAt
         };

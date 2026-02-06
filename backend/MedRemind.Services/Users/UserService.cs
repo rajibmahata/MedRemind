@@ -459,7 +459,7 @@ public class UserService
         }
     }
 
-    /// <summary>
+    /// <summary>x`
     /// Map User entity to UserProfileData DTO
     /// </summary>
     private UserProfileData MapToProfileData(User user)
@@ -480,6 +480,10 @@ public class UserService
             LastAuthenticationMethod = user.LastAuthenticationMethod.ToString(),
             EmailVerifiedAt = user.EmailVerifiedAt,
             PhoneVerifiedAt = user.PhoneVerifiedAt,
+            IsEmailOtpSent = user.IsEmailOtpSent,
+            IsSmsOtpSent = user.IsSmsOtpSent,
+            LastEmailOtpSentAt = user.LastEmailOtpSentAt,
+            LastSmsOtpSentAt = user.LastSmsOtpSentAt,
             CreatedAt = user.CreatedAt,
             LastLoginAt = user.LastLoginAt
         };

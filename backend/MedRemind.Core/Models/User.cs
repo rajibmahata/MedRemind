@@ -29,6 +29,12 @@ public class User
     public DateTime? EmailVerifiedAt { get; set; }
     public DateTime? PhoneVerifiedAt { get; set; }
     
+    // OTP Delivery Tracking
+    public bool IsEmailOtpSent { get; set; } = false;
+    public bool IsSmsOtpSent { get; set; } = false;
+    public DateTime? LastEmailOtpSentAt { get; set; }
+    public DateTime? LastSmsOtpSentAt { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     

@@ -103,6 +103,13 @@ public class OtpCodeService
             }
 
             _logger?.LogInformation("?? OTP sent successfully via {DeliveryMethod}", deliveryMethod);
+
+            // Update user's OTP sent flags if user exists
+            if (userId.HasValue)
+            {
+                await UpdateUserOtpSentFlagsAsync(userId.Value, deliveryMethod);
+            }
+
             return (true, null);
         }
         catch (Exception ex)
@@ -378,5 +385,47 @@ public class OtpCodeService
     {
         var random = new Random();
         return random.Next(100000, 999999).ToString();
+    }
+
+    /// <summary>
+    /// Update user's OTP sent flags based on delivery method
+    /// </summary>
+    private async Task UpdateUserOtpSentFlagsAsync(int userId, string deliveryMethod)
+    {
+        try
+        {
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.GetByIdAsync(userId);
+
+            if (user == null)
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+
+            // Update flags based on delivery method
+            if (deliveryMethod == "SMS" || deliveryMethod == "Both")
+            {
+                user.IsSmsOtpSent = true;
+                user.LastSmsOtpSentAt = now;
+                _logger?.LogInformation("? SMS OTP sent flag updated for user {UserId}", userId);
+            }
+
+            if (deliveryMethod == "Email" || deliveryMethod == "Both")
+            {
+                user.IsEmailOtpSent = true;
+                user.LastEmailOtpSentAt = now;
+                _logger?.LogInformation("? Email OTP sent flag updated for user {UserId}", userId);
+            }
+
+            await userRepo.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error updating OTP sent flags for user {UserId}", userId);
+            // Don't throw - this is tracking only, not critical
+        }
     }
 }

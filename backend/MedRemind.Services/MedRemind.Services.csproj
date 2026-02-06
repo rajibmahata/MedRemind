@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="BackgroundServices\" />
     <Folder Include="Configuration\" />
     <Folder Include="VectorDatabase\" />
   </ItemGroup>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your OTP Code - MedRemind</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        .header-subtitle {
+            color: #ffffff;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 16px;
+            color: #666666;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        .otp-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .otp-label {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        .otp-code {
+            background-color: #ffffff;
+            color: #667eea;
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: 12px;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+        }
+        .expiry-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .expiry-notice strong {
+            color: #856404;
+            font-weight: 600;
+        }
+        .expiry-notice p {
+            color: #856404;
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+        .security-notice {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .security-notice h3 {
+            color: #495057;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .security-notice ul {
+            margin-left: 20px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .security-notice li {
+            margin: 8px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            color: #6c757d;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .social-links {
+            margin-top: 20px;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .otp-code {
+                font-size: 32px;
+                letter-spacing: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">?? MedRemind</div>
+            <div class="header-subtitle">Your Health Companion</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello {{UserName}}! ??</div>
+            
+            <div class="message">
+                You've requested to verify your account. Please use the One-Time Password (OTP) below to complete your verification.
+            </div>
+            
+            <div class="otp-container">
+                <div class="otp-label">Your OTP Code</div>
+                <div class="otp-code">{{OtpCode}}</div>
+            </div>
+            
+            <div class="expiry-notice">
+                <strong>? Important:</strong>
+                <p>This code is valid for 10 minutes only. Please use it promptly.</p>
+            </div>
+            
+            <div class="message">
+                Enter this code in the MedRemind app to verify your identity and continue.
+            </div>
+            
+            <div class="security-notice">
+                <h3>?? Security Tips</h3>
+                <ul>
+                    <li>Never share this OTP with anyone</li>
+                    <li>MedRemind will never ask for your OTP over phone or email</li>
+                    <li>If you didn't request this OTP, please ignore this email</li>
+                    <li>Contact our support team if you notice any suspicious activity</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>MedRemind</strong> - Your Health Companion</p>
+            <p>This is an automated email. Please do not reply to this message.</p>
+            <p>Need help? <a href="mailto:support@medremind.com">Contact Support</a></p>
+            <p style="margin-top: 20px; color: #adb5bd; font-size: 12px;">
+                &copy; 2024 MedRemind. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

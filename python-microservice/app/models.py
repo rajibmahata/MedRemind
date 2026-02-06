@@ -100,3 +100,82 @@ class HealthResponse(BaseModel):
     version: str
     timestamp: datetime
     enabled_parsers: List[str]
+
+
+# ============================================
+# OCR Extraction Models
+# ============================================
+
+class OCRRequest(BaseModel):
+    """Request for OCR extraction from base64 document"""
+    document_base64: str = Field(..., description="Base64 encoded document (image or PDF)")
+    document_type: str = Field(default="auto", description="Document type: 'image', 'pdf', or 'auto' (auto-detect)")
+    language_hints: Optional[List[str]] = Field(default=None, description="Language hints (e.g., ['en', 'hi', 'bn'])")
+    prescription_id: Optional[str] = Field(default=None, description="Optional prescription identifier")
+    enhance_handwriting: bool = Field(default=True, description="Enable enhanced handwriting recognition")
+    extract_structured_data: bool = Field(default=False, description="Also extract structured prescription data")
+
+
+class OCRConfidence(BaseModel):
+    """Confidence scores for OCR extraction"""
+    overall: float = Field(ge=0.0, le=1.0, description="Overall confidence score")
+    text_clarity: float = Field(ge=0.0, le=1.0, description="Text clarity score")
+    handwriting_quality: float = Field(ge=0.0, le=1.0, description="Handwriting readability score")
+    language_confidence: float = Field(ge=0.0, le=1.0, description="Language detection confidence")
+
+
+class DetectedLanguage(BaseModel):
+    """Detected language information"""
+    code: str = Field(description="ISO 639-1 language code")
+    name: str = Field(description="Language name")
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class TextRegion(BaseModel):
+    """A region of text detected in the document"""
+    text: str
+    region_type: Optional[str] = Field(default=None, description="Type: header, body, footer, signature, etc.")
+    confidence: float = Field(ge=0.0, le=1.0)
+    bounding_box: Optional[List[int]] = Field(default=None, description="[x, y, width, height]")
+
+
+class OCRResponse(BaseModel):
+    """Response from OCR extraction"""
+    success: bool
+    prescription_id: Optional[str] = None
+    
+    # Raw extracted text
+    raw_text: str = Field(description="Complete extracted text from document")
+    
+    # Structured regions (if detected)
+    text_regions: Optional[List[TextRegion]] = Field(default=None, description="Detected text regions")
+    
+    # Language information
+    detected_languages: List[DetectedLanguage] = Field(default=[], description="Detected languages")
+    primary_language: Optional[str] = Field(default=None, description="Primary detected language")
+    
+    # Quality metrics
+    confidence: OCRConfidence
+    
+    # Document metadata
+    document_type: str = Field(description="Detected document type")
+    page_count: int = Field(default=1, description="Number of pages processed")
+    
+    # Processing info
+    processing_time: float
+    ocr_provider: str = Field(description="OCR provider used")
+    
+    # Optional structured data (if extract_structured_data=True)
+    structured_data: Optional[ParseResponse] = Field(default=None, description="Extracted prescription data")
+    
+    # Errors/warnings
+    warnings: List[str] = Field(default=[])
+    error_message: Optional[str] = None
+
+
+class OCRProviderConfig(BaseModel):
+    """Configuration for OCR providers"""
+    provider: str = Field(description="Provider name: 'openai_vision', 'azure_di', 'google_vision', 'tesseract'")
+    enabled: bool = True
+    priority: int = Field(default=1, description="Priority order (lower = higher priority)")
+    fallback: bool = Field(default=True, description="Use as fallback if primary fails")

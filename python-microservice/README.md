@@ -6,16 +6,21 @@ FastAPI microservice using CrewAI for prescription data extraction.
 
 - **CrewAI Multi-Agent System** - Sequential agent pipeline
 - **FastAPI REST API** - Easy integration with .NET
+- **OCR Document Extraction** - Extract text from images/PDFs using GPT-4 Vision
+- **Multi-Language Support** - 20+ languages including handwriting
 - **Configuration Sync** - Uses .NET project's LLM configs
 - **File Storage** - Saves parsed prescriptions for validation
-- **Health Checks** - Monitoring endpoints- **Agent Tracing** - LangSmith integration for tracking agent execution
+- **Health Checks** - Monitoring endpoints
+- **Agent Tracing** - LangSmith integration for tracking agent execution
 ## ?? Requirements
 
 - Python 3.11+
 - uv (for package management)
-- OpenAI API Key
+- OpenAI API Key (required for OCR and parsing)
 - DeepSeek API Key (optional)
 - Claude API Key (optional)
+- PyMuPDF (for PDF processing)
+- Pillow (for image processing)
 
 ## ?? Quick Start
 
@@ -147,29 +152,32 @@ GET http://localhost:8000/api/prescription/{prescription_id}
 
 ```
 python-microservice/
-??? app/
-?   ??? __init__.py
-?   ??? main.py                 # FastAPI app
-?   ??? config.py               # Configuration loader
-?   ??? models.py               # Pydantic models
-?   ??? agents/
-?   ?   ??? __init__.py
-?   ?   ??? normalizer.py       # Agent 1
-?   ?   ??? extractor.py        # Agent 2
-?   ?   ??? validator.py        # Agent 3
-?   ?   ??? medicine_validator.py # Agent 4
-?   ??? crew/
-?       ??? __init__.py
-?       ??? prescription_crew.py # CrewAI orchestrator
-??? storage/
-?   ??? parsed_prescriptions/   # Saved results
-??? tests/
-?   ??? test_api.py
-??? .env
-??? .gitignore
-??? requirements.txt
-??? pyproject.toml
-??? README.md
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI app
+│   ├── config.py               # Configuration loader
+│   ├── models.py               # Pydantic models
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── normalizer.py       # Agent 1
+│   │   ├── extractor.py        # Agent 2
+│   │   ├── validator.py        # Agent 3
+│   │   └── medicine_validator.py # Agent 4
+│   ├── crew/
+│   │   ├── __init__.py
+│   │   └── prescription_crew.py # CrewAI orchestrator
+│   └── services/
+│       ├── __init__.py
+│       └── ocr_service.py      # OCR extraction service
+├── storage/
+│   └── parsed_prescriptions/   # Saved results
+├── tests/
+│   └── test_api.py
+├── .env
+├── .gitignore
+├── requirements.txt
+├── pyproject.toml
+└── README.md
 ```
 
 ## ?? Integration with .NET
@@ -292,6 +300,233 @@ LANGCHAIN_TRACING_V2=false
 
 **📘 For detailed tracing setup and usage, see [TRACING_GUIDE.md](TRACING_GUIDE.md)**
 
+## 📷 OCR API - Document Text Extraction
+
+The service provides OCR capabilities for extracting text from medical prescriptions in image or PDF format. It uses **GPT-4 Vision** for superior handwriting recognition, supporting **20+ languages**.
+
+### Supported Formats
+
+| Format | Extensions | Notes |
+|--------|------------|-------|
+| **Images** | PNG, JPEG, JPG, GIF, WEBP, BMP, TIFF | Direct processing |
+| **PDF** | PDF | Each page converted to image |
+
+### Supported Languages
+
+English, Spanish, French, German, Italian, Portuguese, Dutch, Russian, Chinese, Japanese, Korean, Arabic, Hindi, Bengali, Tamil, Telugu, Gujarati, Urdu, Marathi, Kannada, Malayalam, Punjabi, and more.
+
+### OCR Endpoints
+
+#### 1. Extract Text Only
+
+Extract raw text from a document without structured parsing.
+
+```http
+POST http://localhost:8000/api/ocr/extract
+Content-Type: application/json
+
+{
+  "document_base64": "base64_encoded_document_here",
+  "language_hint": "auto",
+  "output_format": "text"
+}
+```
+
+**Request Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `document_base64` | string | Yes | Base64-encoded document (image or PDF) |
+| `language_hint` | string | No | Language hint: "auto", "en", "hi", "bn", etc. Default: "auto" |
+| `output_format` | string | No | Output format: "text", "markdown", "structured". Default: "text" |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "extracted_text": "Dr. Shrinivas Narayan\nMBBS, MS (Urology)\n\nDate: 28/1/26\n\nPatient: Mr. Rajib Mahata\nAge: 34 years\n\nRx:\n1. Tab Fabulas 240mg - Once daily for 3 weeks...",
+  "confidence": {
+    "overall_score": 0.92,
+    "text_clarity": 0.95,
+    "handwriting_quality": 0.88
+  },
+  "detected_languages": [
+    {
+      "language": "English",
+      "language_code": "en",
+      "confidence": 0.98
+    }
+  ],
+  "text_regions": [
+    {
+      "region_type": "header",
+      "text": "Dr. Shrinivas Narayan\nMBBS, MS (Urology)",
+      "confidence": 0.95
+    },
+    {
+      "region_type": "medications",
+      "text": "Tab Fabulas 240mg - Once daily for 3 weeks",
+      "confidence": 0.88
+    }
+  ],
+  "document_type": "image/png",
+  "page_count": 1,
+  "processing_metadata": {
+    "model_used": "gpt-4o",
+    "processing_time_seconds": 2.34
+  }
+}
+```
+
+#### 2. Extract and Parse (Combined)
+
+Extract text from document AND parse it into structured prescription data in one call.
+
+```http
+POST http://localhost:8000/api/ocr/extract-and-parse
+Content-Type: application/json
+
+{
+  "document_base64": "base64_encoded_document_here",
+  "language_hint": "auto",
+  "output_format": "structured",
+  "prescription_id": "rx_001_20260206",
+  "save_result": true
+}
+```
+
+**Additional Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `prescription_id` | string | No | Unique ID for tracking. Auto-generated if not provided |
+| `save_result` | boolean | No | Save parsed prescription to storage. Default: false |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "ocr_result": {
+    "extracted_text": "...",
+    "confidence": { "overall_score": 0.92 },
+    "detected_languages": [{ "language": "English", "language_code": "en" }]
+  },
+  "prescription_result": {
+    "success": true,
+    "prescription_id": "rx_001_20260206",
+    "patient": {
+      "name": "Mr. Rajib Mahata",
+      "age": 34,
+      "gender": "M"
+    },
+    "medications": [
+      {
+        "name": "Fabulas",
+        "dosage": "240",
+        "unit": "mg",
+        "frequency": "Once daily",
+        "duration_days": 21,
+        "purpose": "Urinary tract treatment",
+        "age_appropriate": true
+      }
+    ],
+    "medicine_validation": {
+      "drug_interactions": [],
+      "safety_warnings": [],
+      "overall_safety_score": 0.95
+    }
+  }
+}
+```
+
+### Usage Examples
+
+#### Python
+
+```python
+import base64
+import httpx
+
+# Read and encode document
+with open("prescription.jpg", "rb") as f:
+    document_base64 = base64.b64encode(f.read()).decode("utf-8")
+
+# Extract text
+async with httpx.AsyncClient() as client:
+    response = await client.post(
+        "http://localhost:8000/api/ocr/extract",
+        json={
+            "document_base64": document_base64,
+            "language_hint": "auto"
+        },
+        timeout=60.0
+    )
+    result = response.json()
+    print(result["extracted_text"])
+```
+
+#### C# / .NET
+
+```csharp
+var bytes = await File.ReadAllBytesAsync("prescription.jpg");
+var base64 = Convert.ToBase64String(bytes);
+
+var request = new
+{
+    document_base64 = base64,
+    language_hint = "auto",
+    prescription_id = "rx_12345",
+    save_result = true
+};
+
+var response = await httpClient.PostAsJsonAsync(
+    "http://localhost:8000/api/ocr/extract-and-parse",
+    request
+);
+
+var result = await response.Content.ReadFromJsonAsync<OcrPrescriptionResult>();
+```
+
+#### cURL
+
+```bash
+# Extract text from image
+base64_doc=$(base64 -w0 prescription.jpg)
+curl -X POST http://localhost:8000/api/ocr/extract \
+  -H "Content-Type: application/json" \
+  -d "{\"document_base64\": \"$base64_doc\", \"language_hint\": \"auto\"}"
+```
+
+### OCR Configuration
+
+Add to `.env` file:
+
+```env
+# OCR Settings (optional - uses gpt-4o by default)
+OPENAI_VISION_MODEL=gpt-4o
+```
+
+### Error Handling
+
+The OCR API returns structured error responses:
+
+```json
+{
+  "success": false,
+  "error": "Failed to decode base64 document",
+  "extracted_text": null,
+  "confidence": null
+}
+```
+
+Common errors:
+- Invalid base64 encoding
+- Unsupported document format
+- Empty or corrupted document
+- OpenAI API rate limits
+
 ## ?? Testing
 
 ```bash
@@ -318,6 +553,7 @@ curl -X POST http://localhost:8000/api/prescription/parse \
 | LANGCHAIN_TRACING_V2 | Enable LangSmith tracing | false |
 | LANGCHAIN_API_KEY | LangSmith API key | Optional |
 | LANGCHAIN_PROJECT | LangSmith project name | medremind-prescription-parser |
+| OPENAI_VISION_MODEL | GPT-4 Vision model for OCR | gpt-4o |
 
 ## ?? Security
 

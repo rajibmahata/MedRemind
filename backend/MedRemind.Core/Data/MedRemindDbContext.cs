@@ -12,7 +12,8 @@ public class MedRemindDbContext : DbContext
     public DbSet<VoiceRecording> VoiceRecordings { get; set; }
     public DbSet<DoseLog> DoseLogs { get; set; }
     public DbSet<AppSettings> AppSettings { get; set; }
-    public DbSet<PrescriptionOCRResult> PrescriptionOCRResults { get; set; } // NEW
+    public DbSet<PrescriptionOCRResult> PrescriptionOCRResults { get; set; }
+    public DbSet<OtpCode> OtpCodes { get; set; } // NEW - OTP Code Collection
 
     public MedRemindDbContext(DbContextOptions<MedRemindDbContext> options)
         : base(options)
@@ -28,9 +29,21 @@ public class MedRemindDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.PhoneNumber).IsUnique();
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.IsEmailVerified);
+            entity.HasIndex(e => e.IsPhoneVerified);
+            entity.HasIndex(e => e.AuthenticationMethod);
+            entity.HasIndex(e => e.PasswordResetToken);
             entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Gender).HasMaxLength(20);
+            entity.Property(e => e.PasswordHash).HasMaxLength(500);
+            entity.Property(e => e.PasswordResetToken).HasMaxLength(200);
+            entity.Property(e => e.IsEmailVerified).IsRequired();
+            entity.Property(e => e.IsPhoneVerified).IsRequired();
+            entity.Property(e => e.AuthenticationMethod).IsRequired();
+            entity.Property(e => e.LastAuthenticationMethod).IsRequired();
         });
 
         // Medication configuration
@@ -143,6 +156,35 @@ public class MedRemindDbContext : DbContext
             entity.HasOne(e => e.User)
                 .WithOne()
                 .HasForeignKey<AppSettings>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // OtpCode configuration
+        modelBuilder.Entity<OtpCode>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.PhoneNumber);
+            entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsVerified);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasIndex(e => e.Purpose);
+            entity.HasIndex(e => new { e.PhoneNumber, e.IsActive, e.IsVerified });
+            
+            entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.Purpose).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DeliveryMethod).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.IsVerified).IsRequired();
+            entity.Property(e => e.SenderInfo).HasMaxLength(500);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

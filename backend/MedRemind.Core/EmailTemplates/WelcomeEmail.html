@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MedRemind</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 50px 20px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .welcome-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        .welcome-subtitle {
+            color: #ffffff;
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 26px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 16px;
+            color: #666666;
+            margin-bottom: 25px;
+            line-height: 1.8;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .highlight-box h2 {
+            color: #333333;
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+        .highlight-box p {
+            color: #666666;
+            font-size: 15px;
+        }
+        .features {
+            margin: 35px 0;
+        }
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        .feature-item:hover {
+            transform: translateX(5px);
+            background-color: #e9ecef;
+        }
+        .feature-icon {
+            font-size: 32px;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .feature-content h3 {
+            color: #333333;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .feature-content p {
+            color: #666666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 16px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+        .cta-button:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+        }
+        .user-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+        .user-info h3 {
+            color: #333333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .user-info-item {
+            margin: 10px 0;
+            color: #666666;
+            font-size: 15px;
+        }
+        .user-info-item strong {
+            color: #333333;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .tips-section {
+            background-color: #fff3cd;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .tips-section h3 {
+            color: #856404;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .tips-section ul {
+            margin-left: 20px;
+            color: #856404;
+            font-size: 14px;
+        }
+        .tips-section li {
+            margin: 10px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            color: #6c757d;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .social-links {
+            margin-top: 20px;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .welcome-title {
+                font-size: 26px;
+            }
+            .feature-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            .feature-icon {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">??</div>
+            <div class="welcome-title">Welcome to MedRemind!</div>
+            <div class="welcome-subtitle">Your journey to better health management starts here</div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello {{UserName}}! ??</div>
+            
+            <div class="message">
+                We're thrilled to have you join the MedRemind family! Your account has been successfully created, 
+                and you're now ready to take control of your medication management.
+            </div>
+            
+            <div class="user-info">
+                <h3>?? Your Account Details</h3>
+                <div class="user-info-item">
+                    <strong>Name:</strong> {{UserName}}
+                </div>
+                <div class="user-info-item">
+                    <strong>Email:</strong> {{UserEmail}}
+                </div>
+                <div class="user-info-item">
+                    <strong>Phone:</strong> {{UserPhone}}
+                </div>
+                <div class="user-info-item">
+                    <strong>Registered:</strong> {{RegistrationDate}}
+                </div>
+            </div>
+            
+            <div class="highlight-box">
+                <h2>?? What Makes MedRemind Special?</h2>
+                <p>Smart medication tracking designed to keep you healthy and on schedule</p>
+            </div>
+            
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-icon">?</div>
+                    <div class="feature-content">
+                        <h3>Smart Reminders</h3>
+                        <p>Never miss a dose with intelligent reminders tailored to your schedule. Get notified at the right time, every time.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">??</div>
+                    <div class="feature-content">
+                        <h3>Prescription Scanner</h3>
+                        <p>Simply snap a photo of your prescription, and our AI will automatically extract medication details and create reminders.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">??</div>
+                    <div class="feature-content">
+                        <h3>Adherence Tracking</h3>
+                        <p>Monitor your medication adherence with detailed insights and reports. Stay accountable and healthy.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">??</div>
+                    <div class="feature-content">
+                        <h3>Multi-Channel Notifications</h3>
+                        <p>Receive reminders via push notifications, SMS, or email—choose what works best for you.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tips-section">
+                <h3>?? Getting Started Tips</h3>
+                <ul>
+                    <li>Complete your profile to personalize your experience</li>
+                    <li>Add your first medication by scanning a prescription or entering manually</li>
+                    <li>Set up your notification preferences</li>
+                    <li>Explore the app and discover all the features</li>
+                    <li>Enable biometric authentication for quick and secure access</li>
+                </ul>
+            </div>
+            
+            <div class="cta-section">
+                <a href="{{AppLink}}" class="cta-button">Open MedRemind App</a>
+            </div>
+            
+            <div class="message" style="text-align: center; margin-top: 30px;">
+                <strong>Need help getting started?</strong><br>
+                Our support team is here to assist you every step of the way.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>MedRemind</strong> - Your Health Companion</p>
+            <p>Making medication management simple and stress-free</p>
+            <p style="margin-top: 15px;">
+                <a href="mailto:support@medremind.com">Contact Support</a> | 
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Terms of Service</a>
+            </p>
+            <p style="margin-top: 20px; color: #adb5bd; font-size: 12px;">
+                &copy; 2024 MedRemind. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,10 +1,11 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
+using MedRemind.Core.DTOs;
+using MedRemind.Core.Enums;
 using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
+using MedRemind.Core.Services;
 using Microsoft.IdentityModel.Tokens;
 
 namespace MedRemind.Services.Authentication;
@@ -13,12 +14,9 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISecureStorageService _secureStorage;
-    private readonly string _twoFactorApiKey;
-    private readonly string _sendOtpUrl;
-    private readonly string _verifyOtpUrl;
-    private readonly string _otpTemplate;
-    private readonly HttpClient _httpClient;
-    private string? _lastSessionId; // Store session ID from send OTP response
+    private readonly Communication.OtpCodeService? _otpService;
+    private readonly Communication.EmailService? _emailService;
+    private readonly PasswordHashingService _passwordHashingService;
     private readonly string _jwtSecretKey;
     private readonly string _jwtIssuer;
     private readonly string _jwtAudience;
@@ -27,11 +25,8 @@ public class AuthenticationService : IAuthenticationService
     public AuthenticationService(
         IUnitOfWork unitOfWork,
         ISecureStorageService secureStorage,
-        string twoFactorApiKey,
-        HttpClient httpClient,
-        string? sendOtpUrl = null,
-        string? verifyOtpUrl = null,
-        string? otpTemplate = null,
+        Communication.OtpCodeService? otpService = null,
+        Communication.EmailService? emailService = null,
         string? jwtSecretKey = null,
         string? jwtIssuer = null,
         string? jwtAudience = null,
@@ -39,13 +34,9 @@ public class AuthenticationService : IAuthenticationService
     {
         _unitOfWork = unitOfWork;
         _secureStorage = secureStorage;
-        _twoFactorApiKey = twoFactorApiKey;
-        _httpClient = httpClient;
-
-        // Use provided URLs or default to 2Factor API format
-        _sendOtpUrl = sendOtpUrl ?? "https://2factor.in/API/V1/{apiKey}/SMS/{phoneNumber}/{otpValue}/{templateName}";
-        _verifyOtpUrl = verifyOtpUrl ?? "https://2factor.in/API/V1/{apiKey}/SMS/VERIFY3/{phoneNumber}/{otpValue}";
-        _otpTemplate = otpTemplate ?? "OTP1";
+        _otpService = otpService;
+        _emailService = emailService;
+        _passwordHashingService = new PasswordHashingService();
 
         // JWT Configuration
         _jwtSecretKey = jwtSecretKey ?? "YOUR_SECRET_KEY_HERE_MINIMUM_32_CHARACTERS";
@@ -60,69 +51,31 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            // Validate phone number format (10 digits)
-            if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != 10)
+            if (_otpService == null)
             {
-                return (false, "Invalid phone number. Please enter a 10-digit phone number.");
+                return (false, "OTP service is not configured");
             }
 
-            // Format phone number with country code (+91 for India)
-            var formattedPhone = $"+91{phoneNumber}";
+            // Get user to retrieve email
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
 
-            // Generate random 6-digit OTP
-            var otp = GenerateOtp();
-
-            // Log OTP for development/testing purposes
-            System.Diagnostics.Debug.WriteLine($"🔐 Generated OTP: {otp} for phone number: {phoneNumber}");
-
-            // Build URL from template
-            // URL format: https://2factor.in/API/V1/{apiKey}/SMS/{phoneNumber}/{otpValue}/{templateName}
-            var url = _sendOtpUrl
-                .Replace("{apiKey}", _twoFactorApiKey)
-                .Replace("{phoneNumber}", formattedPhone)
-                .Replace("{otpValue}", otp)
-                .Replace("{templateName}", _otpTemplate);
-
-            System.Diagnostics.Debug.WriteLine($"📤 Sending OTP to {phoneNumber}");
-
-            // Remove: Simulate API response for testing without actual HTTP call
-            //// Call 2Factor.in API
-            //var response = await _httpClient.GetAsync(url, cancellationToken);
-            //var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            string content = "{\"Status\":\"Success\",\"Details\":\"SIMULATED_SESSION_ID_123456\"}";
-            //System.Diagnostics.Debug.WriteLine($"📥 2Factor Response: {content}");
-
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    return (false, $"Failed to send OTP. Please try again.");
-            //}
-
-            try
+            if (user == null)
             {
-                // Parse response to get session ID
-                var jsonResponse = JsonSerializer.Deserialize<TwoFactorSendResponse>(content);
-
-                if (jsonResponse?.Status == "Success")
-                {
-                    _lastSessionId = jsonResponse.Details;
-                    System.Diagnostics.Debug.WriteLine($"✅ OTP sent successfully. Session ID: {_lastSessionId}");
-
-                    return (true, null);
-                }
-                else
-                {
-                    return (false, "Failed to send OTP. Please try again.");
-                }
+                return (false, "User not found. Please register first.");
             }
-            catch
-            {
-                // If JSON parsing fails, check if response indicates success
-                if (content.Contains("Success"))
-                {
-                    return (true, null);
-                }
-                return (false, "Failed to send OTP. Please try again.");
-            }
+
+            System.Diagnostics.Debug.WriteLine($"📤 Sending OTP for login to {phoneNumber}");
+
+            // Use OtpCodeService to generate and send OTP
+            var result = await _otpService.GenerateAndSendOtpAsync(
+                phoneNumber: phoneNumber,
+                email: user.Email,
+                purpose: "Login",
+                userId: user.Id,
+                cancellationToken: cancellationToken);
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -149,118 +102,89 @@ public class AuthenticationService : IAuthenticationService
                 return (false, null, "Invalid OTP. Please enter the code you received.");
             }
 
-            // Build verify URL
-            // URL format: https://2factor.in/API/V1/{apiKey}/SMS/VERIFY3/{phoneNumber}/{otpValue}
-            var url = _verifyOtpUrl
-                .Replace("{apiKey}", _twoFactorApiKey)
-                .Replace("{phoneNumber}", phoneNumber) // Don't add +91 for verify endpoint
-                .Replace("{otpValue}", otp);
+            if (_otpService == null)
+            {
+                return (false, null, "OTP service is not configured");
+            }
 
             System.Diagnostics.Debug.WriteLine($"🔍 Verifying OTP for {phoneNumber}");
 
-            // Remove: Simulate API response for testing without actual HTTP call
-            //// Call 2Factor.in verify API
-            //var response = await _httpClient.GetAsync(url, cancellationToken);
-            //var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            string content = "{\"Status\":\"Success\",\"Details\":\"OTP Matched\"}";
-            //System.Diagnostics.Debug.WriteLine($"📥 Verify Response: {content}");
+            // Verify OTP using OtpCodeService
+            var (success, otpCode, errorMessage) = await _otpService.VerifyOtpAsync(phoneNumber, otp);
 
-            // Parse response
-            try
+            if (!success)
             {
-                var jsonResponse = JsonSerializer.Deserialize<TwoFactorVerifyResponse>(content);
+                return (false, null, errorMessage);
+            }
 
+            // Find user
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
 
-                if (jsonResponse?.Status == "Success" && jsonResponse?.Details == "OTP Matched")
+            if (user == null)
+            {
+                return (false, null, "User not found. Please register first.");
+            }
+
+            // Update last login
+            user.LastLoginAt = DateTime.UtcNow;
+            
+            // Set authentication method and verification status based on delivery method
+            if (otpCode != null)
+            {
+                if (otpCode.DeliveryMethod == "Email" || otpCode.DeliveryMethod == "Both")
                 {
-                    System.Diagnostics.Debug.WriteLine("✅ OTP verified successfully");
+                    user.IsEmailVerified = true;
+                    user.EmailVerifiedAt = DateTime.UtcNow;
+                    System.Diagnostics.Debug.WriteLine($"✅ Email verified for user {user.Id}");
+                }
+                
+                if (otpCode.DeliveryMethod == "SMS" || otpCode.DeliveryMethod == "Both")
+                {
+                    user.IsPhoneVerified = true;
+                    user.PhoneVerifiedAt = DateTime.UtcNow;
+                    System.Diagnostics.Debug.WriteLine($"✅ Phone verified for user {user.Id}");
+                }
 
-                    // Find or create user
-                    var userRepo = _unitOfWork.Repository<User>();
-                    var user = await userRepo.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
-
-                    if (user == null)
-                    {
-                        // Create new user
-                        user = new User
-                        {
-                            PhoneNumber = phoneNumber,
-                            CreatedAt = DateTime.UtcNow,
-                            LastLoginAt = DateTime.UtcNow
-                        };
-                        await userRepo.AddAsync(user);
-                        await _unitOfWork.SaveChangesAsync(); // Save first to get ID
-                        System.Diagnostics.Debug.WriteLine($"👤 New user created: {phoneNumber} with ID: {user.Id}");
-                    }
-                    else
-                    {
-                        // Update existing user
-                        user.LastLoginAt = DateTime.UtcNow;
-                    }
-
-                    // Generate session token
-                    var token = await GenerateSessionTokenAsync(user.Id);
-                    user.SessionToken = token;
-
-                    await userRepo.UpdateAsync(user);
-                    await _unitOfWork.SaveChangesAsync();
-
-                    // Store token in secure storage
-                    await _secureStorage.SetAsync("session_token", token);
-                    await _secureStorage.SetAsync("user_id", user.Id.ToString());
-                    await _secureStorage.SetAsync("phone_number", phoneNumber);
-
-                    System.Diagnostics.Debug.WriteLine($"✅ User logged in: {user.Id}");
-
-                    return (true, token, null);
+                // Determine authentication method
+                var currentAuthMethod = otpCode.DeliveryMethod == "Email" 
+                    ? AuthenticationMethod.EmailOtp 
+                    : (otpCode.DeliveryMethod == "SMS" 
+                        ? AuthenticationMethod.SmsOtp 
+                        : AuthenticationMethod.Both);
+                
+                user.LastAuthenticationMethod = currentAuthMethod;
+                
+                // Set overall authentication method
+                if (user.IsEmailVerified && user.IsPhoneVerified)
+                {
+                    user.AuthenticationMethod = AuthenticationMethod.Both;
                 }
                 else
                 {
-                    return (false, null, "Invalid OTP. Please try again.");
+                    user.AuthenticationMethod = currentAuthMethod;
                 }
             }
-            catch
-            {
-                // If JSON parsing fails, check if response indicates success
-                if (content.Contains("OTP Matched") || content.Contains("Success"))
-                {
-                    // Proceed with user creation/login
-                    var userRepo = _unitOfWork.Repository<User>();
-                    var user = await userRepo.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+            
+            System.Diagnostics.Debug.WriteLine($"🔐 Authentication method: {user.AuthenticationMethod}");
+            System.Diagnostics.Debug.WriteLine($"   Email verified: {user.IsEmailVerified}");
+            System.Diagnostics.Debug.WriteLine($"   Phone verified: {user.IsPhoneVerified}");
 
-                    if (user == null)
-                    {
-                        // Create new user
-                        user = new User
-                        {
-                            PhoneNumber = phoneNumber,
-                            CreatedAt = DateTime.UtcNow,
-                            LastLoginAt = DateTime.UtcNow
-                        };
-                        await userRepo.AddAsync(user);
-                        await _unitOfWork.SaveChangesAsync(); // Save first to get ID
-                    }
-                    else
-                    {
-                        // Update existing user
-                        user.LastLoginAt = DateTime.UtcNow;
-                    }
+            // Generate session token
+            var token = await GenerateSessionTokenAsync(user.Id);
+            user.SessionToken = token;
 
-                    var token = await GenerateSessionTokenAsync(user.Id);
-                    user.SessionToken = token;
+            await userRepo.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
 
-                    await userRepo.UpdateAsync(user);
-                    await _unitOfWork.SaveChangesAsync();
+            // Store token in secure storage
+            await _secureStorage.SetAsync("session_token", token);
+            await _secureStorage.SetAsync("user_id", user.Id.ToString());
+            await _secureStorage.SetAsync("phone_number", phoneNumber);
 
-                    await _secureStorage.SetAsync("session_token", token);
-                    await _secureStorage.SetAsync("user_id", user.Id.ToString());
-                    await _secureStorage.SetAsync("phone_number", phoneNumber);
+            System.Diagnostics.Debug.WriteLine($"✅ User logged in: {user.Id}");
 
-                    return (true, token, null);
-                }
-
-                return (false, null, "Invalid OTP. Please try again.");
-            }
+            return (true, token, null);
         }
         catch (Exception ex)
         {
@@ -337,29 +261,366 @@ public class AuthenticationService : IAuthenticationService
     }
 
     /// <summary>
-    /// Generate random 6-digit OTP
+    /// Login with email/phone and password
     /// </summary>
-    private string GenerateOtp()
+    public async Task<LoginResponse> LoginWithPasswordAsync(LoginRequest request)
     {
-        var random = new Random();
-        return random.Next(100000, 999999).ToString();
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"🔐 Login attempt for: {request.Identifier}");
+
+            var userRepo = _unitOfWork.Repository<User>();
+            
+            // Find user by email or phone
+            var user = await userRepo.FirstOrDefaultAsync(u => 
+                u.Email == request.Identifier || u.PhoneNumber == request.Identifier);
+
+            if (user == null)
+            {
+                System.Diagnostics.Debug.WriteLine("❌ User not found");
+                return new LoginResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid credentials"
+                };
+            }
+
+            // Check if user has a password set
+            if (string.IsNullOrWhiteSpace(user.PasswordHash))
+            {
+                System.Diagnostics.Debug.WriteLine("❌ User has no password set");
+                return new LoginResponse
+                {
+                    Success = false,
+                    ErrorMessage = "No password set. Please use OTP login or reset your password."
+                };
+            }
+
+            // Verify password
+            if (!_passwordHashingService.VerifyPassword(request.Password, user.PasswordHash))
+            {
+                System.Diagnostics.Debug.WriteLine("❌ Invalid password");
+                return new LoginResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid credentials"
+                };
+            }
+
+            // Password is correct - proceed with login
+            System.Diagnostics.Debug.WriteLine("✅ Password verified");
+
+            // Update last login
+            user.LastLoginAt = DateTime.UtcNow;
+            user.LastAuthenticationMethod = AuthenticationMethod.EmailOtp; // Password-based
+
+            // Generate session token
+            var token = await GenerateSessionTokenAsync(user.Id);
+            user.SessionToken = token;
+
+            await userRepo.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Store token in secure storage
+            await _secureStorage.SetAsync("session_token", token);
+            await _secureStorage.SetAsync("user_id", user.Id.ToString());
+
+            System.Diagnostics.Debug.WriteLine($"✅ User logged in: {user.Id}");
+
+            return new LoginResponse
+            {
+                Success = true,
+                Token = token,
+                Profile = MapToProfileData(user)
+            };
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Error during login: {ex.Message}");
+            return new LoginResponse
+            {
+                Success = false,
+                ErrorMessage = $"Login failed: {ex.Message}"
+            };
+        }
     }
 
     /// <summary>
-    /// Response model for 2Factor send OTP
+    /// Initiate forgot password - send reset email
     /// </summary>
-    private class TwoFactorSendResponse
+    public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
     {
-        public string? Status { get; set; }
-        public string? Details { get; set; }
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"🔐 Forgot password request for: {request.Email}");
+
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            if (user == null)
+            {
+                // Don't reveal if user exists for security
+                System.Diagnostics.Debug.WriteLine("⚠️ User not found, but returning success for security");
+                return new ForgotPasswordResponse
+                {
+                    Success = true,
+                    Message = "If an account exists with this email, you will receive password reset instructions."
+                };
+            }
+
+            // Generate reset token
+            var resetToken = _passwordHashingService.GeneratePasswordResetToken();
+            var tokenExpiry = DateTime.UtcNow.AddHours(1); // Valid for 1 hour
+
+            // Save reset token
+            user.PasswordResetToken = resetToken;
+            user.PasswordResetTokenExpiry = tokenExpiry;
+
+            await userRepo.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            System.Diagnostics.Debug.WriteLine($"✅ Reset token generated for user {user.Id}");
+
+            // Send reset email
+            if (_emailService != null)
+            {
+                var resetLink = $"https://medremind.com/reset-password?token={resetToken}&email={user.Email}";
+                
+                var emailResult = await _emailService.SendPasswordResetEmailAsync(
+                    user.Email,
+                    user.Name ?? "User",
+                    resetToken,
+                    resetLink);
+
+                if (emailResult.Success)
+                {
+                    System.Diagnostics.Debug.WriteLine("✅ Password reset email sent");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Failed to send reset email: {emailResult.ErrorMessage}");
+                }
+            }
+
+            return new ForgotPasswordResponse
+            {
+                Success = true,
+                Message = "If an account exists with this email, you will receive password reset instructions."
+            };
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Error in forgot password: {ex.Message}");
+            return new ForgotPasswordResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred. Please try again later."
+            };
+        }
     }
 
     /// <summary>
-    /// Response model for 2Factor verify OTP
+    /// Reset password with token
     /// </summary>
-    private class TwoFactorVerifyResponse
+    public async Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request)
     {
-        public string? Status { get; set; }
-        public string? Details { get; set; }
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"🔐 Reset password attempt for: {request.Email}");
+
+            // Validate passwords match
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return new ResetPasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Passwords do not match"
+                };
+            }
+
+            // Validate password strength
+            var (isValid, errorMessage) = _passwordHashingService.ValidatePasswordStrength(request.NewPassword);
+            if (!isValid)
+            {
+                return new ResetPasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = errorMessage
+                };
+            }
+
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            if (user == null)
+            {
+                System.Diagnostics.Debug.WriteLine("❌ User not found");
+                return new ResetPasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid reset request"
+                };
+            }
+
+            // Validate reset token
+            if (string.IsNullOrWhiteSpace(user.PasswordResetToken) ||
+                user.PasswordResetToken != request.ResetToken)
+            {
+                System.Diagnostics.Debug.WriteLine("❌ Invalid reset token");
+                return new ResetPasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid or expired reset token"
+                };
+            }
+
+            // Check token expiry
+            if (user.PasswordResetTokenExpiry == null ||
+                DateTime.UtcNow > user.PasswordResetTokenExpiry)
+            {
+                System.Diagnostics.Debug.WriteLine("❌ Reset token expired");
+                return new ResetPasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Reset token has expired. Please request a new one."
+                };
+            }
+
+            // Hash new password
+            user.PasswordHash = _passwordHashingService.HashPassword(request.NewPassword);
+            user.LastPasswordChangeAt = DateTime.UtcNow;
+
+            // Clear reset token
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+
+            await userRepo.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            System.Diagnostics.Debug.WriteLine($"✅ Password reset successful for user {user.Id}");
+
+            return new ResetPasswordResponse
+            {
+                Success = true,
+                Message = "Password has been reset successfully. You can now login with your new password."
+            };
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Error resetting password: {ex.Message}");
+            return new ResetPasswordResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred while resetting password"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Change password for authenticated user
+    /// </summary>
+    public async Task<ChangePasswordResponse> ChangePasswordAsync(int userId, ChangePasswordRequest request)
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"🔐 Change password for user: {userId}");
+
+            // Validate passwords match
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return new ChangePasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Passwords do not match"
+                };
+            }
+
+            // Validate password strength
+            var (isValid, errorMessage) = _passwordHashingService.ValidatePasswordStrength(request.NewPassword);
+            if (!isValid)
+            {
+                return new ChangePasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = errorMessage
+                };
+            }
+
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.GetByIdAsync(userId);
+
+            if (user == null)
+            {
+                return new ChangePasswordResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User not found"
+                };
+            }
+
+            // Verify current password if user has one
+            if (!string.IsNullOrWhiteSpace(user.PasswordHash))
+            {
+                if (!_passwordHashingService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ Current password incorrect");
+                    return new ChangePasswordResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Current password is incorrect"
+                    };
+                }
+            }
+
+            // Hash and save new password
+            user.PasswordHash = _passwordHashingService.HashPassword(request.NewPassword);
+            user.LastPasswordChangeAt = DateTime.UtcNow;
+
+            await userRepo.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            System.Diagnostics.Debug.WriteLine($"✅ Password changed for user {userId}");
+
+            return new ChangePasswordResponse
+            {
+                Success = true,
+                Message = "Password has been changed successfully"
+            };
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Error changing password: {ex.Message}");
+            return new ChangePasswordResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred while changing password"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Map User to UserProfileData
+    /// </summary>
+    private UserProfileData MapToProfileData(User user)
+    {
+        return new UserProfileData
+        {
+            Id = user.Id,
+            PhoneNumber = user.PhoneNumber,
+            Email = user.Email,
+            Name = user.Name,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender,
+            ProfilePhotoPath = user.ProfilePhotoPath,
+            IsBiometricEnabled = user.IsBiometricEnabled,
+            IsEmailVerified = user.IsEmailVerified,
+            IsPhoneVerified = user.IsPhoneVerified,
+            AuthenticationMethod = user.AuthenticationMethod.ToString(),
+            LastAuthenticationMethod = user.LastAuthenticationMethod.ToString(),
+            EmailVerifiedAt = user.EmailVerifiedAt,
+            PhoneVerifiedAt = user.PhoneVerifiedAt,
+            CreatedAt = user.CreatedAt,
+            LastLoginAt = user.LastLoginAt
+        };
     }
 }

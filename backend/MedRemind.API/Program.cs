@@ -113,14 +113,68 @@ builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
 // Add HttpClient for services
 builder.Services.AddHttpClient();
 
+// Register Communication Services
+Console.WriteLine("📱 Registering Communication Services...");
+
+// Register SMS Service
+builder.Services.AddScoped<MedRemind.Core.Interfaces.ISmsService>(sp =>
+{
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var twoFactorApiKey = environmentConfig["TwoFactor:ApiKey"] ?? "";
+    var sendOtpUrl = environmentConfig["TwoFactor:SendOtpUrl"];
+    var otpTemplate = environmentConfig["TwoFactor:OtpTemplate"] ?? "OTP1";
+    var logger = sp.GetService<ILogger<MedRemind.Services.Communication.SmsService>>();
+    
+    Console.WriteLine("   ✅ SMS Service registered (2Factor.in)");
+    return new MedRemind.Services.Communication.SmsService(httpClient, twoFactorApiKey, sendOtpUrl, otpTemplate, logger);
+});
+
+// Register Email Service  
+builder.Services.AddScoped<MedRemind.Core.Interfaces.IEmailService>(sp =>
+{
+    var smtpHost = environmentConfig["SmtpSettings:SmtpHost"] ?? "smtp.gmail.com";
+    var smtpPort = int.Parse(environmentConfig["SmtpSettings:SmtpPort"] ?? "587");
+    var smtpUsername = environmentConfig["SmtpSettings:SmtpUsername"] ?? "";
+    var smtpPassword = environmentConfig["SmtpSettings:SmtpPassword"] ?? "";
+    var fromEmail = environmentConfig["SmtpSettings:FromEmail"] ?? "noreply@medremind.com";
+    var fromName = environmentConfig["SmtpSettings:FromName"] ?? "MedRemind";
+    var enableSsl = bool.Parse(environmentConfig["SmtpSettings:EnableSsl"] ?? "true");
+    var logger = sp.GetService<ILogger<MedRemind.Services.Communication.EmailService>>();
+    
+    Console.WriteLine("   ✅ Email Service registered (SMTP)");
+    return new MedRemind.Services.Communication.EmailService(smtpHost, smtpPort, smtpUsername, smtpPassword, fromEmail, fromName, enableSsl, logger);
+});
+
+Console.WriteLine("✅ Communication Services configured");
+
+// Register OTP Code Service
+builder.Services.AddScoped<MedRemind.Services.Communication.OtpCodeService>(sp =>
+{
+    var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
+    var smsService = sp.GetService<MedRemind.Core.Interfaces.ISmsService>();
+    var emailService = sp.GetService<MedRemind.Core.Interfaces.IEmailService>();
+    var enableSmsOtp = bool.Parse(environmentConfig["Features:EnableSmsOtp"] ?? "true");
+    var enableEmailOtp = bool.Parse(environmentConfig["Features:EnableEmailOtp"] ?? "false");
+    var logger = sp.GetService<ILogger<MedRemind.Services.Communication.OtpCodeService>>();
+    
+    Console.WriteLine("🔐 OTP Code Service registered");
+    Console.WriteLine($"   SMS OTP: {(enableSmsOtp ? "Enabled" : "Disabled")}");
+    Console.WriteLine($"   Email OTP: {(enableEmailOtp ? "Enabled" : "Disabled")}");
+    
+    return new MedRemind.Services.Communication.OtpCodeService(unitOfWork, smsService, emailService, enableSmsOtp, enableEmailOtp, logger);
+});
+
+// Register OTP Cleanup Background Service
+builder.Services.AddHostedService<MedRemind.API.BackgroundServices.OtpCleanupBackgroundService>();
+Console.WriteLine("🧹 OTP Cleanup Background Service registered (runs every 5 minutes)");
+
 // Business Services
 builder.Services.AddScoped<IAuthenticationService>(sp =>
 {
     var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
     var secureStorage = sp.GetRequiredService<ISecureStorageService>();
-    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-    var config = sp.GetRequiredService<IConfiguration>();
-    var twoFactorApiKey = environmentConfig["TwoFactor:ApiKey"] ?? "";
+    var otpService = sp.GetService<MedRemind.Services.Communication.OtpCodeService>();
+    var emailService = sp.GetService<MedRemind.Services.Communication.EmailService>();
     
     // JWT Configuration from environment
     var jwtSecret = environmentConfig["Jwt:SecretKey"] ?? "YOUR_SECRET_KEY_HERE_MINIMUM_32_CHARACTERS";
@@ -128,15 +182,31 @@ builder.Services.AddScoped<IAuthenticationService>(sp =>
     var jwtAudience = environmentConfig["Jwt:Audience"] ?? "MedRemind.Mobile";
     var jwtExpiration = int.Parse(environmentConfig["Jwt:ExpirationDays"] ?? "30");
     
+    Console.WriteLine("🔐 Authentication Service Configuration:");
+    Console.WriteLine($"   Using OTP Code Collection with database storage");
+    Console.WriteLine($"   Password authentication enabled");
+    
     return new AuthenticationService(
         unitOfWork, 
-        secureStorage, 
-        twoFactorApiKey, 
-        httpClient,
+        secureStorage,
+        otpService: otpService,
+        emailService: emailService,
         jwtSecretKey: jwtSecret,
         jwtIssuer: jwtIssuer,
         jwtAudience: jwtAudience,
         jwtExpirationDays: jwtExpiration);
+});
+
+// Register UserService for user registration and management
+builder.Services.AddScoped<MedRemind.Services.Users.UserService>(sp =>
+{
+    var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
+    var otpService = sp.GetService<MedRemind.Services.Communication.OtpCodeService>();
+    var emailService = sp.GetService<MedRemind.Services.Communication.EmailService>();
+    var logger = sp.GetService<ILogger<MedRemind.Services.Users.UserService>>();
+    
+    Console.WriteLine("✅ UserService registered with OTP and Email support");
+    return new MedRemind.Services.Users.UserService(unitOfWork, otpService, emailService, logger);
 });
 
 builder.Services.AddScoped<MedicationService>();
@@ -153,8 +223,13 @@ builder.Services.AddSingleton<IPrescriptionFileManager, PrescriptionFileManager>
     return new PrescriptionFileManager(logger, fileStorageService);
 });
 
+
 // Register PrescriptionService
 builder.Services.AddScoped<PrescriptionService>();
+
+// Register UserService for user registration and management
+builder.Services.AddScoped<MedRemind.Services.Users.UserService>();
+Console.WriteLine("✅ UserService registered for user management and registration");
 
 // Register NEW specialized persistence services
 builder.Services.AddScoped<PrescriptionOCRResultService>();

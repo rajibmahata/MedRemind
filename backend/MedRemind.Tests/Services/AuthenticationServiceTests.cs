@@ -23,16 +23,24 @@ public class AuthenticationServiceTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
+
         _context = new MedRemindDbContext(options);
         _unitOfWork = new UnitOfWork(_context);
         _mockSecureStorage = new Mock<ISecureStorageService>();
         _mockHttpClient = new Mock<HttpClient>();
 
+        // Create mock OTP service for testing
+        var mockOtpService = new Mock<MedRemind.Services.Communication.OtpCodeService>(
+            _unitOfWork, null, null, true, false, null);
+        mockOtpService.Setup(s => s.GenerateAndSendOtpAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+            It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((true, null));
+
         _authService = new AuthenticationService(
             _unitOfWork,
             _mockSecureStorage.Object,
-            "test_api_key",
-            new HttpClient()); // Using real HttpClient for now
+            otpService: mockOtpService.Object);
     }
 
     [Fact]

@@ -108,8 +108,23 @@ public static class MauiProgram
                 System.Diagnostics.Debug.WriteLine($"   Template: {otpTemplate}");
             }
             
-            return new AuthenticationService(unitOfWork, secureStorage, twoFactorApiKey, httpClient, 
-                sendOtpUrl, verifyOtpUrl, otpTemplate);
+            // Create SMS Service
+            var smsService = new MedRemind.Services.Communication.SmsService(
+                httpClient, 
+                twoFactorApiKey, 
+                sendOtpUrl, 
+                otpTemplate);
+            
+            // Create OTP Service
+            var otpService = new MedRemind.Services.Communication.OtpCodeService(
+                unitOfWork,
+                smsService,
+                null,
+                true,  // enableSmsOtp
+                false); // enableEmailOtp
+            
+            return new AuthenticationService(unitOfWork, secureStorage, 
+                otpService: otpService);
         });
 
         // Register HttpClient with Android-optimized configuration

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # OpenAI Configuration
     openai_api_key: str
     openai_model: str = "gpt-4o-mini"
+    openai_vision_model: str = "gpt-4o"  # Vision model for OCR
     openai_enabled: bool = True
     
     # DeepSeek Configuration

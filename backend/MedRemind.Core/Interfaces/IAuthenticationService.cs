@@ -1,3 +1,5 @@
+using MedRemind.Core.DTOs;
+
 namespace MedRemind.Core.Interfaces;
 
 /// <summary>
@@ -24,4 +26,24 @@ public interface IAuthenticationService
     /// Validate session token
     /// </summary>
     Task<bool> ValidateSessionTokenAsync(string token);
+
+    /// <summary>
+    /// Login with email/phone and password
+    /// </summary>
+    Task<LoginResponse> LoginWithPasswordAsync(LoginRequest request);
+
+    /// <summary>
+    /// Initiate forgot password - send reset email
+    /// </summary>
+    Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
+
+    /// <summary>
+    /// Reset password with token
+    /// </summary>
+    Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request);
+
+    /// <summary>
+    /// Change password for authenticated user
+    /// </summary>
+    Task<ChangePasswordResponse> ChangePasswordAsync(int userId, ChangePasswordRequest request);
 }

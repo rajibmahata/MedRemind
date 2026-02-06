@@ -14,8 +14,9 @@ from fastapi.responses import JSONResponse
 
 from app import __version__
 from app.config import settings
-from app.models import ParseRequest, ParseResponse, HealthResponse
+from app.models import ParseRequest, ParseResponse, HealthResponse, OCRRequest, OCRResponse
 from app.crew.prescription_crew import get_crew
+from app.services.ocr_service import get_ocr_service
 
 # Create FastAPI app
 app = FastAPI(
@@ -103,6 +104,72 @@ async def parse_prescription(request: ParseRequest):
         print(f"\n? Error processing prescription: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/ocr/extract", response_model=OCRResponse, tags=["OCR"])
+async def extract_ocr_from_document(request: OCRRequest):
+    """
+    Extract text from medical prescription documents using OCR
+    
+    Supports:
+    - Images (PNG, JPEG, GIF, WebP)
+    - PDF documents (single and multi-page)
+    - Handwritten prescriptions
+    - Multi-language support (20+ languages)
+    
+    Args:
+        request: OCRRequest with base64 encoded document
+        
+    Returns:
+        OCRResponse with extracted text and metadata
+    """
+    try:
+        print(f"\n{'='*60}")
+        print(f"📸 OCR Extraction Request")
+        print(f"   Document type: {request.document_type}")
+        print(f"   Language hints: {request.language_hints}")
+        print(f"   Enhance handwriting: {request.enhance_handwriting}")
+        print(f"   Extract structured: {request.extract_structured_data}")
+        print(f"{'='*60}")
+        
+        # Get OCR service and process
+        ocr_service = get_ocr_service()
+        result = await ocr_service.extract_text(request)
+        
+        if result.success:
+            print(f"\n✅ OCR extraction successful")
+            print(f"   Characters extracted: {len(result.raw_text)}")
+            print(f"   Primary language: {result.primary_language}")
+            print(f"   Confidence: {result.confidence.overall:.2f}")
+            print(f"   Processing time: {result.processing_time:.2f}s")
+        else:
+            print(f"\n❌ OCR extraction failed: {result.error_message}")
+        
+        return result
+        
+    except Exception as e:
+        print(f"\n❌ Error in OCR extraction: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ocr/extract-and-parse", response_model=OCRResponse, tags=["OCR"])
+async def extract_and_parse_prescription(request: OCRRequest):
+    """
+    Combined endpoint: Extract OCR and parse prescription data in one call
+    
+    This is a convenience endpoint that:
+    1. Extracts text from the document using OCR
+    2. Parses the extracted text to structured prescription data
+    3. Validates medications for safety
+    
+    Args:
+        request: OCRRequest with base64 encoded document
+        
+    Returns:
+        OCRResponse with extracted text AND structured prescription data
+    """
+    # Force structured data extraction
+    request.extract_structured_data = True
+    
+    return await extract_ocr_from_document(request)
 
 @app.get("/api/prescription/{prescription_id}", tags=["Prescription"])
 async def get_prescription(prescription_id: str):

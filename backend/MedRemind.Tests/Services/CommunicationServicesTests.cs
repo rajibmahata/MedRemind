@@ -128,31 +128,35 @@ public class CommunicationServicesTests
     public async Task SmsService_SendOtpAsync_WithValidPhone_ShouldNotThrow()
     {
         // Arrange
+        var mockHttpClient = new Mock<HttpClient>();
         var smsService = new SmsService(
-            "test_account_sid",
-            "test_auth_token",
-            "+1234567890",
+            mockHttpClient.Object,
+            "test_api_key",
+            null,  // sendOtpUrl
+            null,  // otpTemplate
             _mockSmsLogger.Object);
 
         // Act & Assert
-        // Note: This will fail without actual Twilio credentials
+        // Note: This will fail without actual 2Factor API
         var exception = await Record.ExceptionAsync(async () =>
         {
             await smsService.SendOtpAsync("8420249020", "123456");
         });
 
         // Should handle gracefully
-        Assert.NotNull(exception); // Expected to fail without Twilio
+        Assert.NotNull(exception); // Expected to fail without 2Factor API
     }
 
     [Fact]
     public async Task SmsService_SendOtpAsync_WithInvalidPhone_ShouldReturnError()
     {
         // Arrange
+        var mockHttpClient = new Mock<HttpClient>();
         var smsService = new SmsService(
-            "test_account_sid",
-            "test_auth_token",
-            "+1234567890",
+            mockHttpClient.Object,
+            "test_api_key",
+            null,  // sendOtpUrl
+            null,  // otpTemplate
             _mockSmsLogger.Object);
 
         // Act
@@ -180,15 +184,15 @@ public class CommunicationServicesTests
     [Fact]
     public void SmsService_Constructor_WithNullParameters_ShouldThrowException()
     {
+        // Arrange
+        var mockHttpClient = new Mock<HttpClient>();
+
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new SmsService(null!, "token", "from"));
+            new SmsService(null!, "api_key"));
 
         Assert.Throws<ArgumentNullException>(() =>
-            new SmsService("sid", null!, "from"));
-
-        Assert.Throws<ArgumentNullException>(() =>
-            new SmsService("sid", "token", null!));
+            new SmsService(mockHttpClient.Object, null!));
     }
 
     #endregion

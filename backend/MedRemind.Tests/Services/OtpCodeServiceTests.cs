@@ -31,7 +31,13 @@ public class OtpCodeServiceTests : IDisposable
         _unitOfWork = new UnitOfWork(_context);
 
         // Mock SMS Service
-        _mockSmsService = new Mock<SmsService>("test", "test", "test", null);
+        var mockHttpClient = new Mock<HttpClient>();
+        _mockSmsService = new Mock<SmsService>(
+            mockHttpClient.Object, 
+            "test_api_key", 
+            null, 
+            null, 
+            null);
         _mockSmsService.Setup(s => s.SendOtpAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((true, null));
@@ -49,8 +55,8 @@ public class OtpCodeServiceTests : IDisposable
             _unitOfWork,
             _mockSmsService.Object,
             _mockEmailService.Object,
-            useDatabaseStorage: true,
-            enableRateLimiting: false,
+            enableSmsOtp: true,
+            enableEmailOtp: true,
             _mockLogger.Object);
     }
 
@@ -93,8 +99,8 @@ public class OtpCodeServiceTests : IDisposable
             _unitOfWork,
             _mockSmsService.Object,
             null, // No email service
-            useDatabaseStorage: true,
-            enableRateLimiting: false,
+            enableSmsOtp: true,
+            enableEmailOtp: false,
             _mockLogger.Object);
 
         // Act
@@ -303,12 +309,14 @@ public class OtpCodeServiceTests : IDisposable
         var userId = await CreateTestUserAsync(phoneNumber, email);
 
         // Create service with rate limiting
+        // Note: Rate limiting is not currently implemented in OtpCodeService
+        // This test verifies the service handles multiple requests
         var rateLimitedService = new OtpCodeService(
             _unitOfWork,
             _mockSmsService.Object,
             _mockEmailService.Object,
-            useDatabaseStorage: true,
-            enableRateLimiting: true,
+            enableSmsOtp: true,
+            enableEmailOtp: true,
             _mockLogger.Object);
 
         // Act - Send multiple OTPs quickly

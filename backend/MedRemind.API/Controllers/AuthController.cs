@@ -232,8 +232,112 @@ public class AuthController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Resend OTP for active registration or login
+    /// </summary>
+    /// <param name="request">Resend OTP request with phone number and purpose</param>
+    /// <returns>Resend OTP response with success status and details</returns>
+    /// <response code="200">OTP resent successfully</response>
+    /// <response code="400">Rate limit exceeded or validation error</response>
+    /// <response code="429">Too many requests</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("resend-otp")]
+    [ProducesResponseType(typeof(ResendOtpResponse), 200)]
+    [ProducesResponseType(typeof(ResendOtpResponse), 400)]
+    [ProducesResponseType(typeof(ResendOtpResponse), 429)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<ResendOtpResponse>> ResendOtp([FromBody] ResendOtpRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("?? Resend OTP request for {PhoneNumber}, Purpose: {Purpose}", 
+                request.PhoneNumber, request.Purpose);
+
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                return BadRequest(new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Phone number is required"
+                });
+            }
+
+            // Call authentication service to resend OTP
+            var result = await _authService.ResendOtpAsync(request);
+
+            if (!result.Success)
+            {
+                // Check if it's a rate limit error
+                if (result.NextResendAvailableAt.HasValue)
+                {
+                    return StatusCode(429, result); // Too Many Requests
+                }
+
+                return BadRequest(result);
+            }
+
+            _logger.LogInformation("? OTP resent successfully to {PhoneNumber}", request.PhoneNumber);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "? Error resending OTP for {PhoneNumber}", request.PhoneNumber);
+            return StatusCode(500, new ResendOtpResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred while resending OTP. Please try again."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Check if resend OTP is available
+    /// </summary>
+    /// <param name="phoneNumber">Phone number to check</param>
+    /// <param name="purpose">Purpose of OTP (default: Registration)</param>
+    /// <returns>Availability status with remaining attempts and wait time</returns>
+    /// <response code="200">Availability check successful</response>
+    /// <response code="400">Invalid phone number</response>
+    /// <response code="500">Internal server error</response>
+    [HttpGet("resend-otp/availability")]
+    [ProducesResponseType(typeof(ResendOtpResponse), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<ResendOtpResponse>> CheckResendAvailability(
+        [FromQuery] string phoneNumber,
+        [FromQuery] string purpose = "Registration")
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                return BadRequest(new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Phone number is required"
+                });
+            }
+
+            _logger.LogInformation("?? Checking resend availability for {PhoneNumber}", phoneNumber);
+
+            var result = await _authService.CheckResendAvailabilityAsync(phoneNumber, purpose);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking resend availability for {PhoneNumber}", phoneNumber);
+            return StatusCode(500, new ResendOtpResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred. Please try again."
+            });
+        }
+    }
 }
 
 public record SendOtpRequest(string PhoneNumber);
 public record VerifyOtpRequest(string PhoneNumber, string Otp);
 public record ValidateTokenRequest(string Token);
+

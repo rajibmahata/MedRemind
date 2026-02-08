@@ -46,4 +46,15 @@ public interface IAuthenticationService
     /// Change password for authenticated user
     /// </summary>
     Task<ChangePasswordResponse> ChangePasswordAsync(int userId, ChangePasswordRequest request);
+
+    /// <summary>
+    /// Resend OTP with rate limiting
+    /// </summary>
+    Task<ResendOtpResponse> ResendOtpAsync(ResendOtpRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if resend OTP is available
+    /// </summary>
+    Task<ResendOtpResponse> CheckResendAvailabilityAsync(string phoneNumber, string purpose = "Registration");
 }
+

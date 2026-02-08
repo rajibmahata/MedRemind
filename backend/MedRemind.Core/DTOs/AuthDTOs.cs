@@ -78,3 +78,28 @@ public class ChangePasswordResponse
     public string? Message { get; set; }
     public string? ErrorMessage { get; set; }
 }
+
+/// <summary>
+/// Request to resend OTP
+/// </summary>
+public class ResendOtpRequest
+{
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string Purpose { get; set; } = "Registration"; // Registration, Login, PasswordReset
+}
+
+/// <summary>
+/// Response for resend OTP request
+/// </summary>
+public class ResendOtpResponse
+{
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+    public string? ErrorMessage { get; set; }
+    public DateTime? NextResendAvailableAt { get; set; }
+    public int? RemainingAttempts { get; set; }
+    public bool IsEmailOtpSent { get; set; }
+    public bool IsSmsOtpSent { get; set; }
+}
+

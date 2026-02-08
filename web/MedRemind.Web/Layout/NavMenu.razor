@@ -1,0 +1,51 @@
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<MudNavMenu>
+    <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home" IconColor="Color.Primary">
+        Home
+    </MudNavLink>
+    
+    @if (isAuthenticated)
+    {
+        <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Info">
+            Dashboard
+        </MudNavLink>
+        
+        <MudNavLink Href="/upload" Icon="@Icons.Material.Filled.CameraAlt" IconColor="Color.Success">
+            Upload Prescription
+        </MudNavLink>
+        
+        <MudNavLink Href="/medications" Icon="@Icons.Material.Filled.Medication" IconColor="Color.Secondary">
+            My Medications
+        </MudNavLink>
+        
+        <MudDivider Class="my-2" />
+        
+        <MudNavLink Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error" OnClick="HandleLogout">
+            Logout
+        </MudNavLink>
+    }
+    else
+    {
+        <MudNavLink Href="/login" Icon="@Icons.Material.Filled.Login" IconColor="Color.Primary">
+            Login
+        </MudNavLink>
+    }
+</MudNavMenu>
+
+@code {
+    private bool isAuthenticated = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+        isAuthenticated = AuthService.IsAuthenticated();
+    }
+    
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

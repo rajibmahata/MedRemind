@@ -1,0 +1,198 @@
+@page "/"
+@inject NavigationManager Navigation
+
+<PageTitle>MedRemind - Your Medication Reading Assistant</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <!-- Hero Section with Pharmacist's Mission -->
+    <MudPaper Elevation="0" Class="pa-8 text-center" Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px;">
+        <MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Large" Style="font-size: 80px; color: white;" />
+        <MudText Typo="Typo.h2" Class="mt-4" Style="color: white; font-weight: 700;">
+            MedRemind
+        </MudText>
+        <MudText Typo="Typo.h5" Class="mt-2 mb-2" Style="color: rgba(255,255,255,0.95);">
+            A Pharmacist's Initiative to Help You
+        </MudText>
+        <MudText Typo="Typo.body1" Class="mb-4" Style="color: rgba(255,255,255,0.9); max-width: 600px; margin: 0 auto;">
+            As healthcare professionals, we understand the challenges of reading handwritten prescriptions. 
+            This app is our way of helping you better understand your medications.
+        </MudText>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Surface"
+                   Size="Size.Large"
+                   Href="/login"
+                   StartIcon="@Icons.Material.Filled.AppRegistration"
+                   Style="border-radius: 24px; padding: 12px 36px; font-weight: 600;">
+            Register Now - It's Free
+        </MudButton>
+        <MudText Typo="Typo.caption" Class="mt-3" Style="color: rgba(255,255,255,0.8);">
+            ? Pilot Version - Email OTP Verification
+        </MudText>
+    </MudPaper>
+    
+    <!-- Our Mission -->
+    <MudPaper Elevation="2" Class="pa-6 mt-8" Style="border-radius: 12px; background: #f8f9fa;">
+        <div Style="text-align: center; max-width: 800px; margin: 0 auto;">
+            <MudIcon Icon="@Icons.Material.Filled.Favorite" Size="Size.Large" Color="Color.Error" Class="mb-3" />
+            <MudText Typo="Typo.h5" Class="mb-3" Style="font-weight: 600; color: #333;">
+                Our Mission: Making Healthcare Accessible
+            </MudText>
+            <MudText Typo="Typo.body1" Style="line-height: 1.8; color: #555;">
+                As pharmacists, we've seen countless patients struggle with unclear prescriptions. 
+                MedRemind is our commitment to help society by using AI technology to make prescription reading easier. 
+                This is a <strong>pilot project</strong> - a small step towards better healthcare for everyone.
+            </MudText>
+        </div>
+    </MudPaper>
+    
+    <!-- How It Helps You -->
+    <MudText Typo="Typo.h4" Class="mt-8 mb-4 text-center" Style="font-weight: 700; color: #333;">
+        How We Help You
+    </MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="4" Class="pa-6 text-center" Style="height: 100%; border-radius: 12px;">
+                <div Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AppRegistration" Size="Size.Large" Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600; color: #333;">1. Register</MudText>
+                <MudText Typo="Typo.body2" Style="color: #666;">
+                    Sign up with your email and phone number for secure access
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="4" Class="pa-6 text-center" Style="height: 100%; border-radius: 12px;">
+                <div Style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Large" Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600; color: #333;">2. Verify</MudText>
+                <MudText Typo="Typo.body2" Style="color: #666;">
+                    Receive OTP via email for secure verification (pilot version)
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="4" Class="pa-6 text-center" Style="height: 100%; border-radius: 12px;">
+                <div Style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Large" Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600; color: #333;">3. Upload</MudText>
+                <MudText Typo="Typo.body2" Style="color: #666;">
+                    Take a clear photo of your prescription
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="4" Class="pa-6 text-center" Style="height: 100%; border-radius: 12px;">
+                <div Style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Large" Style="color: white;" />
+                </div>
+                <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600; color: #333;">4. Extract</MudText>
+                <MudText Typo="Typo.body2" Style="color: #666;">
+                    AI reads and organizes your medication information
+                </MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+    
+    <!-- Pilot Program Notice -->
+    <MudAlert Severity="Severity.Info" Class="mt-8" Style="border-radius: 12px; border-left: 4px solid #2196f3;">
+        <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600;">
+            <MudIcon Icon="@Icons.Material.Filled.Science" Class="mr-2" />
+            Pilot Program Information
+        </MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+            This is a <strong>pilot version</strong> of MedRemind. Here's what you should know:
+        </MudText>
+        <div Class="ml-4">
+            <MudText Typo="Typo.body2" Class="mb-1">
+                • <strong>Email Verification:</strong> OTP codes are sent via email (no SMS provider license yet)
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mb-1">
+                • <strong>Free to Use:</strong> This service is completely free during the pilot phase
+            </MudText>
+            <MudText Typo="Typo.body2">
+                • <strong>Your Feedback Matters:</strong> Help us improve by sharing your experience
+            </MudText>
+        </div>
+    </MudAlert>
+    
+    <!-- Important Medical Disclaimer -->
+    <MudPaper Elevation="2" Class="pa-6 mt-8" Style="border-left: 4px solid #ff9800; border-radius: 8px; background: #fff3cd;">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6" Style="color: #ff6f00; font-weight: 600;">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+                Important: Professional Pharmacist Advice
+            </MudText>
+            
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.body2" Class="font-weight-bold mb-2" Style="color: #00897b;">
+                        ? How This App Helps:
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="ml-4" Style="line-height: 1.8;">
+                        • Makes handwritten prescriptions easier to read<br/>
+                        • Organizes medication information clearly<br/>
+                        • Helps you keep track of your medications<br/>
+                        • Provides a digital record for reference
+                    </MudText>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.body2" Class="font-weight-bold mb-2" Style="color: #d32f2f;">
+                        ? What This App Cannot Do:
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="ml-4" Style="line-height: 1.8;">
+                        • Provide medical advice or diagnosis<br/>
+                        • Replace your doctor's consultation<br/>
+                        • Suggest alternative medications<br/>
+                        • Replace your pharmacist's guidance
+                    </MudText>
+                </MudItem>
+            </MudGrid>
+            
+            <MudAlert Severity="Severity.Error" Dense="true" Style="background: #ffebee; border: 1px solid #d32f2f; border-radius: 8px;">
+                <MudText Typo="Typo.body2" Class="font-weight-bold">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Small" Class="mr-1" />
+                    Always Consult Your Healthcare Provider
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    If you have ANY questions or confusion about your prescription, dosage, or side effects, 
+                    please immediately contact your doctor or pharmacist. This app is only a reading assistant, 
+                    not a replacement for professional medical advice.
+                </MudText>
+            </MudAlert>
+        </MudStack>
+    </MudPaper>
+    
+    <!-- Call to Action -->
+    <MudPaper Elevation="0" Class="pa-8 mt-8 text-center" Style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border-radius: 16px;">
+        <MudIcon Icon="@Icons.Material.Filled.VolunteerActivism" Size="Size.Large" Style="font-size: 60px; color: #004d40;" />
+        <MudText Typo="Typo.h4" Style="color: #004d40; font-weight: 700;" Class="mb-2 mt-3">
+            Join Our Pilot Program
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #004d40; max-width: 600px; margin: 0 auto 24px;">
+            Be part of this healthcare initiative. Register now and help us make prescription reading easier for everyone.
+        </MudText>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Surface"
+                   Size="Size.Large"
+                   Href="/login"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   Style="border-radius: 24px; padding: 12px 36px; font-weight: 600; color: #004d40;">
+            Register Now - Help Us Help You
+        </MudButton>
+        <MudText Typo="Typo.caption" Class="mt-3" Style="color: #004d40;">
+            Free • Secure • Made with Care by Pharmacists
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    // Landing page - no code needed
+}

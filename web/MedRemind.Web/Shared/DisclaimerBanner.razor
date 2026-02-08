@@ -1,0 +1,24 @@
+@* Caring Pharmacist Disclaimer Banner *@
+
+<MudAlert Severity="Severity.Info" 
+          Variant="Variant.Outlined" 
+          Class="mb-4" 
+          Elevation="0"
+          Dense="true"
+          Style="border-left: 4px solid #2196f3; border-radius: 8px; background: #e3f2fd;">
+    <div Style="display: flex; align-items: center; gap: 12px;">
+        <MudIcon Icon="@Icons.Material.Filled.LocalPharmacy" Style="color: #1976d2;" />
+        <div>
+            <MudText Typo="Typo.body2" Style="font-weight: 600; color: #1565c0;">
+                ?? Pharmacist's Care: Prescription Reading Helper
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #1976d2;">
+                This tool helps you read prescriptions • Always verify with your doctor or pharmacist • Not medical advice
+            </MudText>
+        </div>
+    </div>
+</MudAlert>
+
+@code {
+    // Pure presentation component
+}

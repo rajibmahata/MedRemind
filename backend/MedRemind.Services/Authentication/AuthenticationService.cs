@@ -598,6 +598,161 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
+
+    /// <summary>
+    /// Resend OTP with rate limiting and validation
+    /// </summary>
+    public async Task<ResendOtpResponse> ResendOtpAsync(
+        ResendOtpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"🔄 Resend OTP request for: {request.PhoneNumber}");
+
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber))
+            {
+                return new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Phone number is required"
+                };
+            }
+
+            // Check if OTP service is available
+            if (_otpService == null)
+            {
+                return new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = "OTP service is not configured"
+                };
+            }
+
+            // Find user by phone number
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.FirstOrDefaultAsync(u => u.PhoneNumber == request.PhoneNumber);
+
+            if (user == null)
+            {
+                // For security, don't reveal if user exists
+                return new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User not found"
+                };
+            }
+
+            // Use user's email if not provided in request
+            var email = request.Email ?? user.Email;
+
+            // Resend OTP using OtpCodeService with rate limiting
+            var (success, errorMessage, nextResendAvailableAt, remainingAttempts) = 
+                await _otpService.ResendOtpAsync(
+                    request.PhoneNumber,
+                    email,
+                    request.Purpose,
+                    user.Id,
+                    $"Resend-{request.Purpose}",
+                    cancellationToken);
+
+            if (success)
+            {
+                System.Diagnostics.Debug.WriteLine($"✅ OTP resent successfully to: {request.PhoneNumber}");
+
+                // Get updated user to check OTP sent flags
+                user = await userRepo.GetByIdAsync(user.Id);
+
+                return new ResendOtpResponse
+                {
+                    Success = true,
+                    Message = errorMessage ?? "OTP has been resent successfully. Please check your email/SMS.",
+                    RemainingAttempts = remainingAttempts,
+                    IsEmailOtpSent = user?.IsEmailOtpSent ?? false,
+                    IsSmsOtpSent = user?.IsSmsOtpSent ?? false
+                };
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Failed to resend OTP: {errorMessage}");
+
+                return new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = errorMessage,
+                    NextResendAvailableAt = nextResendAvailableAt,
+                    RemainingAttempts = remainingAttempts
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Error in ResendOtpAsync: {ex.Message}");
+            return new ResendOtpResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred while resending OTP. Please try again."
+            };
+        }
+    }
+
+    /// <summary>
+    /// Check if resend OTP is available
+    /// </summary>
+    public async Task<ResendOtpResponse> CheckResendAvailabilityAsync(
+        string phoneNumber,
+        string purpose = "Registration")
+    {
+        try
+        {
+            if (_otpService == null)
+            {
+                return new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = "OTP service is not configured"
+                };
+            }
+
+            var (canResend, nextAvailableAt, remainingAttempts) = 
+                await _otpService.CanResendOtpAsync(phoneNumber, purpose);
+
+            if (canResend)
+            {
+                return new ResendOtpResponse
+                {
+                    Success = true,
+                    Message = "Resend is available",
+                    RemainingAttempts = remainingAttempts
+                };
+            }
+            else
+            {
+                var message = remainingAttempts == 0
+                    ? "You have reached the maximum number of OTP requests for today."
+                    : $"Please wait before requesting a new OTP.";
+
+                return new ResendOtpResponse
+                {
+                    Success = false,
+                    ErrorMessage = message,
+                    NextResendAvailableAt = nextAvailableAt,
+                    RemainingAttempts = remainingAttempts
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Error checking resend availability: {ex.Message}");
+            return new ResendOtpResponse
+            {
+                Success = false,
+                ErrorMessage = "An error occurred. Please try again."
+            };
+        }
+    }
+
     /// <summary>
     /// Map User to UserProfileData
     /// </summary>

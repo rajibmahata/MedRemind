@@ -1,0 +1,170 @@
+@page "/login"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Register / Login - MedRemind</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudPaper Elevation="8" Class="pa-8" Style="border-radius: 16px;">
+        <div Class="text-center mb-6">
+            <div Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Large" Style="color: white;" />
+            </div>
+            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #333;">Welcome to MedRemind</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2" Style="color: #666;">
+                A pharmacist's initiative to help you understand your medications better
+            </MudText>
+        </div>
+        
+        <!-- Pilot Program Notice -->
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4" Style="border-radius: 8px;">
+            <MudText Typo="Typo.caption">
+                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-1" />
+                <strong>Pilot Version:</strong> OTP will be sent to your email (no SMS license yet)
+            </MudText>
+        </MudAlert>
+        
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudText Typo="Typo.body2" Class="mb-3" Style="color: #666;">
+                Enter your details to register or login:
+            </MudText>
+            
+            <MudTextField @bind-Value="phoneNumber" 
+                         Label="Phone Number" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Phone number is required"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Phone"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="8420249020"
+                         HelperText="10-digit mobile number"
+                         Class="mb-4"
+                         Style="border-radius: 8px;" />
+                         
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      Disabled="@(!isFormValid || isLoading)"
+                      OnClick="SendOtp"
+                      FullWidth="true"
+                      Size="Size.Large"
+                      Style="border-radius: 8px; padding: 14px; font-weight: 600;">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Sending OTP to your email...</span>
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2" />
+                    <span>Send OTP via Email</span>
+                }
+            </MudButton>
+        </MudForm>
+        
+        <MudDivider Class="my-6" />
+        
+        <!-- Helpful Information -->
+        <MudPaper Elevation="0" Class="pa-4" Style="background: #f8f9fa; border-radius: 8px;">
+            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight: 600; color: #333;">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Info" Class="mr-1" />
+                What happens next?
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.6;">
+                1. You'll receive an OTP code in your email<br/>
+                2. Enter the OTP to verify your account<br/>
+                3. Start uploading prescriptions immediately<br/>
+                4. Our AI will help you read your medications
+            </MudText>
+        </MudPaper>
+        
+        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-4" Style="border-radius: 8px;">
+            <MudText Typo="Typo.caption">
+                <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" Class="mr-1" />
+                Your information is secure and will only be used for this service. 
+                We respect your privacy as healthcare professionals.
+            </MudText>
+        </MudAlert>
+    </MudPaper>
+    
+    <!-- Why Join -->
+    <MudPaper Elevation="2" Class="pa-6 mt-6" Style="border-radius: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;" Class="mb-3 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.Favorite" Style="color: white;" Class="mr-2" />
+            Why Join Our Pilot Program?
+        </MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>Free Service:</strong> Completely free during pilot phase
+                    </MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>Easy to Use:</strong> Simple registration and upload process
+                    </MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>AI Powered:</strong> Advanced technology to read prescriptions
+                    </MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>Help Society:</strong> Your feedback improves the service
+                    </MudText>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm? form;
+    private bool isFormValid;
+    private bool isLoading;
+    private string phoneNumber = "";
+    
+    private async Task SendOtp()
+    {
+        if (!isFormValid) return;
+        
+        isLoading = true;
+        try
+        {
+            var success = await AuthService.SendOtpAsync(phoneNumber);
+            if (success)
+            {
+                Snackbar.Add("? OTP sent successfully! Please check your email inbox (and spam folder).", Severity.Success, config =>
+                {
+                    config.VisibleStateDuration = 5000;
+                });
+                Navigation.NavigateTo($"/verify-otp?phone={phoneNumber}");
+            }
+            else
+            {
+                Snackbar.Add("Failed to send OTP. Please check your phone number and try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

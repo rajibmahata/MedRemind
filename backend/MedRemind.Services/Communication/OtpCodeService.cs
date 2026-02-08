@@ -428,4 +428,160 @@ public class OtpCodeService
             // Don't throw - this is tracking only, not critical
         }
     }
+
+    /// <summary>
+    /// Resend OTP with rate limiting and validation
+    /// </summary>
+    public async Task<(bool Success, string? ErrorMessage, DateTime? NextResendAvailableAt, int? RemainingAttempts)> ResendOtpAsync(
+        string phoneNumber,
+        string? email = null,
+        string purpose = "Registration",
+        int? userId = null,
+        string? senderInfo = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger?.LogInformation("?? Resend OTP request for {PhoneNumber}, Purpose: {Purpose}", phoneNumber, purpose);
+
+            // Get the most recent OTP for this phone number
+            var otpRepo = _unitOfWork.Repository<OtpCode>();
+            var recentOtps = (await otpRepo.FindAsync(o => 
+                o.PhoneNumber == phoneNumber && 
+                o.Purpose == purpose))
+                .OrderByDescending(o => o.CreatedAt)
+                .ToList();
+
+            var lastOtp = recentOtps.FirstOrDefault();
+
+            // Rate limiting: Check if user is requesting too frequently
+            if (lastOtp != null)
+            {
+                var timeSinceLastOtp = DateTime.UtcNow - lastOtp.CreatedAt;
+                var minimumWaitTime = TimeSpan.FromSeconds(60); // 1 minute between requests
+
+                if (timeSinceLastOtp < minimumWaitTime)
+                {
+                    var nextAvailableAt = lastOtp.CreatedAt.Add(minimumWaitTime);
+                    var waitSeconds = (int)(nextAvailableAt - DateTime.UtcNow).TotalSeconds;
+                    
+                    _logger?.LogWarning("? Rate limit hit for {PhoneNumber}. Must wait {WaitSeconds} seconds", 
+                        phoneNumber, waitSeconds);
+                    
+                    return (false, 
+                        $"Please wait {waitSeconds} seconds before requesting a new OTP.", 
+                        nextAvailableAt, 
+                        null);
+                }
+
+                // Check daily limit (max 5 OTPs per day per phone number)
+                var last24Hours = DateTime.UtcNow.AddHours(-24);
+                var otpCountLast24h = recentOtps.Count(o => o.CreatedAt >= last24Hours);
+                var maxDailyOtps = 5;
+
+                if (otpCountLast24h >= maxDailyOtps)
+                {
+                    _logger?.LogWarning("?? Daily OTP limit reached for {PhoneNumber}", phoneNumber);
+                    return (false, 
+                        $"You have reached the maximum of {maxDailyOtps} OTP requests in 24 hours. Please try again later.", 
+                        null, 
+                        0);
+                }
+
+                var remainingAttempts = maxDailyOtps - otpCountLast24h;
+                _logger?.LogInformation("?? Remaining OTP attempts for {PhoneNumber}: {Remaining}/{Max}", 
+                    phoneNumber, remainingAttempts, maxDailyOtps);
+            }
+
+            // Deactivate all previous OTPs
+            await DeactivatePreviousOtpsAsync(phoneNumber);
+
+            // Generate and send new OTP
+            var result = await GenerateAndSendOtpAsync(
+                phoneNumber, 
+                email, 
+                purpose, 
+                userId, 
+                senderInfo, 
+                cancellationToken);
+
+            if (result.Success)
+            {
+                _logger?.LogInformation("? OTP resent successfully to {PhoneNumber}", phoneNumber);
+                
+                // Calculate remaining attempts
+                var last24HoursAfter = DateTime.UtcNow.AddHours(-24);
+                var updatedOtps = (await otpRepo.FindAsync(o => 
+                    o.PhoneNumber == phoneNumber && 
+                    o.Purpose == purpose &&
+                    o.CreatedAt >= last24HoursAfter)).ToList();
+                var remaining = 5 - updatedOtps.Count;
+
+                return (true, "OTP has been resent successfully.", null, remaining);
+            }
+            else
+            {
+                return (false, result.ErrorMessage ?? "Failed to resend OTP.", null, null);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "? Error resending OTP for {PhoneNumber}", phoneNumber);
+            return (false, "An error occurred while resending OTP. Please try again.", null, null);
+        }
+    }
+
+    /// <summary>
+    /// Check if resend is available (for UI to show/hide resend button)
+    /// </summary>
+    public async Task<(bool CanResend, DateTime? NextAvailableAt, int? RemainingAttempts)> CanResendOtpAsync(
+        string phoneNumber,
+        string purpose = "Registration")
+    {
+        try
+        {
+            var otpRepo = _unitOfWork.Repository<OtpCode>();
+            var recentOtps = (await otpRepo.FindAsync(o => 
+                o.PhoneNumber == phoneNumber && 
+                o.Purpose == purpose))
+                .OrderByDescending(o => o.CreatedAt)
+                .ToList();
+
+            var lastOtp = recentOtps.FirstOrDefault();
+
+            if (lastOtp == null)
+            {
+                return (true, null, 5); // Can send, full attempts available
+            }
+
+            // Check rate limit (1 minute)
+            var timeSinceLastOtp = DateTime.UtcNow - lastOtp.CreatedAt;
+            var minimumWaitTime = TimeSpan.FromSeconds(60);
+
+            if (timeSinceLastOtp < minimumWaitTime)
+            {
+                var nextAvailableAt = lastOtp.CreatedAt.Add(minimumWaitTime);
+                return (false, nextAvailableAt, null);
+            }
+
+            // Check daily limit
+            var last24Hours = DateTime.UtcNow.AddHours(-24);
+            var otpCountLast24h = recentOtps.Count(o => o.CreatedAt >= last24Hours);
+            var maxDailyOtps = 5;
+            var remaining = maxDailyOtps - otpCountLast24h;
+
+            if (remaining <= 0)
+            {
+                return (false, null, 0);
+            }
+
+            return (true, null, remaining);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error checking resend availability for {PhoneNumber}", phoneNumber);
+            return (false, null, null);
+        }
+    }
 }
+

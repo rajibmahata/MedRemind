@@ -1,0 +1,238 @@
+@page "/dashboard"
+@inject IAuthService AuthService
+@inject IMedicationService MedicationService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Dashboard - MedRemind</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <!-- Welcome Message -->
+    <MudPaper Elevation="2" Class="pa-6 mb-6" Style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@Icons.Material.Filled.EmojiEmotions" Size="Size.Large" Style="color: white; font-size: 48px;" />
+            <div>
+                <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">
+                    Welcome Back!
+                </MudText>
+                <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.9);">
+                    We're here to help you understand your medications better
+                </MudText>
+            </div>
+        </MudStack>
+    </MudPaper>
+    
+    @* Quick Action Cards *@
+    <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight: 600; color: #333;">
+        <MudIcon Icon="@Icons.Material.Filled.TouchApp" Class="mr-2" />
+        Quick Actions
+    </MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Style="height: 100%; border-radius: 12px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); cursor: pointer;" @onclick="@(() => Navigation.NavigateTo("/upload"))">
+                <MudCardContent Class="pa-6">
+                    <div Style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">Upload New</MudText>
+                            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);">
+                                Scan your prescription
+                            </MudText>
+                            <MudChip T="string" Size="Size.Small" Style="background: rgba(255,255,255,0.3); color: white; margin-top: 8px;">
+                                Click to start
+                            </MudChip>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Large" Style="color: white; font-size: 56px;" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Style="height: 100%; border-radius: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); cursor: pointer;" @onclick="@(() => Navigation.NavigateTo("/medications"))">
+                <MudCardContent Class="pa-6">
+                    <div Style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">My Medications</MudText>
+                            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);">
+                                View all medications
+                            </MudText>
+                            <MudChip T="string" Size="Size.Small" Style="background: rgba(255,255,255,0.3); color: white; margin-top: 8px;">
+                                @medications.Count total
+                            </MudChip>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Large" Style="color: white; font-size: 56px;" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="4" Style="height: 100%; border-radius: 12px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <MudCardContent Class="pa-6">
+                    <div Style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <MudText Typo="Typo.h2" Style="color: white; font-weight: 700;">@medications.Count</MudText>
+                            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);">
+                                Medications Saved
+                            </MudText>
+                            <MudChip T="string" Size="Size.Small" Style="background: rgba(255,255,255,0.3); color: white; margin-top: 8px;">
+                                Organized for you
+                            </MudChip>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Style="color: white; font-size: 56px;" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+    
+    @* Pharmacist's Tip *@
+    <MudAlert Severity="Severity.Info" Class="mt-6" Style="border-radius: 12px; border-left: 4px solid #2196f3;">
+        <MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600;">
+            <MudIcon Icon="@Icons.Material.Filled.LocalPharmacy" Class="mr-2" />
+            Pharmacist's Tip
+        </MudText>
+        <MudText Typo="Typo.body2">
+            Always take your medications as prescribed by your doctor. If you have any questions about dosage, 
+            timing, or side effects, don't hesitate to contact your pharmacist or doctor. We're here to help!
+        </MudText>
+    </MudAlert>
+    
+    @* Recent Medications *@
+    <MudPaper Elevation="3" Class="pa-6 mt-8" Style="border-radius: 12px;">
+        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight: 600;">
+            <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
+            Your Recent Medications
+        </MudText>
+        
+        @if (isLoading)
+        {
+            <div Style="text-align: center; padding: 40px;">
+                <MudProgressCircular Size="Size.Large" Indeterminate="true" Color="Color.Primary" />
+                <MudText Typo="Typo.body2" Class="mt-4">Loading your medications...</MudText>
+            </div>
+        }
+        else if (medications.Any())
+        {
+            <MudGrid>
+                @foreach (var medication in medications.Take(6))
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Elevation="2" Style="border-radius: 8px; height: 100%; border-left: 4px solid #667eea;">
+                            <MudCardContent Class="pa-4">
+                                <div Style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 12px;">
+                                    <MudText Typo="Typo.h6" Style="font-weight: 600; color: #333;">
+                                        @medication.Name
+                                    </MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Style="border-radius: 12px;">
+                                        @medication.Dosage
+                                    </MudChip>
+                                </div>
+                                <MudText Typo="Typo.body2" Class="mb-1" Style="color: #666;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" Class="mr-1" />
+                                    <strong>Take:</strong> @medication.Frequency
+                                </MudText>
+                                <MudText Typo="Typo.body2" Style="color: #666;">
+                                    <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
+                                    <strong>Duration:</strong> @medication.Duration
+                                </MudText>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Size="Size.Small" 
+                                          Color="Color.Primary" 
+                                          Href="@($"/medications/{medication.Id}")"
+                                          StartIcon="@Icons.Material.Filled.Info">
+                                    View Details
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+            
+            @if (medications.Count > 6)
+            {
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          Href="/medications"
+                          EndIcon="@Icons.Material.Filled.ArrowForward"
+                          Class="mt-4"
+                          Style="border-radius: 8px;">
+                    View All @medications.Count Medications
+                </MudButton>
+            }
+        }
+        else
+        {
+            <MudPaper Elevation="0" Class="pa-8 text-center" Style="background: #f8f9fa; border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.MedicationLiquid" Size="Size.Large" Style="font-size: 80px; color: #ccc;" Class="mb-4" />
+                <MudText Typo="Typo.h6" Class="mb-2" Style="color: #666;">
+                    No Medications Yet
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-4" Style="color: #999;">
+                    Upload your first prescription to get started with MedRemind
+                </MudText>
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          Href="/upload"
+                          StartIcon="@Icons.Material.Filled.CameraAlt"
+                          Size="Size.Large"
+                          Style="border-radius: 24px; padding: 12px 32px;">
+                    Upload Your First Prescription
+                </MudButton>
+            </MudPaper>
+        }
+    </MudPaper>
+    
+    @* Help Section *@
+    <MudPaper Elevation="2" Class="pa-6 mt-6" Style="border-radius: 12px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+        <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Large" Style="color: #ff6f00; font-size: 48px;" />
+            <div>
+                <MudText Typo="Typo.h6" Style="color: #ff6f00; font-weight: 600;">
+                    Need Help?
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #e65100;">
+                    If you have any questions about using this app or understanding your medications, 
+                    feel free to consult your pharmacist or doctor. Remember, this is just a reading tool to help you.
+                </MudText>
+            </div>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool isLoading = true;
+    private List<MedicationDto> medications = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+        
+        if (!AuthService.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        
+        await LoadMedications();
+    }
+    
+    private async Task LoadMedications()
+    {
+        isLoading = true;
+        try
+        {
+            medications = await MedicationService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading medications: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

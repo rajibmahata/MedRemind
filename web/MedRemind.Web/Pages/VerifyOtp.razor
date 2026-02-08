@@ -1,0 +1,248 @@
+@page "/verify-otp"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Verify OTP - MedRemind</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudPaper Elevation="8" Class="pa-8" Style="border-radius: 16px;">
+        <div Class="text-center mb-6">
+            <div Style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.MarkEmailRead" Size="Size.Large" Style="color: white;" />
+            </div>
+            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #333;">Check Your Email</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2" Style="color: #666;">
+                We've sent a verification code to your email
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1" Style="color: #666; font-weight: 600;">
+                Phone: <strong>@phoneNumber</strong>
+            </MudText>
+        </div>
+        
+        <!-- Email Check Instructions -->
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4" Style="border-radius: 8px;">
+            <MudText Typo="Typo.caption">
+                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-1" />
+                <strong>Pilot Version:</strong> Check your email inbox and spam folder for the OTP code
+            </MudText>
+        </MudAlert>
+        
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudTextField @bind-Value="otp" 
+                         Label="Enter 6-Digit OTP" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="OTP is required"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Pin"
+                         AdornmentColor="Color.Success"
+                         Placeholder="123456"
+                         MaxLength="6"
+                         InputType="InputType.Number"
+                         HelperText="Enter the code from your email"
+                         Class="mb-4"
+                         Style="border-radius: 8px; font-size: 1.5rem; text-align: center;" />
+                         
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Success" 
+                      Disabled="@(!isFormValid || isLoading)"
+                      OnClick="VerifyOtpCode"
+                      FullWidth="true"
+                      Size="Size.Large"
+                      Class="mb-3"
+                      Style="border-radius: 8px; padding: 14px; font-weight: 600;">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Verifying...</span>
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+                    <span>Verify & Continue</span>
+                }
+            </MudButton>
+            
+            <MudButton Variant="Variant.Text" 
+                      Color="Color.Secondary" 
+                      Disabled="@(resendCooldown > 0 || isResending)"
+                      OnClick="ResendOtp"
+                      FullWidth="true"
+                      Style="border-radius: 8px;">
+                @if (isResending)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Resending to your email...</span>
+                }
+                else if (resendCooldown > 0)
+                {
+                    <span>Resend OTP in @resendCooldown seconds</span>
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-2" />
+                    <span>Resend OTP to Email</span>
+                }
+            </MudButton>
+        </MudForm>
+        
+        <MudDivider Class="my-4" />
+        
+        <!-- Helpful Tips -->
+        <MudPaper Elevation="0" Class="pa-4" Style="background: #f8f9fa; border-radius: 8px;">
+            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight: 600; color: #333;">
+                <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Size="Size.Small" Color="Color.Warning" Class="mr-1" />
+                Didn't receive the code?
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.8;">
+                • Check your spam/junk folder<br/>
+                • Make sure you entered the correct phone number<br/>
+                • Wait a few seconds for email delivery<br/>
+                • Click "Resend OTP" if needed (wait 60 seconds between attempts)
+            </MudText>
+        </MudPaper>
+        
+        <MudButton Variant="Variant.Text" 
+                  Color="Color.Default"
+                  StartIcon="@Icons.Material.Filled.ArrowBack"
+                  Href="/login"
+                  FullWidth="true"
+                  Class="mt-4"
+                  Style="border-radius: 8px;">
+            Back to Registration
+        </MudButton>
+    </MudPaper>
+    
+    <!-- What's Next -->
+    <MudPaper Elevation="2" Class="pa-6 mt-6" Style="border-radius: 12px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;" Class="mb-3 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.Timeline" Style="color: white;" Class="mr-2" />
+            After Verification
+        </MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <div Style="text-align: center;">
+                    <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Large" Style="color: white;" Class="mb-2" />
+                    <MudText Typo="Typo.body2" Style="color: white; font-weight: 600;">Upload Prescription</MudText>
+                    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.9);">Take a clear photo</MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <div Style="text-align: center;">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Large" Style="color: white;" Class="mb-2" />
+                    <MudText Typo="Typo.body2" Style="color: white; font-weight: 600;">AI Processing</MudText>
+                    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.9);">Extract medications</MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <div Style="text-align: center;">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Style="color: white;" Class="mb-2" />
+                    <MudText Typo="Typo.body2" Style="color: white; font-weight: 600;">Organized List</MudText>
+                    <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.9);">Easy to understand</MudText>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "phone")]
+    public string phoneNumber { get; set; } = "";
+    
+    private MudForm? form;
+    private bool isFormValid;
+    private bool isLoading;
+    private bool isResending;
+    private string otp = "";
+    private int resendCooldown = 0;
+    private System.Threading.Timer? cooldownTimer;
+    
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(phoneNumber))
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+    
+    private async Task VerifyOtpCode()
+    {
+        if (!isFormValid) return;
+        
+        isLoading = true;
+        try
+        {
+            var (success, token, error) = await AuthService.VerifyOtpAsync(phoneNumber, otp);
+            if (success)
+            {
+                Snackbar.Add("? Welcome to MedRemind! Your account is verified.", Severity.Success, config =>
+                {
+                    config.VisibleStateDuration = 3000;
+                });
+                await Task.Delay(500);
+                Navigation.NavigateTo("/dashboard", forceLoad: true);
+            }
+            else
+            {
+                Snackbar.Add($"Verification failed: {error}. Please check your OTP and try again.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private async Task ResendOtp()
+    {
+        isResending = true;
+        try
+        {
+            var success = await AuthService.ResendOtpAsync(phoneNumber);
+            if (success)
+            {
+                Snackbar.Add("? New OTP sent to your email! Please check your inbox.", Severity.Success, config =>
+                {
+                    config.VisibleStateDuration = 5000;
+                });
+                StartCooldown();
+            }
+            else
+            {
+                Snackbar.Add("Failed to resend OTP. Please try again later or contact support.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isResending = false;
+        }
+    }
+    
+    private void StartCooldown()
+    {
+        resendCooldown = 60; // 60 seconds cooldown
+        cooldownTimer = new System.Threading.Timer(async _ =>
+        {
+            resendCooldown--;
+            if (resendCooldown <= 0)
+            {
+                cooldownTimer?.Dispose();
+            }
+            await InvokeAsync(StateHasChanged);
+        }, null, 1000, 1000);
+    }
+    
+    public void Dispose()
+    {
+        cooldownTimer?.Dispose();
+    }
+}

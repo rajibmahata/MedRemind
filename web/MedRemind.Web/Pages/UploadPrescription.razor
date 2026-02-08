@@ -1,0 +1,242 @@
+@page "/upload"
+@inject IAuthService AuthService
+@inject IPrescriptionService PrescriptionService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Upload Prescription - MedRemind</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudText Typo="Typo.h4" Class="mb-6">
+                <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Class="mr-2" />
+                Upload Prescription
+            </MudText>
+            
+            @* CRITICAL DISCLAIMER *@
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="false" Class="mb-4">
+                <MudText Typo="Typo.h5" Class="font-weight-bold mb-2">
+                    ???? CRITICAL DISCLAIMER ????
+                </MudText>
+            </MudAlert>
+            
+            <MudPaper Elevation="4" Class="pa-6 mb-4" Style="border: 4px solid #ff9800;">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">
+                        This Tool Helps READ Your Existing Prescription ONLY
+                    </MudText>
+                    
+                    <MudDivider />
+                    
+                    
+                    <MudText Typo="Typo.body2" Class="ml-4">
+                        • NOT medical advice or diagnosis<br/>
+                        • NOT medication suggestions or prescriptions<br/>
+                        • NOT a substitute for your doctor or pharmacist<br/>
+                        • Helps read handwritten prescriptions<br/>
+                        • Organizes medication information for you
+                    </MudText>
+                    
+                    
+                    <MudAlert Severity="Severity.Error" Class="mt-3">
+                        <MudText Typo="Typo.body1" Class="font-weight-bold">
+                            ?? AI MAY MAKE ERRORS - ALWAYS VERIFY WITH YOUR DOCTOR ??
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mt-2">
+                            You MUST review and confirm all information before using it.
+                            If you have ANY doubts, contact your healthcare provider immediately.
+                        </MudText>
+                    </MudAlert>
+                    
+                    <MudCheckBox @bind-Value="@agreedToDisclaimer" 
+                                Color="Color.Error" 
+                                Class="mt-3"
+                                T="bool">
+                        <MudText Typo="Typo.body1" Color="Color.Error" Class="font-weight-bold">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
+                            I understand and agree to proceed. I will verify all information with my doctor.
+                        </MudText>
+                    </MudCheckBox>
+                </MudStack>
+            </MudPaper>
+            
+            @if (agreedToDisclaimer)
+            {
+                <MudPaper Elevation="3" Class="pa-6">
+                    <MudText Typo="Typo.h6" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />
+                        Select Prescription Image
+                    </MudText>
+                    
+                    
+                    <InputFile id="fileInput" OnChange="OnFileSelected" accept="image/*" class="d-none" />
+                    <MudButton HtmlTag="label"
+                              for="fileInput"
+                              Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.CloudUpload"
+                              Size="Size.Large"
+                              FullWidth="true">
+                        Choose Prescription Image
+                    </MudButton>
+                    
+                    @if (selectedFile != null)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mt-4">
+                            <MudText Typo="Typo.body1" Class="font-weight-bold">
+                                Selected File:
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Small" Class="mr-1" />
+                                @selectedFile.Name (@FormatFileSize(selectedFile.Size))
+                            </MudText>
+                        </MudAlert>
+                        
+                        <MudAlert Severity="Severity.Warning" Class="mt-3">
+                            <MudText Typo="Typo.body2" Class="font-weight-bold mb-2">
+                                ?? Tips for Best Results:
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="ml-4">
+                                • Ensure prescription is well-lit and in focus<br/>
+                                • Capture entire prescription in frame<br/>
+                                • Avoid shadows and glare
+                            </MudText>
+                        </MudAlert>
+                        
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Success" 
+                                  OnClick="UploadFile"
+                                  Disabled="uploading"
+                                  StartIcon="@Icons.Material.Filled.AutoAwesome"
+                                  Size="Size.Large"
+                                  FullWidth="true"
+                                  Class="mt-4">
+                            @if (uploading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Processing with AI... This may take 10-30 seconds</span>
+                            }
+                            else
+                            {
+                                <span>? Upload & Process with AI</span>
+                            }
+                        </MudButton>
+                        
+                        @if (uploadProgress != null)
+                        {
+                            <MudProgressLinear Color="Color.Primary" 
+                                             Value="@uploadProgress.Value" 
+                                             Class="mt-3" />
+                            <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">
+                                @uploadProgressMessage
+                            </MudText>
+                        }
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Warning" Class="mt-4">
+                    <MudText>
+                        Please read and agree to the disclaimer above to continue.
+                    </MudText>
+                </MudAlert>
+            }
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="Severity.Warning">
+            Please login to upload prescriptions.
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  Href="/login"
+                  Class="mt-4">
+            Go to Login
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool agreedToDisclaimer = false;
+    private IBrowserFile? selectedFile;
+    private bool uploading = false;
+    private int? uploadProgress;
+    private string uploadProgressMessage = "";
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+        
+        if (!AuthService.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+    
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        uploadProgress = null;
+    }
+    
+    private async Task UploadFile()
+    {
+        if (selectedFile == null) return;
+        
+        uploading = true;
+        uploadProgress = 0;
+        uploadProgressMessage = "Uploading image...";
+        
+        try
+        {
+            // Simulate progress for better UX
+            uploadProgress = 25;
+            uploadProgressMessage = "Uploading to server...";
+            await Task.Delay(500);
+            
+            var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB
+            
+            uploadProgress = 50;
+            uploadProgressMessage = "AI is reading prescription...";
+            
+            var result = await PrescriptionService.UploadPrescriptionAsync(stream, selectedFile.Name);
+            
+            uploadProgress = 100;
+            uploadProgressMessage = "Processing complete!";
+            
+            if (result.Success)
+            {
+                Snackbar.Add("? Prescription uploaded successfully! AI has extracted the information.", Severity.Success);
+                await Task.Delay(1000);
+                Navigation.NavigateTo($"/review/{result.PrescriptionId}");
+            }
+            else
+            {
+                Snackbar.Add($"Upload failed: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            uploading = false;
+        }
+    }
+    
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

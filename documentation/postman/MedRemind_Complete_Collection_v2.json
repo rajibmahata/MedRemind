@@ -1,0 +1,1217 @@
+{
+  "info": {
+    "name": "MedRemind API - Complete Collection",
+    "description": "Complete API collection for MedRemind including Authentication, Users, Prescriptions, and Medications",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "medremind-complete-api-2024",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1.1 Send OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has phoneNumber\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('phoneNumber');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/send-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "send-otp"]
+            },
+            "description": "Send OTP to phone number"
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.environment.set(\"token\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "verify-otp"]
+            },
+            "description": "Verify OTP and get authentication token"
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Resend OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 429\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 429]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Success response has remainingAttempts\", function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "        pm.expect(jsonData.remainingAttempts).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 429) {",
+                  "    pm.test(\"Rate limit response has nextResendAvailableAt\", function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.nextResendAvailableAt).to.not.be.null;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"purpose\": \"Registration\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/resend-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "resend-otp"]
+            },
+            "description": "Resend OTP with rate limiting (60s + 5/day)"
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Check Resend Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has availability status\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/resend-otp/availability?phoneNumber={{test_phone}}&purpose=Registration",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "resend-otp", "availability"],
+              "query": [
+                {
+                  "key": "phoneNumber",
+                  "value": "{{test_phone}}"
+                },
+                {
+                  "key": "purpose",
+                  "value": "Registration"
+                }
+              ]
+            },
+            "description": "Check if resend OTP is currently available"
+          },
+          "response": []
+        },
+        {
+          "name": "1.5 Login with Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.token).to.not.be.null;",
+                  "    pm.environment.set(\"token\", jsonData.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email/phone and password"
+          },
+          "response": []
+        },
+        {
+          "name": "1.6 Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "description": "Request password reset email"
+          },
+          "response": []
+        },
+        {
+          "name": "1.7 Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"resetToken\": \"token-from-email\",\n  \"newPassword\": \"NewPassword456!\",\n  \"confirmPassword\": \"NewPassword456!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "reset-password"]
+            },
+            "description": "Reset password with token from email"
+          },
+          "response": []
+        },
+        {
+          "name": "1.8 Change Password",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"OldPassword123!\",\n  \"newPassword\": \"NewPassword456!\",\n  \"confirmPassword\": \"NewPassword456!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "change-password"]
+            },
+            "description": "Change password for authenticated user"
+          },
+          "response": []
+        },
+        {
+          "name": "1.9 Validate Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/validate-token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "validate-token"]
+            },
+            "description": "Validate authentication token"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints including OTP, password, and resend OTP"
+    },
+    {
+      "name": "2. User Management",
+      "item": [
+        {
+          "name": "2.1 Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"User registered successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.userId).to.not.be.null;",
+                  "    pm.environment.set(\"test_user_id\", jsonData.userId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"email\": \"{{test_email}}\",\n  \"name\": \"Test User\",\n  \"password\": \"{{test_password}}\",\n  \"dateOfBirth\": \"1990-01-01\",\n  \"gender\": \"Male\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "register"]
+            },
+            "description": "Register a new user"
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Get Current User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Profile has required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('phoneNumber');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Get current authenticated user profile"
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Update User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User\",\n  \"email\": \"updated@example.com\",\n  \"dateOfBirth\": \"1990-01-01\",\n  \"gender\": \"Male\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Update current user profile"
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Get User by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{test_user_id}}"]
+            },
+            "description": "Get user by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Delete User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Delete current user account"
+          },
+          "response": []
+        }
+      ],
+      "description": "User management endpoints"
+    },
+    {
+      "name": "3. Prescriptions",
+      "item": [
+        {
+          "name": "3.1 Upload Prescription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test(\"Prescription uploaded successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.prescriptionId).to.not.be.null;",
+                  "    pm.environment.set(\"prescription_id\", jsonData.prescriptionId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "userId",
+                  "value": "{{test_user_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "upload"]
+            },
+            "description": "Upload a prescription image"
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Get All Prescriptions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions"]
+            },
+            "description": "Get all prescriptions"
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 Get Prescription by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/{{prescription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "{{prescription_id}}"]
+            },
+            "description": "Get prescription by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 Get Prescriptions by User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/user/{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "user", "{{test_user_id}}"]
+            },
+            "description": "Get all prescriptions for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "3.5 Update Prescription Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Verified\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/{{prescription_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "{{prescription_id}}", "status"]
+            },
+            "description": "Update prescription status"
+          },
+          "response": []
+        },
+        {
+          "name": "3.6 Delete Prescription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/{{prescription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "{{prescription_id}}"]
+            },
+            "description": "Delete a prescription"
+          },
+          "response": []
+        },
+        {
+          "name": "3.7 Reprocess Prescription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/{{prescription_id}}/reprocess",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "{{prescription_id}}", "reprocess"]
+            },
+            "description": "Reprocess a prescription"
+          },
+          "response": []
+        },
+        {
+          "name": "3.8 Get OCR Results",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/prescriptions/{{prescription_id}}/ocr-results",
+              "host": ["{{base_url}}"],
+              "path": ["api", "prescriptions", "{{prescription_id}}", "ocr-results"]
+            },
+            "description": "Get OCR results for a prescription"
+          },
+          "response": []
+        }
+      ],
+      "description": "Prescription management endpoints"
+    },
+    {
+      "name": "4. Medications",
+      "item": [
+        {
+          "name": "4.1 Get All Medications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/medications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications"]
+            },
+            "description": "Get all medications"
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Get Medication by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/medications/{{medication_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "{{medication_id}}"]
+            },
+            "description": "Get medication by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "4.3 Get Medications by Prescription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/medications/prescription/{{prescription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "prescription", "{{prescription_id}}"]
+            },
+            "description": "Get all medications for a prescription"
+          },
+          "response": []
+        },
+        {
+          "name": "4.4 Get Medications by User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/medications/user/{{test_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "user", "{{test_user_id}}"]
+            },
+            "description": "Get all medications for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "4.5 Create Medication",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Medication created\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.not.be.null;",
+                  "    pm.environment.set(\"medication_id\", jsonData.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prescriptionId\": {{prescription_id}},\n  \"name\": \"Amoxicillin\",\n  \"dosage\": \"500mg\",\n  \"frequency\": \"3 times daily\",\n  \"duration\": \"7 days\",\n  \"startDate\": \"2024-02-04\",\n  \"instructions\": \"Take with food\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/medications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications"]
+            },
+            "description": "Create a new medication"
+          },
+          "response": []
+        },
+        {
+          "name": "4.6 Update Medication",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Amoxicillin\",\n  \"dosage\": \"500mg\",\n  \"frequency\": \"2 times daily\",\n  \"duration\": \"10 days\",\n  \"instructions\": \"Take with food\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/medications/{{medication_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "{{medication_id}}"]
+            },
+            "description": "Update a medication"
+          },
+          "response": []
+        },
+        {
+          "name": "4.7 Delete Medication",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/medications/{{medication_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "{{medication_id}}"]
+            },
+            "description": "Delete a medication"
+          },
+          "response": []
+        },
+        {
+          "name": "4.8 Get Active Medications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/medications/active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "active"]
+            },
+            "description": "Get all active medications"
+          },
+          "response": []
+        },
+        {
+          "name": "4.9 Mark Medication as Taken",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"takenAt\": \"2024-02-04T14:30:00Z\",\n  \"notes\": \"Taken with lunch\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/medications/{{medication_id}}/take",
+              "host": ["{{base_url}}"],
+              "path": ["api", "medications", "{{medication_id}}", "take"]
+            },
+            "description": "Mark a medication as taken"
+          },
+          "response": []
+        }
+      ],
+      "description": "Medication management endpoints"
+    },
+    {
+      "name": "5. Test Flows",
+      "item": [
+        {
+          "name": "5.1 Complete Registration Flow",
+          "item": [
+            {
+              "name": "Step 1: Register",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"email\": \"{{test_email}}\",\n  \"name\": \"Test User\",\n  \"password\": \"{{test_password}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "register"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step 2: Send OTP",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/send-otp",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "send-otp"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step 3: Verify OTP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var jsonData = pm.response.json();",
+                      "pm.environment.set(\"token\", jsonData.token);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phoneNumber\": \"{{test_phone}}\",\n  \"otp\": \"123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/verify-otp",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "verify-otp"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step 4: Get Profile",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/users/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "users", "profile"]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": "Complete registration flow from register to profile"
+        }
+      ],
+      "description": "Complete test flows"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log request info",
+          "console.log('Request:', pm.request.method, pm.request.url.toString());",
+          "",
+          "// Add timestamp",
+          "pm.variables.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log response",
+          "console.log('Response:', pm.response.code, pm.response.status);",
+          "",
+          "// Check response time",
+          "pm.test(\"Response time is less than 5000ms\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "test_phone",
+      "value": "8420249020",
+      "type": "string"
+    },
+    {
+      "key": "test_email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "test_password",
+      "value": "SecurePass123!",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "test_user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "prescription_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "medication_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

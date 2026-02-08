@@ -1,0 +1,105 @@
+﻿@inherits LayoutComponentBase
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="2" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                      Color="Color.Inherit" 
+                      Edge="Edge.Start" 
+                      OnClick="@ToggleDrawer" />
+        
+        <MudText Typo="Typo.h5" Class="ml-3">
+            <MudIcon Icon="@Icons.Material.Filled.Medication" Class="mr-1" />
+            MedRemind
+        </MudText>
+        
+        <MudText Typo="Typo.caption" Class="ml-2 mud-text-secondary">
+            AI Prescription Reader
+        </MudText>
+        
+        <MudSpacer />
+        
+        @if (isAuthenticated)
+        {
+            <MudButton Color="Color.Inherit" 
+                      StartIcon="@Icons.Material.Filled.ExitToApp" 
+                      OnClick="HandleLogout">
+                Logout
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Inherit" 
+                      StartIcon="@Icons.Material.Filled.Login" 
+                      Href="/login">
+                Login
+            </MudButton>
+        }
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" 
+              ClipMode="DrawerClipMode.Always" 
+              Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4 mb-8">
+            @* Medical Disclaimer Banner on Every Page *@
+            <DisclaimerBanner />
+            
+            @Body
+        </MudContainer>
+    </MudMainContent>
+    
+    <MudAppBar Bottom="true" Elevation="1" Fixed="false" Dense="true">
+        <MudText Typo="Typo.caption" Class="mx-auto">
+            &copy; 2025 MedRemind | 
+            <strong>For Prescription Reading Help Only</strong> | 
+            NOT Medical Advice | 
+            Always Consult Your Doctor
+        </MudText>
+    </MudAppBar>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool isAuthenticated = false;
+    
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#0066cc",      // Medical Blue
+            Secondary = "#00994d",    // Healthcare Green
+            Warning = "#ff9800",      // Alert Orange
+            Error = "#d32f2f",        // Danger Red
+            Info = "#0288d1",         // Info Blue
+            Success = "#43a047"       // Success Green
+        }
+    };
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+        isAuthenticated = AuthService.IsAuthenticated();
+    }
+    
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+    
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}
+

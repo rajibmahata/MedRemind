@@ -17,19 +17,64 @@
             </MudText>
         </div>
         
-        <!-- Pilot Program Notice -->
-        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4" Style="border-radius: 8px;">
-            <MudText Typo="Typo.caption">
+        <!-- OTP Email Notice -->
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4" Style="border-radius: 8px; border-left: 4px solid #2196f3;">
+            <MudText Typo="Typo.body2" Style="font-weight: 600;">
                 <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-1" />
-                <strong>Pilot Version:</strong> OTP will be sent to your email (no SMS license yet)
+                Pilot Version: OTP will be sent to your email
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #666;">
+                (We don't have SMS license yet, so verification code will arrive via email)
             </MudText>
         </MudAlert>
         
         <MudForm @ref="form" @bind-IsValid="@isFormValid">
-            <MudText Typo="Typo.body2" Class="mb-3" Style="color: #666;">
+            <MudText Typo="Typo.body2" Class="mb-4" Style="color: #666; font-weight: 600;">
                 Enter your details to register or login:
             </MudText>
             
+            <!-- First Name -->
+            <MudTextField @bind-Value="firstName" 
+                         Label="First Name" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="First name is required"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Person"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="John"
+                         Class="mb-3"
+                         Style="border-radius: 8px;" />
+            
+            <!-- Last Name -->
+            <MudTextField @bind-Value="lastName" 
+                         Label="Last Name" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Last name is required"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Person"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="Doe"
+                         Class="mb-3"
+                         Style="border-radius: 8px;" />
+            
+            <!-- Email Address -->
+            <MudTextField @bind-Value="email" 
+                         Label="Email Address" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Email is required"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Email"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="john.doe@example.com"
+                         HelperText="OTP code will be sent to this email"
+                         InputType="InputType.Email"
+                         Class="mb-3"
+                         Style="border-radius: 8px;" />
+            
+            <!-- Phone Number -->
             <MudTextField @bind-Value="phoneNumber" 
                          Label="Phone Number" 
                          Variant="Variant.Outlined"
@@ -57,7 +102,7 @@
                 }
                 else
                 {
-                    <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2" />
+                    <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-2" />
                     <span>Send OTP via Email</span>
                 }
             </MudButton>
@@ -65,21 +110,21 @@
         
         <MudDivider Class="my-6" />
         
-        <!-- Helpful Information -->
+        <!-- What happens next -->
         <MudPaper Elevation="0" Class="pa-4" Style="background: #f8f9fa; border-radius: 8px;">
             <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight: 600; color: #333;">
                 <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Info" Class="mr-1" />
                 What happens next?
             </MudText>
             <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.6;">
-                1. You'll receive an OTP code in your email<br/>
-                2. Enter the OTP to verify your account<br/>
+                1. Check your email for the OTP verification code<br/>
+                2. Enter the 6-digit code to verify your account<br/>
                 3. Start uploading prescriptions immediately<br/>
                 4. Our AI will help you read your medications
             </MudText>
         </MudPaper>
         
-        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-4" Style="border-radius: 8px;">
+        <MudAlert Severity="Severity.Success" Dense="true" Class="mt-4" Style="border-radius: 8px;">
             <MudText Typo="Typo.caption">
                 <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" Class="mr-1" />
                 Your information is secure and will only be used for this service. 
@@ -135,6 +180,11 @@
     private MudForm? form;
     private bool isFormValid;
     private bool isLoading;
+    
+    // Registration fields
+    private string firstName = "";
+    private string lastName = "";
+    private string email = "";
     private string phoneNumber = "";
     
     private async Task SendOtp()
@@ -144,6 +194,7 @@
         isLoading = true;
         try
         {
+            // TODO: Update AuthService to accept all registration fields
             var success = await AuthService.SendOtpAsync(phoneNumber);
             if (success)
             {
@@ -151,11 +202,11 @@
                 {
                     config.VisibleStateDuration = 5000;
                 });
-                Navigation.NavigateTo($"/verify-otp?phone={phoneNumber}");
+                Navigation.NavigateTo($"/verify-otp?phone={phoneNumber}&email={email}&firstName={firstName}&lastName={lastName}");
             }
             else
             {
-                Snackbar.Add("Failed to send OTP. Please check your phone number and try again.", Severity.Error);
+                Snackbar.Add("Failed to send OTP. Please check your information and try again.", Severity.Error);
             }
         }
         catch (Exception ex)

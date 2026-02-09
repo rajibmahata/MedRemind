@@ -73,12 +73,12 @@ public class PrescriptionReaderService : IPrescriptionReaderService
     {
         try
         {
-            System.Diagnostics.Debug.WriteLine(" Prescription Processing: Starting...");
+            System.Diagnostics.Debug.WriteLine("🚀 Prescription Processing: Starting...");
             System.Diagnostics.Debug.WriteLine($"   Image size: {base64Image?.Length ?? 0} bytes");
 
             if (string.IsNullOrEmpty(base64Image))
             {
-                System.Diagnostics.Debug.WriteLine("? Image is empty!");
+                System.Diagnostics.Debug.WriteLine("❌ Image is empty!");
                 return new PrescriptionReadResult
                 {
                     Success = false,
@@ -87,19 +87,19 @@ public class PrescriptionReaderService : IPrescriptionReaderService
             }
 
             // Step 1: Extract text using Azure Document Intelligence
-            System.Diagnostics.Debug.WriteLine(" Step 1: Extracting text with Azure Document Intelligence...");
+            System.Diagnostics.Debug.WriteLine("📄 Step 1: Extracting text with Azure Document Intelligence...");
             string extractedText;
 
             try
             {
                 extractedText = await _azureDocService.ExtractTextFromImageAsync(base64Image, null, cancellationToken);
-                System.Diagnostics.Debug.WriteLine($"? Text extracted: {extractedText.Length} characters");
+                System.Diagnostics.Debug.WriteLine($"✅ Text extracted: {extractedText.Length} characters");
                 System.Diagnostics.Debug.WriteLine($"   Preview: {extractedText.Substring(0, Math.Min(200, extractedText.Length))}...");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"? Azure DI failed: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine("?? Fallback: Using OpenAI Vision API...");
+                System.Diagnostics.Debug.WriteLine($"❌ Azure DI failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine("🔄 Fallback: Using OpenAI Vision API...");
 
                 // Fallback to OpenAI Vision if Azure DI fails
                 throw ex;
@@ -186,7 +186,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
         }
         catch (HttpRequestException ex)
         {
-            System.Diagnostics.Debug.WriteLine($"? HTTP error: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"❌ HTTP error: {ex.Message}");
             return new PrescriptionReadResult
             {
                 Success = false,
@@ -195,7 +195,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
         }
         catch (TaskCanceledException ex)
         {
-            System.Diagnostics.Debug.WriteLine($"? Timeout: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"⏱️ Timeout: {ex.Message}");
             return new PrescriptionReadResult
             {
                 Success = false,
@@ -204,7 +204,7 @@ public class PrescriptionReaderService : IPrescriptionReaderService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"? Unexpected error: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"❌ Unexpected error: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"   Stack trace: {ex.StackTrace}");
             return new PrescriptionReadResult
             {

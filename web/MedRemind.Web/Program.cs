@@ -29,6 +29,10 @@ builder.Services.AddSingleton(apiSettings);
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<IMedicationService, MedicationService>();
+builder.Services.AddScoped<IValidationService, ValidationService>();
+builder.Services.AddScoped<IVoiceRecordingService, VoiceRecordingService>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
 await builder.Build().RunAsync();

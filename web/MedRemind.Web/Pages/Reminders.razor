@@ -1,0 +1,360 @@
+@page "/reminders"
+@inject IReminderService ReminderService
+@inject INotificationService NotificationService
+@inject IVoiceRecordingService VoiceRecordingService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>My Reminders - MedRemind</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            <!-- Header -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.h4">
+                            <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="mr-2" />
+                            My Reminders
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Manage your medication reminders
+                        </MudText>
+                    </div>
+                    <MudStack Row="true" Spacing="2">
+                        @if (notificationPermission == "granted")
+                        {
+                            <MudChip Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                                Notifications Enabled
+                            </MudChip>
+                        }
+                        else if (notificationPermission == "denied")
+                        {
+                            <MudChip Color="Color.Error" Icon="@Icons.Material.Filled.Cancel">
+                                Notifications Blocked
+                            </MudChip>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Filled"
+                                      Color="Color.Warning"
+                                      StartIcon="@Icons.Material.Filled.NotificationsActive"
+                                      OnClick="RequestNotificationPermission">
+                                Enable Notifications
+                            </MudButton>
+                        }
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Permission Alert -->
+            @if (notificationPermission != "granted")
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-4">
+                    <MudText Typo="Typo.body1" Class="font-weight-bold mb-2">
+                        ⚠️ Notifications Not Enabled
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        To receive medication reminders with voice playback, you need to enable browser notifications.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              Size="Size.Small"
+                              OnClick="RequestNotificationPermission"
+                              Class="mt-2">
+                        Enable Now
+                    </MudButton>
+                </MudAlert>
+            }
+
+            <!-- Loading State -->
+            @if (loading)
+            {
+                <MudPaper Elevation="3" Class="pa-6 text-center">
+                    <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Loading reminders...</MudText>
+                </MudPaper>
+            }
+            <!-- No Reminders -->
+            else if (!reminders.Any())
+            {
+                <MudPaper Elevation="3" Class="pa-6 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.NotificationsNone" Size="Size.Large" Color="Color.Secondary" Class="mb-3" />
+                    <MudText Typo="Typo.h5" Class="mb-2">No Reminders Yet</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+                        Setup reminders for your medications to never miss a dose
+                    </MudText>
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.Add"
+                              Href="/upload">
+                        Upload Prescription
+                    </MudButton>
+                </MudPaper>
+            }
+            <!-- Reminders List -->
+            else
+            {
+                <!-- Summary -->
+                <MudPaper Elevation="2" Class="pa-4 mb-4">
+                    <MudGrid>
+                        <MudItem xs="12" sm="4">
+                            <MudText Typo="Typo.h6">📊 Summary</MudText>
+                            <MudText Typo="Typo.body2">
+                                <strong>{reminders.Count}</strong> total reminders
+                            </MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudText Typo="Typo.h6">✅ Active</MudText>
+                            <MudText Typo="Typo.body2">
+                                <strong>{reminders.Count(r => r.IsEnabled)}</strong> enabled
+                            </MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudText Typo="Typo.h6">🎙️ With Voice</MudText>
+                            <MudText Typo="Typo.body2">
+                                <strong>{reminders.Count(r => r.VoiceRecordingId.HasValue)}</strong> personalized
+                            </MudText>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <!-- Reminders Grouped by Medication -->
+                @foreach (var medicationGroup in GroupedReminders)
+                {
+                    <MudPaper Elevation="3" Class="pa-4 mb-4">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                            <div>
+                                <MudText Typo="Typo.h6">
+                                    💊 @medicationGroup.Key
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @medicationGroup.First().MedicationDosage @medicationGroup.First().MedicationUnit
+                                </MudText>
+                            </div>
+                            <MudChip Color="@(medicationGroup.All(r => r.IsEnabled) ? Color.Success : Color.Default)" Size="Size.Small">
+                                @medicationGroup.Count reminder(s)
+                            </MudChip>
+                        </MudStack>
+
+                        <MudDivider Class="mb-3" />
+
+                        <!-- Individual Reminders -->
+                        @foreach (var reminder in medicationGroup.OrderBy(r => r.ReminderTime))
+                        {
+                            <MudPaper Elevation="1" Class="pa-3 mb-2" Style="@(reminder.IsEnabled ? "" : "opacity: 0.6;")">
+                                <MudGrid>
+                                    <MudItem xs="12" sm="6" md="3">
+                                        <MudText Typo="Typo.body1" Class="font-weight-bold">
+                                            🕐 @reminder.ReminderTime.ToString(@"hh\:mm tt")
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6" md="3">
+                                        @if (reminder.VoiceRecordingId.HasValue)
+                                        {
+                                            <MudText Typo="Typo.body2" Color="Color.Info">
+                                                <MudIcon Icon="@Icons.Material.Filled.RecordVoiceOver" Size="Size.Small" />
+                                                @reminder.VoiceRecordingName
+                                            </MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                No voice
+                                            </MudText>
+                                        }
+                                    </MudItem>
+                                    <MudItem xs="12" sm="12" md="6">
+                                        <MudStack Row="true" Spacing="1" Justify="Justify.End">
+                                            <!-- Test Button -->
+                                            <MudButton Variant="Variant.Outlined"
+                                                      Color="Color.Info"
+                                                      Size="Size.Small"
+                                                      StartIcon="@Icons.Material.Filled.PlayArrow"
+                                                      OnClick="() => TestReminder(reminder)"
+                                                      Disabled="@(notificationPermission != "granted")">
+                                                Test
+                                            </MudButton>
+
+                                            <!-- Enable/Disable Toggle -->
+                                            <MudSwitch @bind-Value="reminder.IsEnabled"
+                                                      Color="Color.Success"
+                                                      Size="Size.Small"
+                                                      ValueChanged="(bool value) => ToggleReminder(reminder.Id, value)" />
+
+                                            <!-- Delete Button -->
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                          Color="Color.Error"
+                                                          Size="Size.Small"
+                                                          OnClick="() => DeleteReminder(reminder.Id)" />
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        }
+                    </MudPaper>
+                }
+
+                <!-- Setup More Button -->
+                <MudButton Variant="Variant.Outlined"
+                          Color="Color.Primary"
+                          StartIcon="@Icons.Material.Filled.Add"
+                          Href="/upload"
+                          FullWidth="true">
+                    Add More Medications
+                </MudButton>
+            }
+
+            <!-- Info Section -->
+            <MudPaper Elevation="2" Class="pa-4 mt-6">
+                <MudText Typo="Typo.h6" Class="mb-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                    About Reminders
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    Reminders help you stay on track with your medication schedule. When a reminder triggers,
+                    you'll receive a browser notification with your chosen voice message.
+                </MudText>
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.body2" Class="font-weight-bold mb-1">Tips:</MudText>
+                <MudText Typo="Typo.body2" Style="padding-left: 20px;">
+                    • Keep your browser open to receive reminders<br/>
+                    • Test reminders to ensure they work<br/>
+                    • Enable/disable reminders as needed<br/>
+                    • Voice playback requires audio permissions<br/>
+                    • Click notifications to mark medications as taken
+                </MudText>
+            </MudPaper>
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="Severity.Warning">
+            Please login to manage reminders.
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/login" Class="mt-4">
+            Go to Login
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<ReminderModel> reminders = new();
+    private bool loading = true;
+    private string notificationPermission = "default";
+
+    private IEnumerable<IGrouping<string, ReminderModel>> GroupedReminders =>
+        reminders.GroupBy(r => r.MedicationName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+
+        if (!AuthService.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        loading = true;
+
+        // Initialize notification service
+        await NotificationService.InitializeAsync();
+        notificationPermission = await NotificationService.GetPermissionStatusAsync();
+
+        // Load reminders
+        reminders = await ReminderService.GetUserRemindersAsync();
+
+        // Start scheduler if permission granted
+        if (notificationPermission == "granted")
+        {
+            await NotificationService.StartReminderSchedulerAsync();
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task RequestNotificationPermission()
+    {
+        notificationPermission = await NotificationService.RequestPermissionAsync();
+
+        if (notificationPermission == "granted")
+        {
+            Snackbar.Add("✓ Notifications enabled! You'll now receive reminders.", Severity.Success);
+            await NotificationService.StartReminderSchedulerAsync();
+        }
+        else if (notificationPermission == "denied")
+        {
+            Snackbar.Add("Notifications blocked. Please enable them in your browser settings.", Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task TestReminder(ReminderModel reminder)
+    {
+        string? voiceUrl = null;
+        if (reminder.VoiceRecordingId.HasValue)
+        {
+            voiceUrl = VoiceRecordingService.GetPlaybackUrl(reminder.VoiceRecordingId.Value);
+        }
+
+        var success = await NotificationService.TestNotificationAsync(reminder.MedicationName, voiceUrl);
+
+        if (success)
+        {
+            Snackbar.Add("🔔 Test notification sent!", Severity.Info);
+        }
+        else
+        {
+            Snackbar.Add("Failed to send notification", Severity.Error);
+        }
+    }
+
+    private async Task ToggleReminder(int reminderId, bool isEnabled)
+    {
+        var success = await ReminderService.ToggleReminderAsync(reminderId, isEnabled);
+
+        if (success)
+        {
+            Snackbar.Add($"Reminder {(isEnabled ? "enabled" : "disabled")}", Severity.Success);
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to update reminder", Severity.Error);
+        }
+    }
+
+    private async Task DeleteReminder(int reminderId)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Delete Reminder",
+            "Are you sure you want to delete this reminder?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var success = await ReminderService.DeleteReminderAsync(reminderId);
+
+            if (success)
+            {
+                Snackbar.Add("Reminder deleted", Severity.Info);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete reminder", Severity.Error);
+            }
+        }
+    }
+}

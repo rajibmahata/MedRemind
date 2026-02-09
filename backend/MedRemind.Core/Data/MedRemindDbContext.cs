@@ -14,6 +14,8 @@ public class MedRemindDbContext : DbContext
     public DbSet<AppSettings> AppSettings { get; set; }
     public DbSet<PrescriptionOCRResult> PrescriptionOCRResults { get; set; }
     public DbSet<OtpCode> OtpCodes { get; set; } // NEW - OTP Code Collection
+    public DbSet<MedicationValidation> MedicationValidations { get; set; }
+    public DbSet<PrescriptionValidationWorkflow> PrescriptionValidationWorkflows { get; set; }
 
     public MedRemindDbContext(DbContextOptions<MedRemindDbContext> options)
         : base(options)
@@ -176,7 +178,7 @@ public class MedRemindDbContext : DbContext
             entity.HasIndex(e => e.ExpiresAt);
             entity.HasIndex(e => e.Purpose);
             entity.HasIndex(e => new { e.PhoneNumber, e.IsActive, e.IsVerified });
-            
+
             entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.Code).IsRequired().HasMaxLength(10);
@@ -185,6 +187,53 @@ public class MedRemindDbContext : DbContext
             entity.Property(e => e.IsActive).IsRequired();
             entity.Property(e => e.IsVerified).IsRequired();
             entity.Property(e => e.SenderInfo).HasMaxLength(500);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MedicationValidation configuration
+        modelBuilder.Entity<MedicationValidation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MedicationId);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.IsConfirmed);
+            entity.HasIndex(e => new { e.MedicationId, e.IsConfirmed });
+            entity.Property(e => e.OriginalName).HasMaxLength(200);
+            entity.Property(e => e.OriginalDosage).HasMaxLength(50);
+            entity.Property(e => e.OriginalFrequency).HasMaxLength(100);
+            entity.Property(e => e.CorrectionReason).HasMaxLength(500);
+            entity.Property(e => e.ValidationNotes).HasMaxLength(1000);
+
+            entity.HasOne(e => e.Medication)
+                .WithMany()
+                .HasForeignKey(e => e.MedicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PrescriptionValidationWorkflow configuration
+        modelBuilder.Entity<PrescriptionValidationWorkflow>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.PrescriptionId);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => new { e.UserId, e.Status });
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.PharmacistNotes).HasMaxLength(2000);
+
+            entity.HasOne(e => e.Prescription)
+                .WithMany()
+                .HasForeignKey(e => e.PrescriptionId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.User)
                 .WithMany()

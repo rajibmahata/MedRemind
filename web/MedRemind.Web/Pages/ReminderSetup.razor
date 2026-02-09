@@ -1,0 +1,517 @@
+@page "/reminder-setup/{PrescriptionId:int}"
+@inject IValidationService ValidationService
+@inject IVoiceRecordingService VoiceRecordingService
+@inject IReminderService ReminderService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Setup Reminders - MedRemind</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            <!-- Header -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4">
+                <MudText Typo="Typo.h4">
+                    <MudIcon Icon="@Icons.Material.Filled.Alarm" Class="mr-2" />
+                    Setup Voice Reminders
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Set up personalized reminders for your medications
+                </MudText>
+            </MudPaper>
+
+            @if (loading)
+            {
+                <MudPaper Elevation="3" Class="pa-6 text-center">
+                    <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Loading medications...</MudText>
+                </MudPaper>
+            }
+            else if (medications.Count == 0)
+            {
+                <MudAlert Severity="Severity.Warning">
+                    No medications found. Please upload and validate a prescription first.
+                </MudAlert>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/upload" Class="mt-4">
+                    Upload Prescription
+                </MudButton>
+            }
+            else
+            {
+                <!-- Progress Stepper -->
+                <MudStepper @ref="stepper" Linear="true" Color="Color.Primary" HeaderSize="Size.Large">
+
+                    <!-- Step 1: Select Medication -->
+                    <MudStep Title="Select Medication" Icon="@Icons.Material.Filled.Medication">
+                        <MudText Typo="Typo.h6" Class="mb-3">Select a medication to setup reminders</MudText>
+
+                        <MudGrid>
+                            @foreach (var med in medications)
+                            {
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudCard Elevation="@(selectedMedication?.MedicationId == med.MedicationId ? 5 : 2)"
+                                            Class="@(selectedMedication?.MedicationId == med.MedicationId ? "mud-theme-primary" : "")"
+                                            Style="cursor: pointer;"
+                                            @onclick="() => SelectMedication(med)">
+                                        <MudCardContent>
+                                            <MudText Typo="Typo.h6">💊 @med.Name</MudText>
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                @med.Dosage @med.Unit
+                                            </MudText>
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                @med.Frequency
+                                            </MudText>
+                                            @if (selectedMedication?.MedicationId == med.MedicationId)
+                                            {
+                                                <MudChip Color="Color.Success" Size="Size.Small" Class="mt-2">
+                                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                                                    Selected
+                                                </MudChip>
+                                            }
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+
+                        <MudButton Variant="Variant.Filled"
+                                  Color="Color.Primary"
+                                  OnClick="NextStep"
+                                  Disabled="@(selectedMedication == null)"
+                                  Class="mt-4">
+                            Next: Choose Voice
+                        </MudButton>
+                    </MudStep>
+
+                    <!-- Step 2: Select Voice -->
+                    <MudStep Title="Choose Voice" Icon="@Icons.Material.Filled.RecordVoiceOver">
+                        <MudText Typo="Typo.h6" Class="mb-3">Choose a voice for the reminder</MudText>
+
+                        @if (voiceRecordings.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mb-3">
+                                <MudText Typo="Typo.body1" Class="mb-2">
+                                    You haven't recorded any voice messages yet.
+                                </MudText>
+                                <MudButton Variant="Variant.Filled"
+                                          Color="Color.Primary"
+                                          Href="/voice-recordings"
+                                          Target="_blank">
+                                    Record Voice Message
+                                </MudButton>
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudGrid>
+                                @foreach (var voice in voiceRecordings)
+                                {
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <MudCard Elevation="@(selectedVoiceId == voice.Id ? 5 : 2)"
+                                                Class="@(selectedVoiceId == voice.Id ? "mud-theme-primary" : "")"
+                                                Style="cursor: pointer;">
+                                            <MudCardContent>
+                                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                                    <MudText Typo="Typo.h6">🎙️ @voice.Name</MudText>
+                                                    @if (selectedVoiceId == voice.Id)
+                                                    {
+                                                        <MudChip Color="Color.Success" Size="Size.Small">
+                                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                                                        </MudChip>
+                                                    }
+                                                </MudStack>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                                                    @voice.DurationSeconds seconds
+                                                </MudText>
+
+                                                <MudStack Row="true" Spacing="1">
+                                                    <MudButton Variant="Variant.Outlined"
+                                                              Color="Color.Info"
+                                                              Size="Size.Small"
+                                                              StartIcon="@Icons.Material.Filled.PlayArrow"
+                                                              OnClick="() => PlayVoicePreview(voice.Id)">
+                                                        Preview
+                                                    </MudButton>
+                                                    <MudButton Variant="Variant.Filled"
+                                                              Color="@(selectedVoiceId == voice.Id ? Color.Success : Color.Primary)"
+                                                              Size="Size.Small"
+                                                              OnClick="() => SelectVoice(voice.Id)">
+                                                        @(selectedVoiceId == voice.Id ? "Selected" : "Select")
+                                                    </MudButton>
+                                                </MudStack>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4">
+                            <MudButton Variant="Variant.Outlined"
+                                      OnClick="PreviousStep">
+                                Back
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                      Color="Color.Primary"
+                                      OnClick="NextStep"
+                                      Disabled="@(selectedVoiceId == null)">
+                                Next: Set Times
+                            </MudButton>
+                        </MudStack>
+                    </MudStep>
+
+                    <!-- Step 3: Set Times -->
+                    <MudStep Title="Set Times" Icon="@Icons.Material.Filled.Schedule">
+                        <MudText Typo="Typo.h6" Class="mb-3">When should the reminder play?</MudText>
+
+                        @if (selectedMedication != null)
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                                <MudText Typo="Typo.body2">
+                                    <strong>Medication:</strong> @selectedMedication.Name - @selectedMedication.Frequency
+                                </MudText>
+                            </MudAlert>
+                        }
+
+                        <!-- Suggested Times -->
+                        @if (suggestedTimes.Any())
+                        {
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Suggested Times:</MudText>
+                            <MudStack Row="true" Spacing="2" Class="mb-3" Wrap="Wrap.Wrap">
+                                @foreach (var time in suggestedTimes)
+                                {
+                                    <MudChip Color="Color.Info"
+                                            OnClick="() => AddReminderTime(time)">
+                                        @time.ToString(@"hh\:mm")
+                                    </MudChip>
+                                }
+                            </MudStack>
+                        }
+
+                        <!-- Custom Time Input -->
+                        <MudTimePicker @bind-Time="customTime"
+                                      Label="Add Custom Time"
+                                      Variant="Variant.Outlined"
+                                      Class="mb-2" />
+                        <MudButton Variant="Variant.Outlined"
+                                  Color="Color.Primary"
+                                  StartIcon="@Icons.Material.Filled.Add"
+                                  OnClick="AddCustomTime"
+                                  Class="mb-4">
+                            Add Time
+                        </MudButton>
+
+                        <!-- Selected Times -->
+                        <MudText Typo="Typo.subtitle1" Class="mb-2">Reminder Times:</MudText>
+                        @if (!reminderTimes.Any())
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true">
+                                Please add at least one reminder time
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudStack Spacing="2">
+                                @foreach (var time in reminderTimes.OrderBy(t => t))
+                                {
+                                    <MudPaper Elevation="1" Class="pa-2">
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <MudText Typo="Typo.h6">
+                                                🕐 @time.ToString(@"hh\:mm tt")
+                                            </MudText>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                          Color="Color.Error"
+                                                          Size="Size.Small"
+                                                          OnClick="() => RemoveReminderTime(time)" />
+                                        </MudStack>
+                                    </MudPaper>
+                                }
+                            </MudStack>
+                        }
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4">
+                            <MudButton Variant="Variant.Outlined"
+                                      OnClick="PreviousStep">
+                                Back
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                      Color="Color.Primary"
+                                      OnClick="NextStep"
+                                      Disabled="@(!reminderTimes.Any())">
+                                Next: Preview
+                            </MudButton>
+                        </MudStack>
+                    </MudStep>
+
+                    <!-- Step 4: Preview -->
+                    <MudStep Title="Preview" Icon="@Icons.Material.Filled.Preview">
+                        <MudText Typo="Typo.h6" Class="mb-3">Preview Your Reminder</MudText>
+
+                        @if (selectedMedication != null && selectedVoiceId.HasValue)
+                        {
+                            <MudPaper Elevation="3" Class="pa-4 mb-3">
+                                <MudText Typo="Typo.h5" Class="mb-3">
+                                    📋 Reminder Summary
+                                </MudText>
+
+                                <MudDivider Class="mb-3" />
+
+                                <MudText Typo="Typo.body1" Class="mb-2">
+                                    <strong>Medication:</strong> @selectedMedication.Name
+                                </MudText>
+                                <MudText Typo="Typo.body1" Class="mb-2">
+                                    <strong>Dosage:</strong> @selectedMedication.Dosage @selectedMedication.Unit
+                                </MudText>
+                                <MudText Typo="Typo.body1" Class="mb-2">
+                                    <strong>Voice:</strong> @voiceRecordings.FirstOrDefault(v => v.Id == selectedVoiceId)?.Name
+                                </MudText>
+                                <MudText Typo="Typo.body1" Class="mb-3">
+                                    <strong>Times:</strong> @string.Join(", ", reminderTimes.OrderBy(t => t).Select(t => t.ToString(@"hh\:mm tt")))
+                                </MudText>
+
+                                <MudDivider Class="mb-3" />
+
+                                <MudText Typo="Typo.h6" Class="mb-2">🎧 This is what you'll hear:</MudText>
+                                <MudPaper Elevation="1" Class="pa-3" Style="background-color: #f5f5f5;">
+                                    <AudioPlayer RecordingId="@selectedVoiceId.Value"
+                                                DurationSeconds="@(voiceRecordings.FirstOrDefault(v => v.Id == selectedVoiceId)?.DurationSeconds ?? 0)"
+                                                ShowProgress="true" />
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                                        Notification: "Time to take @selectedMedication.Name"
+                                    </MudText>
+                                </MudPaper>
+                            </MudPaper>
+                        }
+
+                        <MudStack Row="true" Spacing="2" Class="mt-4">
+                            <MudButton Variant="Variant.Outlined"
+                                      OnClick="PreviousStep">
+                                Back
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                      Color="Color.Success"
+                                      StartIcon="@Icons.Material.Filled.CheckCircle"
+                                      OnClick="SaveReminders"
+                                      Disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                    <span>Saving...</span>
+                                }
+                                else
+                                {
+                                    <span>Save Reminders</span>
+                                }
+                            </MudButton>
+                        </MudStack>
+                    </MudStep>
+
+                </MudStepper>
+
+                <!-- Setup More Button -->
+                @if (completedMedications.Any())
+                {
+                    <MudPaper Elevation="2" Class="pa-4 mt-4">
+                        <MudText Typo="Typo.h6" Class="mb-2">
+                            ✅ Completed: @completedMedications.Count / @medications.Count medications
+                        </MudText>
+                        <MudButton Variant="Variant.Filled"
+                                  Color="Color.Primary"
+                                  OnClick="ResetForNextMedication"
+                                  Class="mr-2">
+                            Setup Another Medication
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                  Color="Color.Success"
+                                  Href="/medications">
+                            Done - View All Reminders
+                        </MudButton>
+                    </MudPaper>
+                }
+            }
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="Severity.Warning">
+            Please login to setup reminders.
+        </MudAlert>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public int PrescriptionId { get; set; }
+
+    private MudStepper? stepper;
+    private bool loading = true;
+    private bool isSaving = false;
+
+    private List<MedicationValidationResponse> medications = new();
+    private List<VoiceRecordingModel> voiceRecordings = new();
+    private List<TimeSpan> suggestedTimes = new();
+    private List<TimeSpan> reminderTimes = new();
+    private HashSet<int> completedMedications = new();
+
+    private MedicationValidationResponse? selectedMedication = null;
+    private int? selectedVoiceId = null;
+    private TimeSpan? customTime = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+
+        if (!AuthService.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        loading = true;
+
+        // Load validated medications
+        var workflow = await ValidationService.GetValidationWorkflowAsync(PrescriptionId);
+        if (workflow != null)
+        {
+            medications = workflow.Medications.Where(m => m.IsConfirmed).ToList();
+        }
+
+        // Load voice recordings
+        voiceRecordings = await VoiceRecordingService.GetUserRecordingsAsync();
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task SelectMedication(MedicationValidationResponse medication)
+    {
+        selectedMedication = medication;
+
+        // Calculate suggested times based on frequency
+        var frequencyCount = medication.FrequencyCount ?? 1;
+        var suggestion = await ReminderService.CalculateReminderTimesAsync(frequencyCount);
+        if (suggestion != null)
+        {
+            suggestedTimes = suggestion.SuggestedTimes;
+        }
+
+        StateHasChanged();
+    }
+
+    private void SelectVoice(int voiceId)
+    {
+        selectedVoiceId = voiceId;
+    }
+
+    private async Task PlayVoicePreview(int voiceId)
+    {
+        // Audio player will handle playback
+        await Task.CompletedTask;
+    }
+
+    private void AddReminderTime(TimeSpan time)
+    {
+        if (!reminderTimes.Contains(time))
+        {
+            reminderTimes.Add(time);
+            StateHasChanged();
+        }
+    }
+
+    private void AddCustomTime()
+    {
+        if (customTime.HasValue && !reminderTimes.Contains(customTime.Value))
+        {
+            reminderTimes.Add(customTime.Value);
+            customTime = null;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveReminderTime(TimeSpan time)
+    {
+        reminderTimes.Remove(time);
+        StateHasChanged();
+    }
+
+    private async Task SaveReminders()
+    {
+        if (selectedMedication == null || selectedVoiceId == null || !reminderTimes.Any())
+        {
+            Snackbar.Add("Please complete all steps", Severity.Warning);
+            return;
+        }
+
+        isSaving = true;
+
+        try
+        {
+            var model = new CreateMultipleRemindersModel
+            {
+                MedicationId = selectedMedication.MedicationId,
+                VoiceRecordingId = selectedVoiceId,
+                ReminderTimes = reminderTimes.ToList()
+            };
+
+            var success = await ReminderService.CreateMultipleRemindersAsync(model);
+
+            if (success)
+            {
+                completedMedications.Add(selectedMedication.MedicationId);
+                Snackbar.Add($"✓ {reminderTimes.Count} reminders created for {selectedMedication.Name}!", Severity.Success);
+
+                // Check if all medications are done
+                if (completedMedications.Count == medications.Count)
+                {
+                    await Task.Delay(2000);
+                    Navigation.NavigateTo("/medications");
+                }
+                else
+                {
+                    // Reset for next medication
+                    await Task.Delay(1000);
+                    ResetForNextMedication();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Failed to create reminders", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ResetForNextMedication()
+    {
+        selectedMedication = null;
+        selectedVoiceId = null;
+        reminderTimes.Clear();
+        suggestedTimes.Clear();
+        customTime = null;
+        stepper?.Reset();
+        StateHasChanged();
+    }
+
+    private void NextStep()
+    {
+        stepper?.NextStep();
+    }
+
+    private void PreviousStep()
+    {
+        stepper?.PreviousStep();
+    }
+}

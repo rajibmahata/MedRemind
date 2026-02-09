@@ -1,0 +1,203 @@
+@inject IVoiceRecordingService VoiceRecordingService
+@inject ILocalStorageService LocalStorageService
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+    <!-- Play/Pause Button -->
+    <MudIconButton Icon="@(isPlaying ? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   OnClick="TogglePlayPause"
+                   Disabled="@isLoading" />
+
+    <!-- Audio Element (hidden) -->
+    <audio @ref="audioElement"
+           src="@audioUrl"
+           @onended="OnAudioEnded"
+           @ontimeupdate="OnTimeUpdate"
+           @onloadedmetadata="OnMetadataLoaded">
+    </audio>
+
+    <!-- Progress -->
+    @if (showProgress)
+    {
+        <MudStack Style="flex-grow: 1;" Spacing="0">
+            <MudSlider @bind-Value="currentTime"
+                       Min="0"
+                       Max="@duration"
+                       Step="1"
+                       Size="Size.Small"
+                       Color="Color.Primary"
+                       ValueChanged="OnSeek"
+                       Disabled="@(duration == 0)" />
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @FormatTime(currentTime)
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @FormatTime(duration)
+                </MudText>
+            </MudStack>
+        </MudStack>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @(DurationSeconds > 0 ? $"{DurationSeconds}s" : "")
+        </MudText>
+    }
+</MudStack>
+
+@code {
+    [Parameter]
+    public int RecordingId { get; set; }
+
+    [Parameter]
+    public int DurationSeconds { get; set; }
+
+    [Parameter]
+    public bool ShowProgress { get; set; } = true;
+
+    [Parameter]
+    public bool AutoPlay { get; set; } = false;
+
+    private ElementReference audioElement;
+    private string? audioUrl;
+    private bool isPlaying = false;
+    private bool isLoading = false;
+    private double currentTime = 0;
+    private double duration = 0;
+    private bool showProgress => ShowProgress && duration > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAudio();
+
+        if (AutoPlay)
+        {
+            await PlayAudio();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RecordingId > 0 && string.IsNullOrEmpty(audioUrl))
+        {
+            await LoadAudio();
+        }
+    }
+
+    private async Task LoadAudio()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Get JWT token for authorization
+            var token = await LocalStorageService.GetItemAsync("sessionToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                // Build URL with authorization header (note: browsers don't support auth headers in audio src)
+                // We'll need to use a different approach - the API endpoint should handle cookies or use a temporary token
+                audioUrl = VoiceRecordingService.GetPlaybackUrl(RecordingId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading audio: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task TogglePlayPause()
+    {
+        if (isPlaying)
+        {
+            await PauseAudio();
+        }
+        else
+        {
+            await PlayAudio();
+        }
+    }
+
+    private async Task PlayAudio()
+    {
+        try
+        {
+            if (audioElement.Context != null)
+            {
+                await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('audio[src=\"{audioUrl}\"]')?.play()");
+                isPlaying = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error playing audio: {ex.Message}");
+        }
+    }
+
+    private async Task PauseAudio()
+    {
+        try
+        {
+            if (audioElement.Context != null)
+            {
+                await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('audio[src=\"{audioUrl}\"]')?.pause()");
+                isPlaying = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error pausing audio: {ex.Message}");
+        }
+    }
+
+    private void OnAudioEnded()
+    {
+        isPlaying = false;
+        currentTime = 0;
+        StateHasChanged();
+    }
+
+    private void OnTimeUpdate(ProgressEventArgs e)
+    {
+        // This would need JS interop to get current time accurately
+        // For simplicity, we'll handle it in a different way
+    }
+
+    private void OnMetadataLoaded()
+    {
+        // Get duration from audio element
+        duration = DurationSeconds; // Fallback to provided duration
+        StateHasChanged();
+    }
+
+    private async Task OnSeek(double newTime)
+    {
+        try
+        {
+            currentTime = newTime;
+            if (audioElement.Context != null)
+            {
+                await JSRuntime.InvokeVoidAsync("eval", $"document.querySelector('audio[src=\"{audioUrl}\"]').currentTime = {newTime}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error seeking: {ex.Message}");
+        }
+    }
+
+    private string FormatTime(double seconds)
+    {
+        var ts = TimeSpan.FromSeconds(seconds);
+        return $"{ts.Minutes:D2}:{ts.Seconds:D2}";
+    }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = null!;
+}

@@ -1,0 +1,267 @@
+@using MedRemind.Web.Models
+
+<MudCard Elevation="3" Class="mb-4">
+    <!-- Card Header with Status -->
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <div>
+                    <MudText Typo="Typo.h6">
+                        💊 @Medication.Name
+                        @if (Medication.IsConfirmed)
+                        {
+                            <MudChip Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Confirmed</MudChip>
+                        }
+                        @if (Medication.HasCorrections)
+                        {
+                            <MudChip Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Edit">Corrected</MudChip>
+                        }
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @Medication.Dosage @Medication.Unit • @Medication.Frequency
+                        @if (Medication.DurationDays.HasValue)
+                        {
+                            <span> • @Medication.DurationDays days</span>
+                        }
+                    </MudText>
+                </div>
+                <MudStack Row="true" Spacing="1">
+                    @if (!editMode)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                      Color="Color.Primary"
+                                      Size="Size.Small"
+                                      OnClick="EnableEditMode"
+                                      Title="Edit" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                      Color="Color.Error"
+                                      Size="Size.Small"
+                                      OnClick="() => OnDelete.InvokeAsync(Medication.MedicationId)"
+                                      Title="Delete" />
+                    }
+                </MudStack>
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (editMode)
+        {
+            <!-- Edit Mode -->
+            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="background-color: #f5f5f5;">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">✏️ Edit Medication</MudText>
+                <MudTextField @bind-Value="editedName"
+                            Label="Medication Name"
+                            Variant="Variant.Outlined"
+                            Class="mb-2"
+                            FullWidth="true" />
+                <MudGrid>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="editedDosage"
+                                    Label="Dosage"
+                                    Variant="Variant.Outlined"
+                                    FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="editedUnit"
+                                    Label="Unit"
+                                    Variant="Variant.Outlined"
+                                    FullWidth="true" />
+                    </MudItem>
+                </MudGrid>
+                <MudTextField @bind-Value="editedFrequency"
+                            Label="Frequency"
+                            Variant="Variant.Outlined"
+                            Class="mt-2 mb-2"
+                            FullWidth="true" />
+                <MudTextField @bind-Value="correctionReason"
+                            Label="Reason for Correction"
+                            Variant="Variant.Outlined"
+                            Lines="2"
+                            Class="mb-2"
+                            FullWidth="true"
+                            Required="true" />
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Success"
+                              StartIcon="@Icons.Material.Filled.Save"
+                              OnClick="SaveCorrections">
+                        Save Changes
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                              Color="Color.Default"
+                              OnClick="CancelEdit">
+                        Cancel
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+
+        <!-- Instructions -->
+        @if (!string.IsNullOrEmpty(Medication.Instructions))
+        {
+            <MudText Typo="Typo.body2" Class="mb-2">
+                <strong>Instructions:</strong> @Medication.Instructions
+            </MudText>
+        }
+
+        <!-- Safety Warnings -->
+        @if (Medication.SafetyWarnings.Any())
+        {
+            <MudExpansionPanels Class="mb-3">
+                <MudExpansionPanel Text="⚠️ Safety Warnings">
+                    @foreach (var warning in Medication.SafetyWarnings)
+                    {
+                        <MudAlert Severity="@GetWarningSeverity(warning.Severity)" Dense="true" Class="mb-2">
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">@warning.Type</MudText>
+                            <MudText Typo="Typo.body2">@warning.Message</MudText>
+                            @if (!string.IsNullOrEmpty(warning.Recommendation))
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    <strong>Recommendation:</strong> @warning.Recommendation
+                                </MudText>
+                            }
+                            @if (warning.RequiresPharmacistConsultation)
+                            {
+                                <MudChip Color="Color.Warning" Size="Size.Small" Class="mt-1">
+                                    Pharmacist Consultation Required
+                                </MudChip>
+                            }
+                        </MudAlert>
+                    }
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
+        <!-- Medicine Details -->
+        @if (!string.IsNullOrEmpty(Medication.MedicineDetails))
+        {
+            <MudExpansionPanels Class="mb-3">
+                <MudExpansionPanel Text="ℹ️ Purpose & Details">
+                    <MudText Typo="Typo.body2">@Medication.MedicineDetails</MudText>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
+        <!-- Side Effects -->
+        @if (!string.IsNullOrEmpty(Medication.SideEffects))
+        {
+            <MudExpansionPanels Class="mb-3">
+                <MudExpansionPanel Text="⚕️ Side Effects">
+                    <MudText Typo="Typo.body2">@Medication.SideEffects</MudText>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
+        <!-- Safety Score -->
+        @if (Medication.SafetyScore.HasValue)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                Safety Score: @($"{Medication.SafetyScore.Value:P0}")
+            </MudText>
+        }
+
+        <!-- Age Warning -->
+        @if (Medication.AgeAppropriate == false && !string.IsNullOrEmpty(Medication.AgeSpecificWarning))
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                <strong>Age-Specific Warning:</strong> @Medication.AgeSpecificWarning
+            </MudAlert>
+        }
+    </MudCardContent>
+
+    <MudCardActions>
+        @if (!Medication.IsConfirmed && !editMode)
+        {
+            <MudButton Variant="Variant.Filled"
+                      Color="Color.Success"
+                      StartIcon="@Icons.Material.Filled.CheckCircle"
+                      OnClick="ConfirmMedication"
+                      FullWidth="true">
+                ✓ Confirm This Medication
+            </MudButton>
+        }
+        else if (Medication.IsConfirmed)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Success" Class="ml-auto mr-auto">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                Confirmed @(Medication.ConfirmedAt.HasValue ? $"at {Medication.ConfirmedAt.Value.ToLocalTime():hh:mm tt}" : "")
+            </MudText>
+        }
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter]
+    public MedicationValidationResponse Medication { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<int> OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback<CorrectMedicationRequest> OnCorrect { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnDelete { get; set; }
+
+    private bool editMode = false;
+    private string editedName = string.Empty;
+    private string editedDosage = string.Empty;
+    private string editedUnit = string.Empty;
+    private string editedFrequency = string.Empty;
+    private string correctionReason = string.Empty;
+
+    private void EnableEditMode()
+    {
+        editMode = true;
+        editedName = Medication.Name;
+        editedDosage = Medication.Dosage;
+        editedUnit = Medication.Unit;
+        editedFrequency = Medication.Frequency;
+        correctionReason = string.Empty;
+    }
+
+    private void CancelEdit()
+    {
+        editMode = false;
+        correctionReason = string.Empty;
+    }
+
+    private async Task ConfirmMedication()
+    {
+        await OnConfirm.InvokeAsync(Medication.MedicationId);
+    }
+
+    private async Task SaveCorrections()
+    {
+        if (string.IsNullOrWhiteSpace(correctionReason))
+        {
+            // Show validation error
+            return;
+        }
+
+        var request = new CorrectMedicationRequest
+        {
+            MedicationId = Medication.MedicationId,
+            CorrectedName = editedName != Medication.Name ? editedName : null,
+            CorrectedDosage = editedDosage != Medication.Dosage ? editedDosage : null,
+            CorrectedUnit = editedUnit != Medication.Unit ? editedUnit : null,
+            CorrectedFrequency = editedFrequency != Medication.Frequency ? editedFrequency : null,
+            CorrectionReason = correctionReason
+        };
+
+        await OnCorrect.InvokeAsync(request);
+        editMode = false;
+    }
+
+    private Severity GetWarningSeverity(string severity)
+    {
+        return severity.ToLower() switch
+        {
+            "info" => Severity.Info,
+            "warning" => Severity.Warning,
+            "danger" or "error" => Severity.Error,
+            _ => Severity.Normal
+        };
+    }
+}

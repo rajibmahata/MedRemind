@@ -3,17 +3,19 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-<PageTitle>Register / Login - MedRemind</PageTitle>
+<PageTitle>Login - MedRemind</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
     <MudPaper Elevation="8" Class="pa-8" Style="border-radius: 16px;">
+        
+        <!-- Header -->
         <div Class="text-center mb-6">
             <div Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Large" Style="color: white;" />
+                <MudIcon Icon="@Icons.Material.Filled.Login" Size="Size.Large" Style="color: white;" />
             </div>
-            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #333;">Welcome to MedRemind</MudText>
+            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #333;">Welcome Back!</MudText>
             <MudText Typo="Typo.body2" Class="mt-2" Style="color: #666;">
-                A pharmacist's initiative to help you understand your medications better
+                Login to manage your medications
             </MudText>
         </div>
         
@@ -24,55 +26,15 @@
                 Pilot Version: OTP will be sent to your email
             </MudText>
             <MudText Typo="Typo.caption" Style="color: #666;">
-                (We don't have SMS license yet, so verification code will arrive via email)
+                We'll send a verification code to your registered email
             </MudText>
         </MudAlert>
         
+        <!-- Login Form -->
         <MudForm @ref="form" @bind-IsValid="@isFormValid">
             <MudText Typo="Typo.body2" Class="mb-4" Style="color: #666; font-weight: 600;">
-                Enter your details to register or login:
+                Enter your phone number to login:
             </MudText>
-            
-            <!-- First Name -->
-            <MudTextField @bind-Value="firstName" 
-                         Label="First Name" 
-                         Variant="Variant.Outlined"
-                         Required="true"
-                         RequiredError="First name is required"
-                         Adornment="Adornment.Start"
-                         AdornmentIcon="@Icons.Material.Filled.Person"
-                         AdornmentColor="Color.Primary"
-                         Placeholder="John"
-                         Class="mb-3"
-                         Style="border-radius: 8px;" />
-            
-            <!-- Last Name -->
-            <MudTextField @bind-Value="lastName" 
-                         Label="Last Name" 
-                         Variant="Variant.Outlined"
-                         Required="true"
-                         RequiredError="Last name is required"
-                         Adornment="Adornment.Start"
-                         AdornmentIcon="@Icons.Material.Filled.Person"
-                         AdornmentColor="Color.Primary"
-                         Placeholder="Doe"
-                         Class="mb-3"
-                         Style="border-radius: 8px;" />
-            
-            <!-- Email Address -->
-            <MudTextField @bind-Value="email" 
-                         Label="Email Address" 
-                         Variant="Variant.Outlined"
-                         Required="true"
-                         RequiredError="Email is required"
-                         Adornment="Adornment.Start"
-                         AdornmentIcon="@Icons.Material.Filled.Email"
-                         AdornmentColor="Color.Primary"
-                         Placeholder="john.doe@example.com"
-                         HelperText="OTP code will be sent to this email"
-                         InputType="InputType.Email"
-                         Class="mb-3"
-                         Style="border-radius: 8px;" />
             
             <!-- Phone Number -->
             <MudTextField @bind-Value="phoneNumber" 
@@ -80,99 +42,67 @@
                          Variant="Variant.Outlined"
                          Required="true"
                          RequiredError="Phone number is required"
+                         Validation="@(new Func<string, string>(ValidatePhoneNumber))"
                          Adornment="Adornment.Start"
                          AdornmentIcon="@Icons.Material.Filled.Phone"
                          AdornmentColor="Color.Primary"
-                         Placeholder="8420249020"
+                         Placeholder="9876543210"
                          HelperText="10-digit mobile number"
+                         Mask="@(new PatternMask("0000000000"))"
                          Class="mb-4"
                          Style="border-radius: 8px;" />
                          
+            <!-- Login Button -->
             <MudButton Variant="Variant.Filled" 
                       Color="Color.Primary" 
                       Disabled="@(!isFormValid || isLoading)"
-                      OnClick="SendOtp"
+                      OnClick="HandleLogin"
                       FullWidth="true"
                       Size="Size.Large"
                       Style="border-radius: 8px; padding: 14px; font-weight: 600;">
                 @if (isLoading)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Sending OTP to your email...</span>
+                    <span>Sending OTP...</span>
                 }
                 else
                 {
                     <MudIcon Icon="@Icons.Material.Filled.Send" Class="mr-2" />
-                    <span>Send OTP via Email</span>
+                    <span>Send OTP</span>
                 }
             </MudButton>
         </MudForm>
         
         <MudDivider Class="my-6" />
         
+        <!-- Don't have account -->
+        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: #666;">
+            Don't have an account?
+            <MudLink Href="/register" Typo="Typo.body2" Style="font-weight: 600; color: #667eea;">
+                Register here
+            </MudLink>
+        </MudText>
+        
         <!-- What happens next -->
-        <MudPaper Elevation="0" Class="pa-4" Style="background: #f8f9fa; border-radius: 8px;">
+        <MudPaper Elevation="0" Class="pa-4 mt-4" Style="background: #f8f9fa; border-radius: 8px;">
             <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight: 600; color: #333;">
                 <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Info" Class="mr-1" />
                 What happens next?
             </MudText>
             <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.6;">
                 1. Check your email for the OTP verification code<br/>
-                2. Enter the 6-digit code to verify your account<br/>
-                3. Start uploading prescriptions immediately<br/>
-                4. Our AI will help you read your medications
+                2. Enter the 6-digit code to verify and login<br/>
+                3. Access your prescriptions and medications<br/>
+                4. Manage your reminders and voice recordings
             </MudText>
         </MudPaper>
         
         <MudAlert Severity="Severity.Success" Dense="true" Class="mt-4" Style="border-radius: 8px;">
             <MudText Typo="Typo.caption">
                 <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" Class="mr-1" />
-                Your information is secure and will only be used for this service. 
-                We respect your privacy as healthcare professionals.
+                Your information is secure and protected.
             </MudText>
         </MudAlert>
-    </MudPaper>
-    
-    <!-- Why Join -->
-    <MudPaper Elevation="2" Class="pa-6 mt-6" Style="border-radius: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-        <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;" Class="mb-3 text-center">
-            <MudIcon Icon="@Icons.Material.Filled.Favorite" Style="color: white;" Class="mr-2" />
-            Why Join Our Pilot Program?
-        </MudText>
-        <MudGrid>
-            <MudItem xs="12" sm="6">
-                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
-                    <MudText Typo="Typo.body2" Style="color: white;">
-                        <strong>Free Service:</strong> Completely free during pilot phase
-                    </MudText>
-                </div>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
-                    <MudText Typo="Typo.body2" Style="color: white;">
-                        <strong>Easy to Use:</strong> Simple registration and upload process
-                    </MudText>
-                </div>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
-                    <MudText Typo="Typo.body2" Style="color: white;">
-                        <strong>AI Powered:</strong> Advanced technology to read prescriptions
-                    </MudText>
-                </div>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <div Style="display: flex; align-items: start;">
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
-                    <MudText Typo="Typo.body2" Style="color: white;">
-                        <strong>Help Society:</strong> Your feedback improves the service
-                    </MudText>
-                </div>
-            </MudItem>
-        </MudGrid>
     </MudPaper>
 </MudContainer>
 
@@ -181,21 +111,31 @@
     private bool isFormValid;
     private bool isLoading;
     
-    // Registration fields
-    private string firstName = "";
-    private string lastName = "";
-    private string email = "";
     private string phoneNumber = "";
     
-    private async Task SendOtp()
+    private string ValidatePhoneNumber(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+            return "Phone number is required";
+            
+        if (phone.Length != 10)
+            return "Phone number must be 10 digits";
+            
+        if (!phone.All(char.IsDigit))
+            return "Phone number must contain only digits";
+            
+        return null;
+    }
+    
+    private async Task HandleLogin()
     {
         if (!isFormValid) return;
         
         isLoading = true;
         try
         {
-            // TODO: Update AuthService to accept all registration fields
             var success = await AuthService.SendOtpAsync(phoneNumber);
+            
             if (success)
             {
                 Snackbar.Add("OTP sent successfully! Please check your email inbox (and spam folder).", Severity.Success, config =>
@@ -203,11 +143,13 @@
                     config.VisibleStateDuration = 5000;
                     config.Icon = Icons.Material.Filled.CheckCircle;
                 });
-                Navigation.NavigateTo($"/verify-otp?phone={phoneNumber}&email={email}&firstName={firstName}&lastName={lastName}");
+                
+                // Navigate to OTP verification page
+                Navigation.NavigateTo($"/verify-otp?phone={phoneNumber}");
             }
             else
             {
-                Snackbar.Add("Failed to send OTP. Please check your information and try again.", Severity.Error);
+                Snackbar.Add("Failed to send OTP. Please check your phone number and try again.", Severity.Error);
             }
         }
         catch (Exception ex)
@@ -218,6 +160,6 @@
         {
             isLoading = false;
         }
-
     }
 }
+

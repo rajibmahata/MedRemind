@@ -21,8 +21,37 @@ public class AuthService : IAuthService
         try
         {
             var request = new { PhoneNumber = phoneNumber };
-            var response = await _httpClient.PostAsJsonAsync("/api/auth/send-otp", request);
+            var response = await _httpClient.PostAsJsonAsync("/api/auth/login", request);
             return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    public async Task<bool> RegisterAsync(RegisterModel model)
+    {
+        try
+        {
+            var request = new
+            {
+                Name = model.Name,
+                Email = model.Email,
+                PhoneNumber = model.PhoneNumber,
+                Password = model.Password,
+                DateOfBirth = model.DateOfBirth
+            };
+            
+            var response = await _httpClient.PostAsJsonAsync("/api/users/register", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<RegistrationResponse>();
+                return result?.Success ?? false;
+            }
+            
+            return false;
         }
         catch
         {
@@ -91,10 +120,52 @@ public class AuthService : IAuthService
         _cachedToken = null;
     }
     
+    public async Task<string?> GetTokenAsync()
+    {
+        if (_cachedToken == null)
+        {
+            _cachedToken = await _localStorage.GetItemAsync(TOKEN_KEY);
+        }
+        return _cachedToken;
+    }
+    
+    public async Task<UserProfileData?> GetCurrentUserAsync()
+    {
+        try
+        {
+            var token = await GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.GetAsync("/api/users/me");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<UserProfileData>();
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+    
     private class LoginResponse
     {
         public string Token { get; set; } = string.Empty;
         public UserProfile? Profile { get; set; }
+    }
+    
+    private class RegistrationResponse
+    {
+        public bool Success { get; set; }
+        public int? UserId { get; set; }
+        public string? Message { get; set; }
+        public string? ErrorMessage { get; set; }
     }
     
     private class UserProfile
@@ -104,5 +175,16 @@ public class AuthService : IAuthService
         public string Name { get; set; } = string.Empty;
     }
 }
+
+public class RegisterModel
+{
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string PhoneNumber { get; set; } = "";
+    public string Password { get; set; } = "";
+    public string ConfirmPassword { get; set; } = "";
+    public DateTime? DateOfBirth { get; set; }
+}
+
 
 

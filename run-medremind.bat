@@ -16,7 +16,7 @@ echo [1/2] Starting Backend API on port 5000...
 echo.
 
 REM Start backend in new window
-start "MedRemind API" cmd /k "dotnet run --urls=http://localhost:5000"
+start "MedRemind API" cmd /k "dotnet run --urls=https://localhost:5000"
 
 REM Wait for API to start
 timeout /t 5 /nobreak >nul
@@ -36,9 +36,9 @@ echo ========================================
 echo  Both services started!
 echo ========================================
 echo.
-echo Backend API: http://localhost:5000
-echo Frontend UI: http://localhost:5001
-echo Swagger: http://localhost:5000/swagger
+echo Backend API: https://localhost:5000
+echo Frontend UI: https://localhost:5001
+echo Swagger: https://localhost:5000/swagger
 echo.
 echo Press any key to stop all services...
 pause >nul

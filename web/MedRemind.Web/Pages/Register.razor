@@ -1,0 +1,351 @@
+@page "/register"
+@using System.ComponentModel.DataAnnotations
+@using MedRemind.Web.Services
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Register - MedRemind</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudPaper Elevation="8" Class="pa-8" Style="border-radius: 16px;">
+        
+        <!-- Header -->
+        <div Class="text-center mb-6">
+            <div Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Large" Style="color: white;" />
+            </div>
+            <MudText Typo="Typo.h4" Style="font-weight: 700; color: #333;">Create Your Account</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2" Style="color: #666;">
+                Join MedRemind to manage your medications better
+            </MudText>
+        </div>
+        
+        <!-- OTP Email Notice -->
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4" Style="border-radius: 8px; border-left: 4px solid #2196f3;">
+            <MudText Typo="Typo.body2" Style="font-weight: 600;">
+                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-1" />
+                Pilot Version: OTP will be sent to your email
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #666;">
+                We don't have SMS license yet, so verification code will arrive via email
+            </MudText>
+        </MudAlert>
+        
+        <!-- Registration Form -->
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudText Typo="Typo.body2" Class="mb-4" Style="color: #666; font-weight: 600;">
+                Enter your details to register:
+            </MudText>
+            
+            <!-- Full Name -->
+            <MudTextField @bind-Value="model.Name" 
+                         Label="Full Name" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Name is required"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Person"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="John Doe"
+                         Class="mb-3"
+                         Style="border-radius: 8px;" />
+            
+            <!-- Email Address -->
+            <MudTextField @bind-Value="model.Email" 
+                         Label="Email Address" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Email is required"
+                         Validation="@(new EmailAddressAttribute() { ErrorMessage = "Invalid email address" })"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Email"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="john.doe@example.com"
+                         HelperText="OTP code will be sent to this email"
+                         InputType="InputType.Email"
+                         Class="mb-3"
+                         Style="border-radius: 8px;" />
+            
+            <!-- Phone Number -->
+            <MudTextField @bind-Value="model.PhoneNumber" 
+                         Label="Phone Number" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Phone number is required"
+                         Validation="@(new Func<string, string>(ValidatePhoneNumber))"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Phone"
+                         AdornmentColor="Color.Primary"
+                         Placeholder="9876543210"
+                         HelperText="10-digit mobile number"
+                         Mask="@(new PatternMask("0000000000"))"
+                         Class="mb-3"
+                         Style="border-radius: 8px;" />
+            
+            <!-- Password -->
+            <MudTextField @bind-Value="model.Password" 
+                         Label="Password" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Password is required"
+                         Validation="@(new Func<string, string>(ValidatePassword))"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Lock"
+                         AdornmentColor="Color.Primary"
+                         InputType="@passwordInputType"
+                         Placeholder="Enter password"
+                         HelperText="Minimum 6 characters"
+                         Class="mb-3"
+                         Style="border-radius: 8px;"
+                         Immediate="true">
+                <MudIconButton Icon="@passwordIcon" 
+                              OnClick="TogglePasswordVisibility" 
+                              Edge="Edge.End" 
+                              Style="margin-right: 8px;" />
+            </MudTextField>
+            
+            <!-- Confirm Password -->
+            <MudTextField @bind-Value="model.ConfirmPassword" 
+                         Label="Confirm Password" 
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         RequiredError="Please confirm your password"
+                         Validation="@(new Func<string, string>(ValidateConfirmPassword))"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.Lock"
+                         AdornmentColor="Color.Primary"
+                         InputType="@confirmPasswordInputType"
+                         Placeholder="Re-enter password"
+                         Class="mb-3"
+                         Style="border-radius: 8px;"
+                         Immediate="true">
+                <MudIconButton Icon="@confirmPasswordIcon" 
+                              OnClick="ToggleConfirmPasswordVisibility" 
+                              Edge="Edge.End" 
+                              Style="margin-right: 8px;" />
+            </MudTextField>
+            
+            <!-- Date of Birth (Optional) -->
+            <MudDatePicker @bind-Date="model.DateOfBirth" 
+                          Label="Date of Birth (Optional)" 
+                          Variant="Variant.Outlined"
+                          Editable="true"
+                          MaxDate="DateTime.Today"
+                          OpenTo="OpenTo.Year"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                          AdornmentColor="Color.Primary"
+                          Placeholder="Select date"
+                          HelperText="Optional: For age-appropriate medication guidance"
+                          Class="mb-4"
+                          Style="border-radius: 8px;" />
+                         
+            <!-- Register Button -->
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      Disabled="@(!isFormValid || isLoading)"
+                      OnClick="HandleRegister"
+                      FullWidth="true"
+                      Size="Size.Large"
+                      Style="border-radius: 8px; padding: 14px; font-weight: 600;">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Creating Account...</span>
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" />
+                    <span>Create Account</span>
+                }
+            </MudButton>
+        </MudForm>
+        
+        <MudDivider Class="my-6" />
+        
+        <!-- Already have account -->
+        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: #666;">
+            Already have an account?
+            <MudLink Href="/login" Typo="Typo.body2" Style="font-weight: 600; color: #667eea;">
+                Login here
+            </MudLink>
+        </MudText>
+        
+        <!-- What happens next -->
+        <MudPaper Elevation="0" Class="pa-4 mt-4" Style="background: #f8f9fa; border-radius: 8px;">
+            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight: 600; color: #333;">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Info" Class="mr-1" />
+                What happens next?
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.6;">
+                1. We'll send a 6-digit OTP to your email<br/>
+                2. Enter the OTP to verify your account<br/>
+                3. Start uploading prescriptions immediately<br/>
+                4. Our AI will help you read your medications
+            </MudText>
+        </MudPaper>
+        
+        <!-- Security Notice -->
+        <MudAlert Severity="Severity.Success" Dense="true" Class="mt-4" Style="border-radius: 8px;">
+            <MudText Typo="Typo.caption">
+                <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" Class="mr-1" />
+                Your information is secure and will only be used for this service.
+            </MudText>
+        </MudAlert>
+    </MudPaper>
+    
+    <!-- Why Join -->
+    <MudPaper Elevation="2" Class="pa-6 mt-6" Style="border-radius: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <MudText Typo="Typo.h6" Style="color: white; font-weight: 600;" Class="mb-3 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.Favorite" Style="color: white;" Class="mr-2" />
+            Why Join MedRemind?
+        </MudText>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>Free Service:</strong> Completely free during pilot phase
+                    </MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>Easy to Use:</strong> Simple registration and upload process
+                    </MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start; margin-bottom: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>AI Powered:</strong> Advanced technology to read prescriptions
+                    </MudText>
+                </div>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <div Style="display: flex; align-items: start;">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white;" Size="Size.Small" Class="mr-2 mt-1" />
+                    <MudText Typo="Typo.body2" Style="color: white;">
+                        <strong>Privacy First:</strong> Your data is secure and private
+                    </MudText>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm? form;
+    private bool isFormValid;
+    private bool isLoading;
+    
+    private RegisterModel model = new();
+    private InputType passwordInputType = InputType.Password;
+    private string passwordIcon = Icons.Material.Filled.VisibilityOff;
+    private InputType confirmPasswordInputType = InputType.Password;
+    private string confirmPasswordIcon = Icons.Material.Filled.VisibilityOff;
+    
+    private void TogglePasswordVisibility()
+    {
+        if (passwordInputType == InputType.Password)
+        {
+            passwordInputType = InputType.Text;
+            passwordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            passwordInputType = InputType.Password;
+            passwordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
+    
+    private void ToggleConfirmPasswordVisibility()
+    {
+        if (confirmPasswordInputType == InputType.Password)
+        {
+            confirmPasswordInputType = InputType.Text;
+            confirmPasswordIcon = Icons.Material.Filled.Visibility;
+        }
+        else
+        {
+            confirmPasswordInputType = InputType.Password;
+            confirmPasswordIcon = Icons.Material.Filled.VisibilityOff;
+        }
+    }
+    
+    private string ValidatePassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            return "Password is required";
+            
+        if (password.Length < 6)
+            return "Password must be at least 6 characters";
+            
+        return null;
+    }
+    
+    private string ValidateConfirmPassword(string confirmPassword)
+    {
+        if (string.IsNullOrWhiteSpace(confirmPassword))
+            return "Please confirm your password";
+            
+        if (confirmPassword != model.Password)
+            return "Passwords do not match";
+            
+        return null;
+    }
+    
+    private string ValidatePhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return "Phone number is required";
+            
+        if (phoneNumber.Length != 10)
+            return "Phone number must be 10 digits";
+            
+        if (!phoneNumber.All(char.IsDigit))
+            return "Phone number must contain only digits";
+            
+        return null;
+    }
+    
+    private async Task HandleRegister()
+    {
+        if (!isFormValid) return;
+        
+        isLoading = true;
+        try
+        {
+            var success = await AuthService.RegisterAsync(model);
+            
+            if (success)
+            {
+                Snackbar.Add("Registration successful! Please check your email for OTP.", Severity.Success, config =>
+                {
+                    config.VisibleStateDuration = 5000;
+                    config.Icon = Icons.Material.Filled.CheckCircle;
+                });
+                
+                // Navigate to OTP verification page
+                Navigation.NavigateTo($"/verify-otp?phone={model.PhoneNumber}&email={model.Email}&name={Uri.EscapeDataString(model.Name)}");
+            }
+            else
+            {
+                Snackbar.Add("Registration failed. User may already exist or invalid data.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
+

@@ -1,9 +1,11 @@
 using MedRemind.Core.Data;
 using MedRemind.Core.DTOs;
+using MedRemind.Core.Interfaces;
 using MedRemind.Core.Models;
 using MedRemind.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using System.Linq.Expressions;
 using Xunit;
 
 namespace MedRemind.Tests;
@@ -55,12 +57,17 @@ public class ValidationWorkflowServiceTests
             Medications = medications
         };
 
-        var prescriptionQueryable = new List<Prescription> { prescription }.AsQueryable();
-        var mockPrescriptionSet = CreateMockDbSet(prescriptionQueryable);
-        _mockPrescriptionRepo.Setup(r => r.GetQueryable()).Returns(mockPrescriptionSet.Object);
+        // Mock prescription repository
+        _mockPrescriptionRepo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<Prescription, bool>>>()))
+            .ReturnsAsync(prescription);
 
-        _mockWorkflowRepo.Setup(r => r.GetQueryable()).Returns(new List<PrescriptionValidationWorkflow>().AsQueryable().BuildMockDbSet().Object);
-        _mockOcrRepo.Setup(r => r.GetQueryable()).Returns(new List<PrescriptionOCRResult>().AsQueryable().BuildMockDbSet().Object);
+        // Mock workflow repository (no existing workflow)
+        _mockWorkflowRepo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<PrescriptionValidationWorkflow, bool>>>()))
+            .ReturnsAsync((PrescriptionValidationWorkflow)null);
+
+        // Mock OCR repository
+        _mockOcrRepo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<PrescriptionOCRResult, bool>>>()))
+            .ReturnsAsync((PrescriptionOCRResult)null);
 
         // Act
         var result = await _service.CreateValidationWorkflowAsync(prescriptionId, userId);
@@ -100,8 +107,9 @@ public class ValidationWorkflowServiceTests
             IsConfirmed = false
         };
 
-        var validationQueryable = new List<MedicationValidation> { validation }.AsQueryable();
-        _mockValidationRepo.Setup(r => r.GetQueryable()).Returns(validationQueryable.BuildMockDbSet().Object);
+        // Mock validation repository
+        _mockValidationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<MedicationValidation, bool>>>()))
+            .ReturnsAsync(new List<MedicationValidation> { validation });
 
         var request = new ConfirmMedicationRequest
         {
@@ -138,8 +146,9 @@ public class ValidationWorkflowServiceTests
         _mockMedicationRepo.Setup(r => r.GetByIdAsync(medicationId))
             .ReturnsAsync(medication);
 
-        var validationQueryable = new List<MedicationValidation>().AsQueryable();
-        _mockValidationRepo.Setup(r => r.GetQueryable()).Returns(validationQueryable.BuildMockDbSet().Object);
+        // Mock validation repository (no existing validation)
+        _mockValidationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<MedicationValidation, bool>>>()))
+            .ReturnsAsync(new List<MedicationValidation>());
 
         var request = new CorrectMedicationRequest
         {
@@ -189,8 +198,9 @@ public class ValidationWorkflowServiceTests
             UserId = userId
         };
 
-        var validationQueryable = new List<MedicationValidation> { validation }.AsQueryable();
-        _mockValidationRepo.Setup(r => r.GetQueryable()).Returns(validationQueryable.BuildMockDbSet().Object);
+        // Mock validation repository
+        _mockValidationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<MedicationValidation, bool>>>()))
+            .ReturnsAsync(new List<MedicationValidation> { validation });
 
         var request = new DeleteMedicationRequest
         {
@@ -222,8 +232,9 @@ public class ValidationWorkflowServiceTests
             Status = "InProgress"
         };
 
-        var workflowQueryable = new List<PrescriptionValidationWorkflow> { workflow }.AsQueryable();
-        _mockWorkflowRepo.Setup(r => r.GetQueryable()).Returns(workflowQueryable.BuildMockDbSet().Object);
+        // Mock workflow repository
+        _mockWorkflowRepo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<PrescriptionValidationWorkflow, bool>>>()))
+            .ReturnsAsync(workflow);
 
         var medications = new List<Medication>
         {
@@ -231,8 +242,9 @@ public class ValidationWorkflowServiceTests
             new Medication { Id = 2, PrescriptionId = prescriptionId }
         };
 
-        var medicationQueryable = medications.AsQueryable();
-        _mockMedicationRepo.Setup(r => r.GetQueryable()).Returns(medicationQueryable.BuildMockDbSet().Object);
+        // Mock medication repository
+        _mockMedicationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<Medication, bool>>>()))
+            .ReturnsAsync(medications);
 
         var validations = new List<MedicationValidation>
         {
@@ -240,8 +252,9 @@ public class ValidationWorkflowServiceTests
             new MedicationValidation { MedicationId = 2, IsConfirmed = false } // Not confirmed!
         };
 
-        var validationQueryable = validations.AsQueryable();
-        _mockValidationRepo.Setup(r => r.GetQueryable()).Returns(validationQueryable.BuildMockDbSet().Object);
+        // Mock validation repository
+        _mockValidationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<MedicationValidation, bool>>>()))
+            .ReturnsAsync(validations);
 
         var request = new CompleteValidationRequest
         {
@@ -269,24 +282,27 @@ public class ValidationWorkflowServiceTests
             StartedAt = DateTime.UtcNow.AddMinutes(-5)
         };
 
-        var workflowQueryable = new List<PrescriptionValidationWorkflow> { workflow }.AsQueryable();
-        _mockWorkflowRepo.Setup(r => r.GetQueryable()).Returns(workflowQueryable.BuildMockDbSet().Object);
+        // Mock workflow repository
+        _mockWorkflowRepo.Setup(r => r.FirstOrDefaultAsync(It.IsAny<Expression<Func<PrescriptionValidationWorkflow, bool>>>()))
+            .ReturnsAsync(workflow);
 
         var medications = new List<Medication>
         {
             new Medication { Id = 1, PrescriptionId = prescriptionId }
         };
 
-        var medicationQueryable = medications.AsQueryable();
-        _mockMedicationRepo.Setup(r => r.GetQueryable()).Returns(medicationQueryable.BuildMockDbSet().Object);
+        // Mock medication repository
+        _mockMedicationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<Medication, bool>>>()))
+            .ReturnsAsync(medications);
 
         var validations = new List<MedicationValidation>
         {
             new MedicationValidation { MedicationId = 1, IsConfirmed = true }
         };
 
-        var validationQueryable = validations.AsQueryable();
-        _mockValidationRepo.Setup(r => r.GetQueryable()).Returns(validationQueryable.BuildMockDbSet().Object);
+        // Mock validation repository
+        _mockValidationRepo.Setup(r => r.FindAsync(It.IsAny<Expression<Func<MedicationValidation, bool>>>()))
+            .ReturnsAsync(validations);
 
         var request = new CompleteValidationRequest
         {
@@ -308,23 +324,4 @@ public class ValidationWorkflowServiceTests
         )), Times.Once);
     }
 
-    // Helper method to create mock DbSet
-    private Mock<DbSet<T>> CreateMockDbSet<T>(IQueryable<T> data) where T : class
-    {
-        return data.BuildMockDbSet();
-    }
-}
-
-// Extension method for creating mock DbSet
-public static class MockDbSetExtensions
-{
-    public static Mock<DbSet<T>> BuildMockDbSet<T>(this IQueryable<T> data) where T : class
-    {
-        var mockSet = new Mock<DbSet<T>>();
-        mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(data.Provider);
-        mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(data.Expression);
-        mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(data.ElementType);
-        mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
-        return mockSet;
-    }
 }

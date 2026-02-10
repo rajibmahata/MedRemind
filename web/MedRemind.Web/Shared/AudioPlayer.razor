@@ -13,7 +13,6 @@
     <audio @ref="audioElement"
            src="@audioUrl"
            @onended="OnAudioEnded"
-           @ontimeupdate="OnTimeUpdate"
            @onloadedmetadata="OnMetadataLoaded">
     </audio>
 
@@ -21,13 +20,13 @@
     @if (showProgress)
     {
         <MudStack Style="flex-grow: 1;" Spacing="0">
-            <MudSlider @bind-Value="currentTime"
+            <MudSlider Value="@currentTime"
                        Min="0"
                        Max="@duration"
                        Step="1"
                        Size="Size.Small"
                        Color="Color.Primary"
-                       ValueChanged="OnSeek"
+                       ValueChanged="(double value) => OnSeek(value)"
                        Disabled="@(duration == 0)" />
             <MudStack Row="true" Justify="Justify.SpaceBetween">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -201,3 +200,4 @@
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = null!;
 }
+

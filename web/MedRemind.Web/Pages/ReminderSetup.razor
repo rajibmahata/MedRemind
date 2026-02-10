@@ -41,7 +41,7 @@
             else
             {
                 <!-- Progress Stepper -->
-                <MudStepper @ref="stepper" Linear="true" Color="Color.Primary" HeaderSize="Size.Large">
+                <MudStepper @ref="stepper" @bind-ActiveIndex="activeStep" Linear="true" Color="Color.Primary" HeaderSize="Size.Large">
 
                     <!-- Step 1: Select Medication -->
                     <MudStep Title="Select Medication" Icon="@Icons.Material.Filled.Medication">
@@ -65,7 +65,7 @@
                                             </MudText>
                                             @if (selectedMedication?.MedicationId == med.MedicationId)
                                             {
-                                                <MudChip Color="Color.Success" Size="Size.Small" Class="mt-2">
+                                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="mt-2">
                                                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
                                                     Selected
                                                 </MudChip>
@@ -117,7 +117,7 @@
                                                     <MudText Typo="Typo.h6">🎙️ @voice.Name</MudText>
                                                     @if (selectedVoiceId == voice.Id)
                                                     {
-                                                        <MudChip Color="Color.Success" Size="Size.Small">
+                                                        <MudChip T="string" Color="Color.Success" Size="Size.Small">
                                                             <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
                                                         </MudChip>
                                                     }
@@ -182,7 +182,7 @@
                             <MudStack Row="true" Spacing="2" Class="mb-3" Wrap="Wrap.Wrap">
                                 @foreach (var time in suggestedTimes)
                                 {
-                                    <MudChip Color="Color.Info"
+                                    <MudChip T="string" Color="Color.Info"
                                             OnClick="() => AddReminderTime(time)">
                                         @time.ToString(@"hh\:mm")
                                     </MudChip>
@@ -394,7 +394,8 @@
         selectedMedication = medication;
 
         // Calculate suggested times based on frequency
-        var frequencyCount = medication.FrequencyCount ?? 1;
+        // Parse frequency string to get count (e.g., "Twice daily" -> 2, "Once daily" -> 1)
+        var frequencyCount = ParseFrequencyCount(medication.Frequency);
         var suggestion = await ReminderService.CalculateReminderTimesAsync(frequencyCount);
         if (suggestion != null)
         {
@@ -402,6 +403,26 @@
         }
 
         StateHasChanged();
+    }
+
+    private int ParseFrequencyCount(string frequency)
+    {
+        if (string.IsNullOrEmpty(frequency)) return 1;
+        
+        var lower = frequency.ToLower();
+        if (lower.Contains("once")) return 1;
+        if (lower.Contains("twice") || lower.Contains("two")) return 2;
+        if (lower.Contains("thrice") || lower.Contains("three")) return 3;
+        if (lower.Contains("four")) return 4;
+        
+        // Try to extract number
+        var match = System.Text.RegularExpressions.Regex.Match(frequency, @"(\d+)");
+        if (match.Success && int.TryParse(match.Value, out int count))
+        {
+            return count;
+        }
+        
+        return 1; // Default to once daily
     }
 
     private void SelectVoice(int voiceId)
@@ -494,6 +515,8 @@
         }
     }
 
+    private int activeStep = 0;
+
     private void ResetForNextMedication()
     {
         selectedMedication = null;
@@ -501,17 +524,23 @@
         reminderTimes.Clear();
         suggestedTimes.Clear();
         customTime = null;
-        stepper?.Reset();
+        activeStep = 0;
         StateHasChanged();
     }
 
     private void NextStep()
     {
-        stepper?.NextStep();
+        activeStep++;
+        StateHasChanged();
     }
 
     private void PreviousStep()
     {
-        stepper?.PreviousStep();
+        if (activeStep > 0)
+        {
+            activeStep--;
+            StateHasChanged();
+        }
     }
 }
+

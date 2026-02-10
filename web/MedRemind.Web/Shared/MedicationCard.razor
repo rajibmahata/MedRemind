@@ -10,11 +10,11 @@
                         💊 @Medication.Name
                         @if (Medication.IsConfirmed)
                         {
-                            <MudChip Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Confirmed</MudChip>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Confirmed</MudChip>
                         }
                         @if (Medication.HasCorrections)
                         {
-                            <MudChip Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Edit">Corrected</MudChip>
+                            <MudChip T="string" Color="Color.Info" Size="Size.Small" Icon="@Icons.Material.Filled.Edit">Corrected</MudChip>
                         }
                     </MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -123,7 +123,7 @@
                             }
                             @if (warning.RequiresPharmacistConsultation)
                             {
-                                <MudChip Color="Color.Warning" Size="Size.Small" Class="mt-1">
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Class="mt-1">
                                     Pharmacist Consultation Required
                                 </MudChip>
                             }
@@ -265,3 +265,4 @@
         };
     }
 }
+

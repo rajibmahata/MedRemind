@@ -7,13 +7,14 @@
           Dense="true"
           Style="border-left: 4px solid #2196f3; border-radius: 8px; background: #e3f2fd;">
     <div Style="display: flex; align-items: center; gap: 12px;">
-        <MudIcon Icon="@Icons.Material.Filled.LocalPharmacy" Style="color: #1976d2;" />
+        <MudIcon Icon="@Icons.Material.Filled.LocalPharmacy" Style="color: #1976d2;" Size="Size.Large" />
         <div>
             <MudText Typo="Typo.body2" Style="font-weight: 600; color: #1565c0;">
-                ?? Pharmacist's Care: Prescription Reading Helper
+                <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Size="Size.Small" Style="vertical-align: middle; margin-right: 4px;" />
+                Pharmacist's Care: Prescription Reading Helper
             </MudText>
             <MudText Typo="Typo.caption" Style="color: #1976d2;">
-                This tool helps you read prescriptions • Always verify with your doctor or pharmacist • Not medical advice
+                This tool helps you read prescriptions &bull; Always verify with your doctor or pharmacist &bull; Not medical advice
             </MudText>
         </div>
     </div>
@@ -22,3 +23,4 @@
 @code {
     // Pure presentation component
 }
+

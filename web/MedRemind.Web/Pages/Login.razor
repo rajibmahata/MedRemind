@@ -198,9 +198,10 @@
             var success = await AuthService.SendOtpAsync(phoneNumber);
             if (success)
             {
-                Snackbar.Add("? OTP sent successfully! Please check your email inbox (and spam folder).", Severity.Success, config =>
+                Snackbar.Add("OTP sent successfully! Please check your email inbox (and spam folder).", Severity.Success, config =>
                 {
                     config.VisibleStateDuration = 5000;
+                    config.Icon = Icons.Material.Filled.CheckCircle;
                 });
                 Navigation.NavigateTo($"/verify-otp?phone={phoneNumber}&email={email}&firstName={firstName}&lastName={lastName}");
             }
@@ -217,5 +218,6 @@
         {
             isLoading = false;
         }
+
     }
 }

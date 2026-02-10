@@ -82,8 +82,9 @@ public class VoiceRecordingStorageService
             var uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
             var fileName = $"voice_{userId}_{timestamp}_{uniqueId}{extension}";
 
-            // Get storage path
-            var voiceRecordingsPath = _fileStorageService.GetFolderPath(VoiceRecordingsFolderName);
+            // Get storage path - use prescriptions directory as base and create voice recordings subfolder
+            var baseDirectory = _fileStorageService.GetPrescriptionsDirectory();
+            var voiceRecordingsPath = Path.Combine(baseDirectory, "..", VoiceRecordingsFolderName);
             var userFolderPath = Path.Combine(voiceRecordingsPath, userId.ToString());
 
             // Ensure user folder exists
@@ -117,7 +118,9 @@ public class VoiceRecordingStorageService
     /// </summary>
     public string GetVoiceRecordingPath(string relativePath)
     {
-        return _fileStorageService.GetFullPath(relativePath);
+        var baseDirectory = _fileStorageService.GetPrescriptionsDirectory();
+        var voiceRecordingsBase = Path.Combine(baseDirectory, "..");
+        return Path.Combine(voiceRecordingsBase, relativePath);
     }
 
     /// <summary>
@@ -210,7 +213,8 @@ public class VoiceRecordingStorageService
     {
         try
         {
-            var voiceRecordingsPath = _fileStorageService.GetFolderPath(VoiceRecordingsFolderName);
+            var baseDirectory = _fileStorageService.GetPrescriptionsDirectory();
+            var voiceRecordingsPath = Path.Combine(baseDirectory, "..", VoiceRecordingsFolderName);
             var deletedCount = 0;
 
             if (!Directory.Exists(voiceRecordingsPath))

@@ -64,7 +64,7 @@
                 <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
                     @foreach (var time in ReminderTimes.OrderBy(t => t))
                     {
-                        <MudChip Color="Color.Primary" Size="Size.Small">
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">
                             @time.ToString(@"hh\:mm tt")
                         </MudChip>
                     }
@@ -128,3 +128,4 @@
         StateHasChanged();
     }
 }
+

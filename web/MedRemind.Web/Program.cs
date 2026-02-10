@@ -9,6 +9,9 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// Register Configuration Service (NEW - Centralized Config)
+builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
+
 // Load API settings from configuration
 var apiSettings = builder.Configuration.GetSection("ApiSettings").Get<ApiSettings>() ?? new ApiSettings();
 
@@ -22,8 +25,13 @@ builder.Services.AddScoped(sp => new HttpClient
 // Add MudBlazor
 builder.Services.AddMudServices();
 
-// Register API Settings
+// Register API Settings (Keep for backward compatibility)
 builder.Services.AddSingleton(apiSettings);
+
+// Register Complete Configuration (NEW - Access all settings)
+var appConfig = new AppConfiguration();
+builder.Configuration.Bind(appConfig);
+builder.Services.AddSingleton(appConfig);
 
 // Add Application Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -36,3 +44,4 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 
 await builder.Build().RunAsync();
+

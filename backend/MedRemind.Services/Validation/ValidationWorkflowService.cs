@@ -1,6 +1,7 @@
 using MedRemind.Core.Data;
 using MedRemind.Core.DTOs;
 using MedRemind.Core.Models;
+using MedRemind.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -45,8 +46,6 @@ public class ValidationWorkflowService
     {
         // Get prescription with medications
         var prescription = await _prescriptionRepository
-            .GetQueryable()
-            .Include(p => p.Medications)
             .FirstOrDefaultAsync(p => p.Id == prescriptionId && p.UserId == userId);
 
         if (prescription == null)
@@ -54,7 +53,6 @@ public class ValidationWorkflowService
 
         // Check if workflow already exists
         var existingWorkflow = await _workflowRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(w => w.PrescriptionId == prescriptionId);
 
         if (existingWorkflow != null)
@@ -65,7 +63,6 @@ public class ValidationWorkflowService
 
         // Get OCR result for safety metrics
         var ocrResult = await _ocrResultRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(o => o.PrescriptionId == prescriptionId);
 
         // Create new workflow
@@ -113,8 +110,6 @@ public class ValidationWorkflowService
     public async Task<ValidationWorkflowDto> GetValidationWorkflowAsync(int prescriptionId, int userId)
     {
         var workflow = await _workflowRepository
-            .GetQueryable()
-            .Include(w => w.Prescription)
             .FirstOrDefaultAsync(w => w.PrescriptionId == prescriptionId && w.UserId == userId);
 
         if (workflow == null)
@@ -123,16 +118,13 @@ public class ValidationWorkflowService
             return await CreateValidationWorkflowAsync(prescriptionId, userId);
         }
 
-        var prescription = workflow.Prescription;
-        var medications = await _medicationRepository
-            .GetQueryable()
-            .Where(m => m.PrescriptionId == prescriptionId)
-            .ToListAsync();
+        var prescription = await _prescriptionRepository.GetByIdAsync(prescriptionId);
+        var medications = (await _medicationRepository
+            .FindAsync(m => m.PrescriptionId == prescriptionId)).ToList();
 
-        var validations = await _validationRepository
-            .GetQueryable()
-            .Where(v => medications.Select(m => m.Id).Contains(v.MedicationId))
-            .ToListAsync();
+        var medicationIds = medications.Select(m => m.Id).ToList();
+        var validations = (await _validationRepository
+            .FindAsync(v => medicationIds.Contains(v.MedicationId))).ToList();
 
         var medicationDtos = new List<MedicationValidationDto>();
         foreach (var med in medications)
@@ -171,7 +163,6 @@ public class ValidationWorkflowService
             throw new InvalidOperationException($"Medication {request.MedicationId} not found");
 
         var validation = await _validationRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(v => v.MedicationId == request.MedicationId);
 
         if (validation == null)
@@ -212,7 +203,6 @@ public class ValidationWorkflowService
             throw new InvalidOperationException($"Medication {request.MedicationId} not found");
 
         var validation = await _validationRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(v => v.MedicationId == request.MedicationId);
 
         if (validation == null)
@@ -281,7 +271,6 @@ public class ValidationWorkflowService
 
         // Delete validation record
         var validation = await _validationRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(v => v.MedicationId == request.MedicationId);
 
         if (validation != null)
@@ -304,22 +293,18 @@ public class ValidationWorkflowService
     public async Task<ValidationWorkflowDto> CompleteValidationAsync(CompleteValidationRequest request, int userId)
     {
         var workflow = await _workflowRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(w => w.PrescriptionId == request.PrescriptionId && w.UserId == userId);
 
         if (workflow == null)
             throw new InvalidOperationException($"Validation workflow not found for prescription {request.PrescriptionId}");
 
         // Check if all medications are confirmed
-        var medications = await _medicationRepository
-            .GetQueryable()
-            .Where(m => m.PrescriptionId == request.PrescriptionId)
-            .ToListAsync();
+        var medications = (await _medicationRepository
+            .FindAsync(m => m.PrescriptionId == request.PrescriptionId)).ToList();
 
-        var validations = await _validationRepository
-            .GetQueryable()
-            .Where(v => medications.Select(m => m.Id).Contains(v.MedicationId))
-            .ToListAsync();
+        var medicationIds = medications.Select(m => m.Id).ToList();
+        var validations = (await _validationRepository
+            .FindAsync(v => medicationIds.Contains(v.MedicationId))).ToList();
 
         var allConfirmed = validations.All(v => v.IsConfirmed);
         if (!allConfirmed)
@@ -348,20 +333,16 @@ public class ValidationWorkflowService
         if (prescriptionId == 0) return;
 
         var workflow = await _workflowRepository
-            .GetQueryable()
             .FirstOrDefaultAsync(w => w.PrescriptionId == prescriptionId);
 
         if (workflow == null) return;
 
-        var medications = await _medicationRepository
-            .GetQueryable()
-            .Where(m => m.PrescriptionId == prescriptionId)
-            .ToListAsync();
+        var medications = (await _medicationRepository
+            .FindAsync(m => m.PrescriptionId == prescriptionId)).ToList();
 
-        var validations = await _validationRepository
-            .GetQueryable()
-            .Where(v => medications.Select(m => m.Id).Contains(v.MedicationId))
-            .ToListAsync();
+        var medicationIds = medications.Select(m => m.Id).ToList();
+        var validations = (await _validationRepository
+            .FindAsync(v => medicationIds.Contains(v.MedicationId))).ToList();
 
         workflow.TotalMedications = medications.Count;
         workflow.ConfirmedMedications = validations.Count(v => v.IsConfirmed);
@@ -430,3 +411,6 @@ public class ValidationWorkflowService
         };
     }
 }
+
+
+

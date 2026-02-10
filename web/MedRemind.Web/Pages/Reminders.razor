@@ -27,13 +27,13 @@
                     <MudStack Row="true" Spacing="2">
                         @if (notificationPermission == "granted")
                         {
-                            <MudChip Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                            <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">
                                 Notifications Enabled
                             </MudChip>
                         }
                         else if (notificationPermission == "denied")
                         {
-                            <MudChip Color="Color.Error" Icon="@Icons.Material.Filled.Cancel">
+                            <MudChip T="string" Color="Color.Error" Icon="@Icons.Material.Filled.Cancel">
                                 Notifications Blocked
                             </MudChip>
                         }
@@ -103,20 +103,20 @@
                     <MudGrid>
                         <MudItem xs="12" sm="4">
                             <MudText Typo="Typo.h6">📊 Summary</MudText>
-                            <MudText Typo="Typo.body2">
-                                <strong>{reminders.Count}</strong> total reminders
+                    <MudText Typo="Typo.body2">
+                                <strong>@reminders.Count</strong> total reminders
                             </MudText>
                         </MudItem>
                         <MudItem xs="12" sm="4">
                             <MudText Typo="Typo.h6">✅ Active</MudText>
-                            <MudText Typo="Typo.body2">
-                                <strong>{reminders.Count(r => r.IsEnabled)}</strong> enabled
+                    <MudText Typo="Typo.body2">
+                                <strong>@reminders.Count(r => r.IsEnabled)</strong> enabled
                             </MudText>
                         </MudItem>
                         <MudItem xs="12" sm="4">
                             <MudText Typo="Typo.h6">🎙️ With Voice</MudText>
-                            <MudText Typo="Typo.body2">
-                                <strong>{reminders.Count(r => r.VoiceRecordingId.HasValue)}</strong> personalized
+                    <MudText Typo="Typo.body2">
+                                <strong>@reminders.Count(r => r.VoiceRecordingId.HasValue)</strong> personalized
                             </MudText>
                         </MudItem>
                     </MudGrid>
@@ -135,8 +135,8 @@
                                     @medicationGroup.First().MedicationDosage @medicationGroup.First().MedicationUnit
                                 </MudText>
                             </div>
-                            <MudChip Color="@(medicationGroup.All(r => r.IsEnabled) ? Color.Success : Color.Default)" Size="Size.Small">
-                                @medicationGroup.Count reminder(s)
+                            <MudChip T="string" Color="@(medicationGroup.All(r => r.IsEnabled) ? Color.Success : Color.Default)" Size="Size.Small">
+                                @($"{medicationGroup.Count()} reminder(s)")
                             </MudChip>
                         </MudStack>
 
@@ -168,7 +168,7 @@
                                         }
                                     </MudItem>
                                     <MudItem xs="12" sm="12" md="6">
-                                        <MudStack Row="true" Spacing="1" Justify="Justify.End">
+                                        <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd">
                                             <!-- Test Button -->
                                             <MudButton Variant="Variant.Outlined"
                                                       Color="Color.Info"
@@ -180,7 +180,7 @@
                                             </MudButton>
 
                                             <!-- Enable/Disable Toggle -->
-                                            <MudSwitch @bind-Value="reminder.IsEnabled"
+                                            <MudSwitch Value="reminder.IsEnabled"
                                                       Color="Color.Success"
                                                       Size="Size.Small"
                                                       ValueChanged="(bool value) => ToggleReminder(reminder.Id, value)" />
@@ -358,3 +358,4 @@
         }
     }
 }
+

@@ -3,6 +3,7 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>Review Prescription - MedRemind</PageTitle>
 
@@ -53,7 +54,7 @@
                                 </MudText>
                             }
                         </div>
-                        <MudChip Color="@GetStatusColor()" Size="Size.Large">
+                        <MudChip T="string" Color="@GetStatusColor()" Size="Size.Large">
                             @workflow.Status
                         </MudChip>
                     </MudStack>
@@ -244,13 +245,13 @@
 
     private async Task HandleDeleteMedication(int medicationId)
     {
-        var confirmed = await Snackbar.Add(
+        var result = await DialogService.ShowMessageBox(
+            "Delete Medication",
             "Are you sure you want to delete this medication?",
-            Severity.Warning,
-            config => config.Action = "Delete"
-        ).Result;
+            yesText: "Delete",
+            cancelText: "Cancel");
 
-        if (confirmed)
+        if (result == true)
         {
             var success = await ValidationService.DeleteMedicationAsync(medicationId, "User removed during review");
 
@@ -297,3 +298,4 @@
         };
     }
 }
+

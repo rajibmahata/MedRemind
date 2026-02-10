@@ -42,7 +42,6 @@ public class RemindersController : ControllerBase
 
             // Verify medication ownership
             var medication = await _unitOfWork.Repository<Medication>()
-                .GetQueryable()
                 .FirstOrDefaultAsync(m => m.Id == request.MedicationId && m.UserId == userId);
 
             if (medication == null)
@@ -54,7 +53,6 @@ public class RemindersController : ControllerBase
             if (request.VoiceRecordingId.HasValue)
             {
                 var voiceRecording = await _unitOfWork.Repository<VoiceRecording>()
-                    .GetQueryable()
                     .FirstOrDefaultAsync(v => v.Id == request.VoiceRecordingId && v.UserId == userId);
 
                 if (voiceRecording == null)
@@ -126,7 +124,6 @@ public class RemindersController : ControllerBase
 
             // Verify medication ownership
             var medication = await _unitOfWork.Repository<Medication>()
-                .GetQueryable()
                 .FirstOrDefaultAsync(m => m.Id == request.MedicationId && m.UserId == userId);
 
             if (medication == null)
@@ -139,7 +136,6 @@ public class RemindersController : ControllerBase
             if (request.VoiceRecordingId.HasValue)
             {
                 voiceRecording = await _unitOfWork.Repository<VoiceRecording>()
-                    .GetQueryable()
                     .FirstOrDefaultAsync(v => v.Id == request.VoiceRecordingId && v.UserId == userId);
 
                 if (voiceRecording == null)
@@ -377,7 +373,6 @@ public class RemindersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while calculating reminder times" });
         }
     }
-}
 
     /// <summary>
     /// Delete a reminder
@@ -390,8 +385,6 @@ public class RemindersController : ControllerBase
             var userId = GetCurrentUserId();
 
             var reminder = await _unitOfWork.Repository<Reminder>()
-                .GetQueryable()
-                .Include(r => r.Medication)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (reminder == null)
@@ -439,3 +432,4 @@ public record UpdateReminderTimeRequest(TimeSpan NewTime);
 public record ToggleReminderRequest(bool IsEnabled);
 public record CalculateRemindersRequest(int TimesPerDay);
 public record CalculateCustomRemindersRequest(string Frequency);
+

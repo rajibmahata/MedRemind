@@ -211,6 +211,13 @@ builder.Services.AddScoped<MedRemind.Services.Users.UserService>(sp =>
 
 builder.Services.AddScoped<MedicationService>();
 builder.Services.AddScoped<AdherenceService>();
+builder.Services.AddScoped<MedRemind.Services.Validation.ValidationWorkflowService>();
+Console.WriteLine("✅ ValidationWorkflowService registered");
+
+// Voice Recording Services
+builder.Services.AddScoped<MedRemind.Services.Storage.VoiceRecordingStorageService>();
+builder.Services.AddScoped<MedRemind.Services.VoiceRecordings.VoiceRecordingService>();
+Console.WriteLine("✅ Voice Recording Services registered");
 
 // Register PrescriptionFileManager for file handling (now uses IFileStorageService)
 builder.Services.AddSingleton<IPrescriptionFileManager, PrescriptionFileManager>(sp =>

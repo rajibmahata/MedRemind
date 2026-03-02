@@ -8,11 +8,11 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "crewai>=0.76.7",
-    "crewai-tools>=0.12.1",
-    "langchain-openai>=0.3.7",
-    "langchain-anthropic>=0.3.8",
-    "langchain-core>=0.3.29",
+    "crewai>=1.9.0",
+    "crewai-tools>=0.17.0",
+    "langchain-openai>=0.3.0",
+    "langchain-anthropic>=0.3.0",
+    "langchain-core>=0.3.0",
     "langsmith>=0.2.0",
     "fastapi>=0.115.5",
     "uvicorn[standard]>=0.32.1",

@@ -1,0 +1,293 @@
+@page "/voice-recordings"
+@inject IVoiceRecordingService VoiceRecordingService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Voice Recordings - MedRemind</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+            <!-- Header -->
+            <MudPaper Elevation="2" Class="pa-4 mb-4">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.h4">
+                            <MudIcon Icon="@Icons.Material.Filled.RecordVoiceOver" Class="mr-2" />
+                            Voice Recordings
+                        </MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Manage voice reminders from your loved ones
+                        </MudText>
+                    </div>
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.Add"
+                              OnClick="() => showRecorder = !showRecorder">
+                        @(showRecorder ? "Hide Recorder" : "New Recording")
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Voice Recorder Component -->
+            @if (showRecorder)
+            {
+                <div class="mb-4">
+                    <VoiceRecorder OnRecordingSaved="OnRecordingSaved" />
+                </div>
+            }
+
+            <!-- Loading State -->
+            @if (loading)
+            {
+                <MudPaper Elevation="3" Class="pa-6 text-center">
+                    <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Loading recordings...</MudText>
+                </MudPaper>
+            }
+            <!-- No Recordings -->
+            else if (!recordings.Any())
+            {
+                <MudPaper Elevation="3" Class="pa-6 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.MicNone" Size="Size.Large" Color="Color.Secondary" Class="mb-3" />
+                    <MudText Typo="Typo.h5" Class="mb-2">No Voice Recordings Yet</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+                        Create your first voice recording to personalize medication reminders
+                    </MudText>
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.Mic"
+                              OnClick="() => showRecorder = true">
+                        Record Your First Message
+                    </MudButton>
+                </MudPaper>
+            }
+            <!-- Recordings List -->
+            else
+            {
+                <MudText Typo="Typo.h6" Class="mb-3">
+                    Your Recordings (@recordings.Count)
+                </MudText>
+
+                <MudGrid>
+                    @foreach (var recording in recordings)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCard Elevation="3">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <MudText Typo="Typo.h6">
+                                                @recording.Name
+                                            </MudText>
+                                            @if (recording.ReminderCount > 0)
+                                            {
+                                                <MudChip T="string" Color="Color.Info" Size="Size.Small">
+                                                    @recording.ReminderCount reminders
+                                                </MudChip>
+                                            }
+                                        </MudStack>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @recording.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                                        </MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        @if (editingId != recording.Id)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                          Size="Size.Small"
+                                                          OnClick="() => StartEdit(recording)" />
+                                        }
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                      Color="Color.Error"
+                                                      Size="Size.Small"
+                                                      OnClick="() => DeleteRecording(recording)"
+                                                      Disabled="@(recording.ReminderCount > 0)" />
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+
+                                <MudCardContent>
+                                    @if (editingId == recording.Id)
+                                    {
+                                        <MudTextField @bind-Value="editingName"
+                                                     Label="Recording Name"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Dense"
+                                                     Class="mb-2" />
+                                        <MudStack Row="true" Spacing="1">
+                                            <MudButton Variant="Variant.Filled"
+                                                      Color="Color.Success"
+                                                      Size="Size.Small"
+                                                      OnClick="() => SaveEdit(recording.Id)">
+                                                Save
+                                            </MudButton>
+                                            <MudButton Variant="Variant.Outlined"
+                                                      Size="Size.Small"
+                                                      OnClick="CancelEdit">
+                                                Cancel
+                                            </MudButton>
+                                        </MudStack>
+                                    }
+                                    else
+                                    {
+                                        <!-- Audio Player -->
+                                        <AudioPlayer RecordingId="@recording.Id"
+                                                    DurationSeconds="@recording.DurationSeconds"
+                                                    ShowProgress="true" />
+
+                                        <!-- File Info -->
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                                            Duration: @recording.DurationSeconds seconds
+                                        </MudText>
+                                    }
+
+                                    @if (recording.ReminderCount > 0)
+                                    {
+                                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                                            <MudText Typo="Typo.caption">
+                                                Used in @recording.ReminderCount medication reminder(s)
+                                            </MudText>
+                                        </MudAlert>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+
+            <!-- Info Section -->
+            <MudPaper Elevation="2" Class="pa-4 mt-6">
+                <MudText Typo="Typo.h6" Class="mb-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                    About Voice Recordings
+                </MudText>
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    Voice recordings allow you to personalize medication reminders with the voices of your loved ones.
+                    This creates a warm, caring experience that makes it easier to remember to take medications on time.
+                </MudText>
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.body2" Class="font-weight-bold mb-1">Tips:</MudText>
+                <MudText Typo="Typo.body2" Style="padding-left: 20px;">
+                    • Keep recordings short and clear (5-10 seconds)<br/>
+                    • Record in a quiet environment<br/>
+                    • Speak naturally and warmly<br/>
+                    • You can create multiple recordings for different medications<br/>
+                    • Recordings in use by reminders cannot be deleted
+                </MudText>
+            </MudPaper>
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="Severity.Warning">
+            Please login to manage voice recordings.
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/login" Class="mt-4">
+            Go to Login
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<VoiceRecordingModel> recordings = new();
+    private bool loading = true;
+    private bool showRecorder = false;
+
+    private int editingId = 0;
+    private string editingName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+
+        if (!AuthService.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadRecordings();
+    }
+
+    private async Task LoadRecordings()
+    {
+        loading = true;
+        recordings = await VoiceRecordingService.GetUserRecordingsAsync();
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnRecordingSaved()
+    {
+        showRecorder = false;
+        await LoadRecordings();
+        Snackbar.Add("Voice recording saved successfully!", Severity.Success);
+    }
+
+    private void StartEdit(VoiceRecordingModel recording)
+    {
+        editingId = recording.Id;
+        editingName = recording.Name;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = 0;
+        editingName = string.Empty;
+    }
+
+    private async Task SaveEdit(int id)
+    {
+        if (string.IsNullOrWhiteSpace(editingName))
+        {
+            Snackbar.Add("Please enter a name", Severity.Warning);
+            return;
+        }
+
+        var success = await VoiceRecordingService.UpdateRecordingNameAsync(id, editingName);
+
+        if (success)
+        {
+            Snackbar.Add("Recording name updated", Severity.Success);
+            await LoadRecordings();
+            CancelEdit();
+        }
+        else
+        {
+            Snackbar.Add("Failed to update recording name", Severity.Error);
+        }
+    }
+
+    private async Task DeleteRecording(VoiceRecordingModel recording)
+    {
+        if (recording.ReminderCount > 0)
+        {
+            Snackbar.Add($"Cannot delete - this recording is used by {recording.ReminderCount} reminders", Severity.Warning);
+            return;
+        }
+
+        var result = await DialogService.ShowMessageBox(
+            "Delete Recording",
+            $"Are you sure you want to delete '{recording.Name}'? This action cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var success = await VoiceRecordingService.DeleteRecordingAsync(recording.Id);
+
+            if (success)
+            {
+                Snackbar.Add("Recording deleted", Severity.Info);
+                await LoadRecordings();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete recording", Severity.Error);
+            }
+        }
+    }
+}
+

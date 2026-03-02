@@ -1,0 +1,41 @@
+@* StatCard - Reusable statistics card component *@
+
+<MudCard Elevation="2" Class="stat-card">
+    <MudCardContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <div class="stat-card-icon">
+                <MudIcon Icon="@Icon" Size="Size.Large" Color="Color.Surface" />
+            </div>
+            <div style="flex: 1;">
+                <MudText Typo="Typo.h4" Class="mb-1">@Value</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Label</MudText>
+                @if (!string.IsNullOrEmpty(Subtitle))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Tertiary">@Subtitle</MudText>
+                }
+            </div>
+            @if (ShowTrend && TrendValue != 0)
+            {
+                <MudChip T="string"
+                         Size="Size.Small" 
+                         Color="@(TrendValue > 0 ? Color.Success : Color.Error)"
+                         Variant="Variant.Text">
+                    <MudIcon Icon="@(TrendValue > 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)" 
+                             Size="Size.Small" />
+                    @Math.Abs(TrendValue)%
+                </MudChip>
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Info;
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public Color IconColor { get; set; } = Color.Primary;
+    [Parameter] public bool ShowTrend { get; set; } = false;
+    [Parameter] public double TrendValue { get; set; } = 0;
+}
+

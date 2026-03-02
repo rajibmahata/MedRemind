@@ -1,0 +1,33 @@
+@* SearchBar - Universal search component *@
+
+<MudTextField @bind-Value="searchQuery"
+              Placeholder="@Placeholder"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Variant="Variant.Outlined"
+              Immediate="true"
+              DebounceInterval="300"
+              OnDebounceIntervalElapsed="HandleSearch"
+              Class="search-bar"
+              Clearable="true"
+              OnClearButtonClick="HandleClear"
+              FullWidth="@FullWidth" />
+
+@code {
+    [Parameter] public string Placeholder { get; set; } = "Search...";
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+    [Parameter] public bool FullWidth { get; set; } = true;
+    
+    private string searchQuery = "";
+
+    private async Task HandleSearch()
+    {
+        await OnSearch.InvokeAsync(searchQuery);
+    }
+
+    private async Task HandleClear()
+    {
+        searchQuery = "";
+        await OnSearch.InvokeAsync("");
+    }
+}

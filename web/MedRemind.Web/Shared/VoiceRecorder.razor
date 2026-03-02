@@ -1,0 +1,383 @@
+@inject IJSRuntime JS
+@inject IVoiceRecordingService VoiceRecordingService
+@inject ISnackbar Snackbar
+
+<MudCard Elevation="3">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Mic" Class="mr-2" />
+                Record Voice Reminder
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Record a loving message for medication reminders
+            </MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!isSupported)
+        {
+            <MudAlert Severity="Severity.Error">
+                Your browser doesn't support audio recording. Please use Chrome, Firefox, or Edge.
+            </MudAlert>
+        }
+        else if (!isInitialized)
+        {
+            <MudButton Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      StartIcon="@Icons.Material.Filled.Mic"
+                      OnClick="InitializeRecorder"
+                      FullWidth="true">
+                Initialize Microphone
+            </MudButton>
+        }
+        else
+        {
+            <!-- Recording Name -->
+            <MudTextField @bind-Value="recordingName"
+                         Label="Recording Name"
+                         Placeholder="e.g., Mom, Dad, Self, Wife..."
+                         Variant="Variant.Outlined"
+                         Class="mb-3"
+                         Disabled="@isRecording"
+                         Required="true" />
+
+            <!-- Recording Controls -->
+            <MudStack Row="true" Justify="Justify.Center" Spacing="2" Class="mb-3">
+                @if (!isRecording && !hasRecording)
+                {
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Error"
+                              Size="Size.Large"
+                              StartIcon="@Icons.Material.Filled.FiberManualRecord"
+                              OnClick="StartRecording"
+                              Disabled="string.IsNullOrWhiteSpace(recordingName)">
+                        Start Recording
+                    </MudButton>
+                }
+                else if (isRecording)
+                {
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Default"
+                              Size="Size.Large"
+                              StartIcon="@Icons.Material.Filled.Stop"
+                              OnClick="StopRecording">
+                        Stop Recording
+                    </MudButton>
+                }
+                else if (hasRecording)
+                {
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Info"
+                              StartIcon="@Icons.Material.Filled.PlayArrow"
+                              OnClick="PlayPreview">
+                        Preview
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                              Color="Color.Default"
+                              StartIcon="@Icons.Material.Filled.Refresh"
+                              OnClick="ResetRecording">
+                        Re-record
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Success"
+                              StartIcon="@Icons.Material.Filled.Save"
+                              OnClick="SaveRecording"
+                              Disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </MudButton>
+                }
+            </MudStack>
+
+            <!-- Recording Status -->
+            @if (isRecording)
+            {
+                <MudPaper Elevation="1" Class="pa-3 text-center" Style="background-color: #ffebee;">
+                    <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.FiberManualRecord" Color="Color.Error" Class="recording-pulse" />
+                        <MudText Typo="Typo.h6" Color="Color.Error">
+                            Recording... @elapsedSeconds s
+                        </MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">
+                        Maximum duration: 60 seconds
+                    </MudText>
+                </MudPaper>
+            }
+
+            @if (hasRecording && !isRecording)
+            {
+                <MudAlert Severity="Severity.Success" Dense="true">
+                    <MudText Typo="Typo.body2">
+                        ✓ Recording complete! Duration: @recordingDuration seconds
+                    </MudText>
+                    <MudText Typo="Typo.caption">
+                        File size: @FormatFileSize(recordingSize)
+                    </MudText>
+                </MudAlert>
+            }
+
+            <!-- Tips -->
+            @if (!isRecording && !hasRecording)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">
+                    <MudText Typo="Typo.body2" Class="font-weight-bold mb-1">
+                        💡 Tips for great voice reminders:
+                    </MudText>
+                    <MudText Typo="Typo.caption">
+                        • Record in a quiet environment<br/>
+                        • Speak clearly and warmly<br/>
+                        • Keep it under 10 seconds for best results<br/>
+                        • Example: "Sweetheart, time to take your heart medication"
+                    </MudText>
+                </MudAlert>
+            }
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter]
+    public EventCallback OnRecordingSaved { get; set; }
+
+    private bool isSupported = false;
+    private bool isInitialized = false;
+    private bool isRecording = false;
+    private bool hasRecording = false;
+    private bool isSaving = false;
+
+    private string recordingName = string.Empty;
+    private string? recordingBase64 = null;
+    private int recordingDuration = 0;
+    private long recordingSize = 0;
+    private int elapsedSeconds = 0;
+
+    private Timer? recordingTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isSupported = await JS.InvokeAsync<bool>("eval", "window.audioRecorder.isSupported()");
+    }
+
+    private async Task InitializeRecorder()
+    {
+        try
+        {
+            var result = await JS.InvokeAsync<RecorderResult>("audioRecorder.initialize");
+
+            if (result.Success)
+            {
+                isInitialized = true;
+                Snackbar.Add("✓ Microphone initialized", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Failed to initialize microphone", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task StartRecording()
+    {
+        try
+        {
+            var result = await JS.InvokeAsync<RecorderResult>("audioRecorder.startRecording");
+
+            if (result.Success)
+            {
+                isRecording = true;
+                hasRecording = false;
+                elapsedSeconds = 0;
+
+                // Start timer to update elapsed time
+                recordingTimer = new Timer(_ =>
+                {
+                    elapsedSeconds++;
+                    InvokeAsync(StateHasChanged);
+
+                    // Auto-stop at 60 seconds
+                    if (elapsedSeconds >= 60)
+                    {
+                        InvokeAsync(StopRecording);
+                    }
+                }, null, 1000, 1000);
+
+                Snackbar.Add("🎙️ Recording started", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Failed to start recording", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task StopRecording()
+    {
+        try
+        {
+            recordingTimer?.Dispose();
+            recordingTimer = null;
+
+            var result = await JS.InvokeAsync<StopRecordingResult>("audioRecorder.stopRecording");
+
+            if (result.Success)
+            {
+                isRecording = false;
+                hasRecording = true;
+                recordingBase64 = result.Base64;
+                recordingDuration = result.Duration;
+                recordingSize = result.Size;
+
+                Snackbar.Add("✓ Recording stopped", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Failed to stop recording", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PlayPreview()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(recordingBase64))
+            {
+                await JS.InvokeVoidAsync("audioRecorder.playAudio", recordingBase64);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error playing audio: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ResetRecording()
+    {
+        hasRecording = false;
+        recordingBase64 = null;
+        recordingDuration = 0;
+        recordingSize = 0;
+    }
+
+    private async Task SaveRecording()
+    {
+        if (string.IsNullOrEmpty(recordingBase64) || string.IsNullOrWhiteSpace(recordingName))
+        {
+            Snackbar.Add("Please provide a name and recording", Severity.Warning);
+            return;
+        }
+
+        isSaving = true;
+
+        try
+        {
+            var model = new CreateVoiceRecordingModel
+            {
+                Name = recordingName,
+                Base64Audio = recordingBase64,
+                FileName = $"{recordingName}.webm",
+                DurationSeconds = recordingDuration
+            };
+
+            var result = await VoiceRecordingService.UploadRecordingAsync(model);
+
+            if (result != null && result.Success)
+            {
+                Snackbar.Add($"✓ Voice recording '{recordingName}' saved!", Severity.Success);
+
+                // Reset form
+                recordingName = string.Empty;
+                hasRecording = false;
+                recordingBase64 = null;
+                recordingDuration = 0;
+                recordingSize = 0;
+
+                // Notify parent
+                await OnRecordingSaved.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add(result?.Message ?? "Failed to save recording", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving recording: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        recordingTimer?.Dispose();
+        try
+        {
+            await JS.InvokeVoidAsync("audioRecorder.cleanup");
+        }
+        catch { }
+    }
+
+    // Helper classes for JS interop
+    private class RecorderResult
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+    }
+
+    private class StopRecordingResult : RecorderResult
+    {
+        public string Base64 { get; set; } = string.Empty;
+        public int Duration { get; set; }
+        public long Size { get; set; }
+        public string MimeType { get; set; } = string.Empty;
+    }
+}
+
+<style>
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .recording-pulse {
+        animation: pulse 1s infinite;
+    }
+</style>

@@ -1,0 +1,301 @@
+@page "/review/{PrescriptionId:int}"
+@inject IValidationService ValidationService
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Review Prescription - MedRemind</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        @if (loading)
+        {
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+                <MudPaper Elevation="3" Class="pa-6 text-center">
+                    <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Loading prescription...</MudText>
+                </MudPaper>
+            </MudContainer>
+        }
+        else if (workflow == null)
+        {
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+                <MudAlert Severity="Severity.Error">
+                    <MudText Typo="Typo.h6">Prescription not found</MudText>
+                    <MudText Typo="Typo.body2">The prescription you're looking for doesn't exist or you don't have access to it.</MudText>
+                </MudAlert>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/upload" Class="mt-4">
+                    Upload New Prescription
+                </MudButton>
+            </MudContainer>
+        }
+        else
+        {
+            <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+                <!-- Header -->
+                <MudPaper Elevation="2" Class="pa-4 mb-4">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <div>
+                            <MudText Typo="Typo.h4">
+                                <MudIcon Icon="@Icons.Material.Filled.FactCheck" Class="mr-2" />
+                                Review Prescription
+                            </MudText>
+                            @if (!string.IsNullOrEmpty(workflow.DoctorName))
+                            {
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Prescribed by: Dr. @workflow.DoctorName
+                                </MudText>
+                            }
+                            @if (workflow.PrescriptionDate.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Date: @workflow.PrescriptionDate.Value.ToString("MMM dd, yyyy")
+                                </MudText>
+                            }
+                        </div>
+                        <MudChip T="string" Color="@GetStatusColor()" Size="Size.Large">
+                            @workflow.Status
+                        </MudChip>
+                    </MudStack>
+                </MudPaper>
+
+                <!-- Progress Indicator -->
+                <MudPaper Elevation="2" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6" Class="mb-2">Validation Progress</MudText>
+                    <MudProgressLinear Value="@ProgressPercentage" Color="Color.Primary" Size="Size.Large" Class="mb-2" />
+                    <MudText Typo="Typo.body2">
+                        <strong>@workflow.ConfirmedMedications</strong> of <strong>@workflow.TotalMedications</strong> medications confirmed
+                        @if (workflow.CorrectedMedications > 0)
+                        {
+                            <span> | <strong>@workflow.CorrectedMedications</strong> corrected</span>
+                        }
+                    </MudText>
+                </MudPaper>
+
+                <!-- Safety Alerts -->
+                @if (workflow.HasHighRiskMedications || workflow.RequiresPharmacistReview || workflow.TotalSafetyWarnings > 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4">
+                        <MudText Typo="Typo.h6" Class="mb-2">⚠️ Safety Alerts</MudText>
+                        @if (workflow.HasHighRiskMedications)
+                        {
+                            <MudText Typo="Typo.body2">• High-risk medications detected</MudText>
+                        }
+                        @if (workflow.RequiresPharmacistReview)
+                        {
+                            <MudText Typo="Typo.body2">• Pharmacist consultation recommended</MudText>
+                        }
+                        @if (workflow.TotalSafetyWarnings > 0)
+                        {
+                            <MudText Typo="Typo.body2">• @workflow.TotalSafetyWarnings safety warnings found</MudText>
+                        }
+                        @if (workflow.DrugInteractionsDetected > 0)
+                        {
+                            <MudText Typo="Typo.body2">• @workflow.DrugInteractionsDetected potential drug interactions</MudText>
+                        }
+                    </MudAlert>
+                }
+
+                <!-- Instructions -->
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <MudText Typo="Typo.body1" Class="font-weight-bold mb-2">
+                        📋 Please review each medication carefully:
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        ✓ Verify the medication name, dosage, and frequency<br/>
+                        ✓ Read safety warnings and side effects<br/>
+                        ✓ Make corrections if needed<br/>
+                        ✓ Confirm each medication before proceeding
+                    </MudText>
+                </MudAlert>
+
+                <!-- Medications List -->
+                <MudText Typo="Typo.h5" Class="mb-3">Medications (@workflow.TotalMedications)</MudText>
+
+                @foreach (var medication in workflow.Medications)
+                {
+                    <MedicationCard
+                        Medication="@medication"
+                        OnConfirm="@HandleConfirmMedication"
+                        OnCorrect="@HandleCorrectMedication"
+                        OnDelete="@HandleDeleteMedication" />
+                }
+
+                <!-- Complete Button -->
+                @if (AllMedicationsConfirmed)
+                {
+                    <MudPaper Elevation="3" Class="pa-4 mt-6">
+                        <MudText Typo="Typo.h6" Class="mb-3">✅ All medications confirmed!</MudText>
+
+                        @if (workflow.RequiresPharmacistReview)
+                        {
+                            <MudCheckBox @bind-Value="consultedPharmacist" Color="Color.Primary" Class="mb-2">
+                                <MudText Typo="Typo.body1">I have consulted with my pharmacist</MudText>
+                            </MudCheckBox>
+
+                            @if (consultedPharmacist)
+                            {
+                                <MudTextField @bind-Value="pharmacistNotes"
+                                            Label="Pharmacist Notes (Optional)"
+                                            Variant="Variant.Outlined"
+                                            Lines="3"
+                                            Class="mb-3" />
+                            }
+                        }
+
+                        <MudButton Variant="Variant.Filled"
+                                  Color="Color.Success"
+                                  Size="Size.Large"
+                                  FullWidth="true"
+                                  OnClick="CompleteValidation"
+                                  Disabled="@(workflow.RequiresPharmacistReview && !consultedPharmacist)"
+                                  StartIcon="@Icons.Material.Filled.CheckCircle">
+                            Complete Review & Continue
+                        </MudButton>
+
+                        @if (workflow.RequiresPharmacistReview && !consultedPharmacist)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-2 text-center">
+                                Please confirm pharmacist consultation before proceeding
+                            </MudText>
+                        }
+                    </MudPaper>
+                }
+            </MudContainer>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <MudAlert Severity="Severity.Warning">
+            Please login to review prescriptions.
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/login" Class="mt-4">
+            Go to Login
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public int PrescriptionId { get; set; }
+
+    private ValidationWorkflowResponse? workflow;
+    private bool loading = true;
+    private bool consultedPharmacist = false;
+    private string pharmacistNotes = string.Empty;
+
+    private bool AllMedicationsConfirmed =>
+        workflow != null && workflow.ConfirmedMedications == workflow.TotalMedications;
+
+    private double ProgressPercentage =>
+        workflow != null && workflow.TotalMedications > 0
+            ? (workflow.ConfirmedMedications * 100.0 / workflow.TotalMedications)
+            : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.InitializeAsync();
+
+        if (!AuthService.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadWorkflowAsync();
+    }
+
+    private async Task LoadWorkflowAsync()
+    {
+        loading = true;
+        workflow = await ValidationService.GetValidationWorkflowAsync(PrescriptionId);
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleConfirmMedication(int medicationId)
+    {
+        var result = await ValidationService.ConfirmMedicationAsync(medicationId, true);
+
+        if (result != null)
+        {
+            Snackbar.Add("✓ Medication confirmed", Severity.Success);
+            await LoadWorkflowAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to confirm medication", Severity.Error);
+        }
+    }
+
+    private async Task HandleCorrectMedication(CorrectMedicationRequest request)
+    {
+        var result = await ValidationService.CorrectMedicationAsync(request);
+
+        if (result != null)
+        {
+            Snackbar.Add("✓ Medication corrected and confirmed", Severity.Success);
+            await LoadWorkflowAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to correct medication", Severity.Error);
+        }
+    }
+
+    private async Task HandleDeleteMedication(int medicationId)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Delete Medication",
+            "Are you sure you want to delete this medication?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var success = await ValidationService.DeleteMedicationAsync(medicationId, "User removed during review");
+
+            if (success)
+            {
+                Snackbar.Add("Medication deleted", Severity.Info);
+                await LoadWorkflowAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete medication", Severity.Error);
+            }
+        }
+    }
+
+    private async Task CompleteValidation()
+    {
+        var result = await ValidationService.CompleteValidationAsync(
+            PrescriptionId,
+            consultedPharmacist,
+            pharmacistNotes);
+
+        if (result != null)
+        {
+            Snackbar.Add("✓ Prescription review completed!", Severity.Success);
+            await Task.Delay(1000);
+            // Redirect to reminder setup
+            Navigation.NavigateTo($"/reminder-setup/{PrescriptionId}");
+        }
+        else
+        {
+            Snackbar.Add("Failed to complete validation", Severity.Error);
+        }
+    }
+
+    private Color GetStatusColor()
+    {
+        return workflow?.Status switch
+        {
+            "Pending" => Color.Default,
+            "InProgress" => Color.Info,
+            "Completed" => Color.Success,
+            _ => Color.Default
+        };
+    }
+}
+

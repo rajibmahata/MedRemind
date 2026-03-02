@@ -1,0 +1,46 @@
+@* EmptyState - No data placeholder component *@
+
+<MudContainer Class="empty-state animate-fade-in">
+    <div class="empty-state-icon">
+        <MudIcon Icon="@Icon" Size="Size.Large" Color="Color.Secondary" />
+    </div>
+    <MudText Typo="Typo.h5" Class="mb-2">@Title</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4" Style="max-width: 400px;">
+        @Message
+    </MudText>
+    @if (!string.IsNullOrEmpty(ActionText))
+    {
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   OnClick="HandleAction"
+                   StartIcon="@ActionIcon"
+                   Size="Size.Large"
+                   Class="mt-2">
+            @ActionText
+        </MudButton>
+    }
+    @if (ChildContent != null)
+    {
+        <div class="mt-4">
+            @ChildContent
+        </div>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.SearchOff;
+    [Parameter] public string Title { get; set; } = "No data found";
+    [Parameter] public string Message { get; set; } = "There's nothing here yet. Get started by adding your first item.";
+    [Parameter] public string ActionText { get; set; } = "";
+    [Parameter] public string ActionIcon { get; set; } = Icons.Material.Filled.Add;
+    [Parameter] public EventCallback OnAction { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    private async Task HandleAction()
+    {
+        if (OnAction.HasDelegate)
+        {
+            await OnAction.InvokeAsync();
+        }
+    }
+}

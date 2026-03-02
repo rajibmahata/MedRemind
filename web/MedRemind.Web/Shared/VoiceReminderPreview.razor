@@ -1,0 +1,131 @@
+@inject IVoiceRecordingService VoiceRecordingService
+
+<MudCard Elevation="3">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Class="mr-2" />
+                Preview: This is what you'll hear
+            </MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!string.IsNullOrEmpty(MedicationName))
+        {
+            <!-- Notification Preview -->
+            <MudPaper Elevation="1" Class="pa-3 mb-3" Style="background-color: #f5f5f5;">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">
+                    📱 Notification Message:
+                </MudText>
+                <MudText Typo="Typo.h6" Class="mb-1">
+                    💊 Time for @MedicationName
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Take @Dosage @Unit
+                </MudText>
+            </MudPaper>
+
+            @if (VoiceRecordingId.HasValue)
+            {
+                <!-- Voice Recording Preview -->
+                <MudPaper Elevation="1" Class="pa-3" Style="background-color: #e3f2fd;">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Info" Class="mb-2">
+                        🎙️ Voice Message:
+                    </MudText>
+                    @if (!string.IsNullOrEmpty(VoiceRecordingName))
+                    {
+                        <MudText Typo="Typo.body1" Class="font-weight-bold mb-2">
+                            "@VoiceRecordingName" will say:
+                        </MudText>
+                    }
+                    <AudioPlayer RecordingId="@VoiceRecordingId.Value"
+                                DurationSeconds="@DurationSeconds"
+                                ShowProgress="true"
+                                AutoPlay="@AutoPlay" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    <MudText Typo="Typo.body2">
+                        No voice recording selected. You'll receive a standard notification without voice.
+                    </MudText>
+                </MudAlert>
+            }
+
+            <!-- Reminder Time Preview -->
+            @if (ReminderTimes?.Any() == true)
+            {
+                <MudDivider Class="my-3" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">
+                    ⏰ Reminder Times:
+                </MudText>
+                <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                    @foreach (var time in ReminderTimes.OrderBy(t => t))
+                    {
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">
+                            @time.ToString(@"hh\:mm tt")
+                        </MudChip>
+                    }
+                </MudStack>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Warning">
+                Please provide medication information to preview the reminder.
+            </MudAlert>
+        }
+    </MudCardContent>
+
+    @if (ShowPlayButton)
+    {
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      StartIcon="@Icons.Material.Filled.PlayArrow"
+                      OnClick="PlayPreview"
+                      Disabled="@(!VoiceRecordingId.HasValue)">
+                Play Voice Preview
+            </MudButton>
+        </MudCardActions>
+    }
+</MudCard>
+
+@code {
+    [Parameter]
+    public string MedicationName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Dosage { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Unit { get; set; } = string.Empty;
+
+    [Parameter]
+    public int? VoiceRecordingId { get; set; }
+
+    [Parameter]
+    public string? VoiceRecordingName { get; set; }
+
+    [Parameter]
+    public int DurationSeconds { get; set; }
+
+    [Parameter]
+    public List<TimeSpan>? ReminderTimes { get; set; }
+
+    [Parameter]
+    public bool ShowPlayButton { get; set; } = false;
+
+    [Parameter]
+    public bool AutoPlay { get; set; } = false;
+
+    private void PlayPreview()
+    {
+        // AudioPlayer component handles the actual playback
+        AutoPlay = true;
+        StateHasChanged();
+    }
+}
+
